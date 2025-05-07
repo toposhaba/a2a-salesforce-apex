@@ -14,7 +14,7 @@ An *initial* [A2AClient](https://github.com/fjuma/a2a-java-sdk/blob/main/src/mai
 
 #### Send a task
 
-```
+```java
 // Create an A2AClient (the URL specified is the server agent's URL)
 A2AClient client = new A2AClient("http://localhost:1234");
 
@@ -28,7 +28,7 @@ SendTaskResponse response = client.sendTask(params);
 ```
 
 #### Retrieve details about the server agent that this client agent is communicating with
-```
+```java
 A2AClient client = new A2AClient("http://localhost:1234");
 AgentCard serverAgentCard = client.getAgentCard();
 ```
