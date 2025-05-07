@@ -4,7 +4,6 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.a2a.util.Assert;
 
@@ -16,19 +15,12 @@ import io.a2a.util.Assert;
 public sealed class JSONRPCResponse implements JSONRPCMessage permits SendTaskResponse, SendTaskStreamingResponse,
         GetTaskResponse, CancelTaskResponse, SetTaskPushNotificationResponse, GetTaskPushNotificationResponse {
 
-    @JsonProperty("jsonrpc")
-    String jsonrpc;
+    protected String jsonrpc;
+    protected Object id;
+    protected Object result;
+    protected JSONRPCError error;
 
-    @JsonProperty("id")
-    Object id;
-
-    @JsonProperty("result")
-    Object result;
-
-    @JsonProperty("error")
-    JSONRPCError error;
-
-    JSONRPCResponse() {
+    public JSONRPCResponse() {
     }
 
     public JSONRPCResponse(String jsonrpc, Object id, Object result, JSONRPCError error) {

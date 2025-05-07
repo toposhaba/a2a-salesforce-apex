@@ -1,6 +1,8 @@
 package io.a2a.client;
 
+import static io.a2a.spec.A2A.toUserMessage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
@@ -11,9 +13,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
 
+import io.a2a.spec.Artifact;
 import io.a2a.spec.Message;
+import io.a2a.spec.Part;
 import io.a2a.spec.SendTaskResponse;
+import io.a2a.spec.Task;
 import io.a2a.spec.TaskSendParams;
+import io.a2a.spec.TaskState;
 import io.a2a.spec.TextPart;
 
 public class A2AClientTest {
@@ -28,6 +34,47 @@ public class A2AClientTest {
     @AfterAll
     public static void tearDown() {
         server.stop();
+    }
+
+    @Test
+    public void testA2AClientSendTask() throws Exception {
+        this.server.when(
+                        request()
+                                .withMethod("POST")
+                                .withPath("/tasks/send")
+
+                )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody(TASK_RESPONSE)
+                );
+
+        A2AClient client = new A2AClient("http://localhost:4001");
+        Message message = toUserMessage("tell me a joke");
+        TaskSendParams params = new TaskSendParams.Builder()
+                .id("task-1234")
+                .message(message)
+                .build();
+
+        SendTaskResponse response = client.sendTask(params);
+
+        assertEquals("2.0", response.jsonrpc());
+        assertTrue(response.id() != null);
+        Object result = response.result();
+        assertTrue(result instanceof Task);
+        Task task = (Task) result;
+        assertEquals("de38c76d-d54c-436c-8b9f-4c2703648d64", task.id());
+        assertTrue(task.sessionId() != null);
+        assertTrue(task.status().state() == TaskState.COMPLETED);
+        assertTrue(task.artifacts().size() == 1);
+        Artifact artifact = task.artifacts().get(0);
+        assertEquals("joke", artifact.name());
+        assertTrue(artifact.parts().size() == 1);
+        Part part = artifact.parts().get(0);
+        assertEquals(Part.Type.TEXT, part.getType());
+        assertEquals("Why did the chicken cross the road? To get to the other side!", ((TextPart) part).getText());
+        assertTrue(task.metadata().isEmpty());
     }
 
     @Test

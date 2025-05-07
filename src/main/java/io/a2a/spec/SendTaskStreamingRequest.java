@@ -6,8 +6,10 @@ import static io.a2a.util.Utils.OBJECT_MAPPER;
 import java.util.Map;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.a2a.util.Assert;
 
@@ -18,7 +20,9 @@ import io.a2a.util.Assert;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class SendTaskStreamingRequest extends JSONRPCRequest {
 
-    public SendTaskStreamingRequest(String jsonrpc, Object id, String method, TaskSendParams params) {
+    @JsonCreator
+    public SendTaskStreamingRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
+                                    @JsonProperty("method") String method, @JsonProperty("params") TaskSendParams params) {
         Assert.checkNotNullParam("jsonrpc", jsonrpc);
         Assert.checkNotNullParam("method", method);
         Assert.checkNotNullParam("params", params);

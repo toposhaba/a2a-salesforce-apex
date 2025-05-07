@@ -2,34 +2,40 @@ package io.a2a.spec;
 
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import io.a2a.util.Assert;
 
 /**
  * A fundamental data unit within a Message or Artifact.
  */
-public class DataPart implements Part<Map<String, Object>> {
+public class DataPart extends Part<Map<String, Object>> {
 
-    private Map<String, Object> part;
+    private Map<String, Object> data;
     private Map<String, Object> metadata;
+    private Type type;
 
-    public DataPart(Map<String, Object> part) {
-        this(part, null);
+    public DataPart(Map<String, Object> data) {
+        this(data, null);
     }
 
-    public DataPart(Map<String, Object> part, Map<String, Object> metadata) {
-        Assert.checkNotNullParam("part", part);
-        this.part = part;
+    @JsonCreator
+    public DataPart(@JsonProperty("data") Map<String, Object> data,
+                    @JsonProperty("metadata") Map<String, Object> metadata) {
+        Assert.checkNotNullParam("data", data);
+        this.data = data;
         this.metadata = metadata;
+        this.type = Type.DATA;
     }
 
     @Override
     public Type getType() {
-        return Type.DATA;
+        return type;
     }
 
-    @Override
-    public Map<String, Object> getPart() {
-        return part;
+    public Map<String, Object> getData() {
+        return data;
     }
 
     @Override

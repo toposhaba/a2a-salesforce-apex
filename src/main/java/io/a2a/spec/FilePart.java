@@ -2,34 +2,39 @@ package io.a2a.spec;
 
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import io.a2a.util.Assert;
 
 /**
  * A fundamental file unit within a Message or Artifact.
  */
-public class FilePart implements Part<FileContent> {
+public class FilePart extends Part<FileContent> {
 
-    private FileContent part;
+    private FileContent file;
     private Map<String, Object> metadata;
+    private Type type;
 
-    public FilePart(FileContent part) {
-        this(part, null);
+    public FilePart(FileContent file) {
+        this(file, null);
     }
 
-    public FilePart(FileContent part, Map<String, Object> metadata) {
-        Assert.checkNotNullParam("part", part);
-        this.part = part;
+    @JsonCreator
+    public FilePart(@JsonProperty("file") FileContent file, @JsonProperty("metadata") Map<String, Object> metadata) {
+        Assert.checkNotNullParam("file", file);
+        this.file = file;
         this.metadata = metadata;
+        this.type = Type.FILE;
     }
 
     @Override
     public Type getType() {
-        return Type.FILE;
+        return type;
     }
 
-    @Override
-    public FileContent getPart() {
-        return part;
+    public FileContent getFile() {
+        return file;
     }
 
     @Override
