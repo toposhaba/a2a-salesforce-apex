@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.a2a.util.Assert;
 
@@ -18,19 +17,12 @@ public sealed class JSONRPCRequest implements JSONRPCMessage permits SendTaskReq
         GetTaskRequest, CancelTaskRequest, SetTaskPushNotificationRequest, GetTaskPushNotificationRequest,
         TaskResubscriptionRequest {
 
-    @JsonProperty("jsonrpc")
-    String jsonrpc;
+    protected String jsonrpc;
+    protected Object id;
+    protected String method;
+    protected Map<String, Object> params;
 
-    @JsonProperty("id")
-    Object id;
-
-    @JsonProperty("method")
-    String method;
-
-    @JsonProperty("params")
-    Map<String, Object> params;
-
-    JSONRPCRequest() {
+    public JSONRPCRequest() {
     }
 
     public JSONRPCRequest(String jsonrpc, Object id, String method, Map<String, Object> params) {

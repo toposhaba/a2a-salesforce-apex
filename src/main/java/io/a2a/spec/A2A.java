@@ -1,7 +1,9 @@
 package io.a2a.spec;
 
+import java.util.Collections;
+
 /**
- * Constants related to the A2A protocol.
+ * Constants and utility methods related to the A2A protocol.
  */
 public class A2A {
 
@@ -20,4 +22,32 @@ public class A2A {
     public static final String getRequestEndpoint(String agentUrl, String request) {
         return agentUrl.endsWith("/") ? agentUrl + request : agentUrl + "/" + request;
     }
+
+    /**
+     * Convert the given text to a user message.
+     *
+     * @param text the message text
+     * @return the user message
+     */
+    public static Message toUserMessage(String text) {
+        return toMessage(text, Message.Role.USER);
+    }
+
+    /**
+     * Convert the given text to an agent message.
+     *
+     * @param text the message text
+     * @return the agent message
+     */
+    public static Message toAgentMessage(String text) {
+        return toMessage(text, Message.Role.AGENT);
+    }
+
+    private static Message toMessage(String text, Message.Role role) {
+        return new Message.Builder()
+                .role(role)
+                .parts(Collections.singletonList(new TextPart(text)))
+                .build();
+    }
+
 }

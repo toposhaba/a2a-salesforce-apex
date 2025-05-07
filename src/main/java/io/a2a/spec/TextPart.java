@@ -10,35 +10,34 @@ import io.a2a.util.Assert;
 /**
  * A fundamental text unit of an Artifact or Message.
  */
-public class TextPart implements Part<String> {
-    private String part;
+public class TextPart extends Part<String> {
+    private String text;
     private Map<String, Object> metadata;
+    private Type type;
 
-    @JsonCreator
-    public TextPart(@JsonProperty("part") String part) {
-        this(part, null);
+    public TextPart(String text) {
+        this(text, null);
     }
 
     @JsonCreator
-    public TextPart(@JsonProperty("part") String part, @JsonProperty("metadata") Map<String, Object> metadata) {
-        Assert.checkNotNullParam("part", part);
-        this.part = part;
+    public TextPart(@JsonProperty("text") String text, @JsonProperty("metadata") Map<String, Object> metadata) {
+        Assert.checkNotNullParam("text", text);
+        this.text = text;
         this.metadata = metadata;
+        this.type = Type.TEXT;
     }
 
     @Override
     public Type getType() {
-        return Type.TEXT;
+        return type;
     }
 
-    @Override
-    public String getPart() {
-        return part;
+    public String getText() {
+        return text;
     }
 
     @Override
     public Map<String, Object> getMetadata() {
         return metadata;
     }
-
 }

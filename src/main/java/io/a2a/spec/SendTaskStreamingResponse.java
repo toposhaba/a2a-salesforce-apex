@@ -2,8 +2,10 @@ package io.a2a.spec;
 
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.a2a.util.Assert;
 
@@ -14,7 +16,9 @@ import io.a2a.util.Assert;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class SendTaskStreamingResponse extends JSONRPCResponse {
 
-    public SendTaskStreamingResponse(String jsonrpc, Object id, Object result, JSONRPCError error) {
+    @JsonCreator
+    public SendTaskStreamingResponse(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
+                                     @JsonProperty("result") Object result, @JsonProperty("error") JSONRPCError error) {
         Assert.checkNotNullParam("jsonrpc", jsonrpc);
         if (result != null && ! (result instanceof TaskStatusUpdateEvent) && ! (result instanceof TaskArtifactUpdateEvent)) {
             throw new IllegalArgumentException("Invalid result");
