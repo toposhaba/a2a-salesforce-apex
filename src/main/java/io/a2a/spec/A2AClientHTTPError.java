@@ -2,16 +2,12 @@ package io.a2a.spec;
 
 import io.a2a.util.Assert;
 
-/**
- * Represents a JSONRPC error.
- */
-public class JSONRPCError {
-
+public class A2AClientHTTPError extends A2AClientError {
     private final int code;
     private final String message;
     private final Object data;
 
-    public JSONRPCError(int code, String message, Object data) {
+    public A2AClientHTTPError(int code, String message, Object data) {
         Assert.checkNotNullParam("code", code);
         Assert.checkNotNullParam("message", message);
         this.code = code;
