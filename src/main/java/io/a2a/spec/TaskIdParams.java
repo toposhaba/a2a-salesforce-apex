@@ -17,4 +17,8 @@ public record TaskIdParams(String id, Map<String, Object> metadata) {
     public TaskIdParams {
         Assert.checkNotNullParam("id", id);
     }
+
+    public TaskIdParams(String id) {
+        this(id, null);
+    }
 }

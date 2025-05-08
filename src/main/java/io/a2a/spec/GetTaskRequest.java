@@ -37,4 +37,35 @@ public final class GetTaskRequest extends JSONRPCRequest {
         this.method = method;
         this.params = paramsMap;
     }
+
+    public static class Builder {
+        private String jsonrpc;
+        private Object id;
+        private String method;
+        private TaskQueryParams params;
+
+        public GetTaskRequest.Builder jsonrpc(String jsonrpc) {
+            this.jsonrpc = jsonrpc;
+            return this;
+        }
+
+        public GetTaskRequest.Builder id(Object id) {
+            this.id = id;
+            return this;
+        }
+
+        public GetTaskRequest.Builder method(String method) {
+            this.method = method;
+            return this;
+        }
+
+        public GetTaskRequest.Builder params(TaskQueryParams params) {
+            this.params = params;
+            return this;
+        }
+
+        public GetTaskRequest build() {
+            return new GetTaskRequest(jsonrpc, id, method, params);
+        }
+    }
 }

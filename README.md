@@ -12,12 +12,16 @@ An *initial* [A2AClient](https://github.com/fjuma/a2a-java-sdk/blob/main/src/mai
 
 ### Sample Usage
 
-#### Send a task
+#### Create a client
 
 ```java
 // Create an A2AClient (the URL specified is the server agent's URL)
 A2AClient client = new A2AClient("http://localhost:1234");
+```
 
+#### Send a task
+
+```java
 // Send a text message to the server agent
 Message message = A2A.toUserMessage("tell me a joke");
 TaskSendParams params = new TaskSendParams.Builder()
@@ -27,9 +31,29 @@ TaskSendParams params = new TaskSendParams.Builder()
 SendTaskResponse response = client.sendTask(params);        
 ```
 
+#### Get a task
+
+```java
+// Retrieve the task with id "task-1234"
+GetTaskResponse response = client.getTask("task-1234");
+
+// You can also specify the maximum number of items of history for the task
+// to include in the response
+GetTaskResponse response = client.getTask(new TaskQueryParams("task-1234", 10));
+```
+
+#### Cancel a task
+
+```java
+// Cancel the task we previously submitted with id "task-1234"
+CancelTaskResponse response = client.cancelTask("task-1234");
+
+// You can also specify additional properties
+CancelTaskResponse response = client.cancelTask(new TaskIdParams("task-1234", metadata));
+```
+
 #### Retrieve details about the server agent that this client agent is communicating with
 ```java
-A2AClient client = new A2AClient("http://localhost:1234");
 AgentCard serverAgentCard = client.getAgentCard();
 ```
 
