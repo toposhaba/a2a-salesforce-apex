@@ -18,4 +18,8 @@ public record TaskStatus(TaskState state, Message message, LocalDateTime timesta
         Assert.checkNotNullParam("state", state);
         timestamp = timestamp == null ? LocalDateTime.now() : timestamp;
     }
+
+    public TaskStatus(TaskState state) {
+        this(state, null, null);
+    }
 }

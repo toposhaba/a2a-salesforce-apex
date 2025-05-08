@@ -10,7 +10,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TaskNotFoundError extends JSONRPCError {
+    public TaskNotFoundError() {
+        this(null, null, null);
+    }
+
     @JsonCreator
+
     public TaskNotFoundError(
             @JsonProperty("code") Integer code,
             @JsonProperty("message") String message,

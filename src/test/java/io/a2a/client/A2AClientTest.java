@@ -252,7 +252,7 @@ public class A2AClientTest {
         assertEquals(1, history.size());
         Message message = history.get(0);
         assertEquals(Message.Role.USER, message.getRole());
-        List<Part> parts = message.getParts();
+        List<Part<?>> parts = message.getParts();
         assertNotNull(parts);
         assertEquals(1, parts.size());
         part = parts.get(0);

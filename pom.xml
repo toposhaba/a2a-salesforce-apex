@@ -18,6 +18,7 @@
         <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
         <jackson.version>2.17.0</jackson.version>
         <junit.version>5.10.2</junit.version>
+        <mockito.version>5.17.0</mockito.version>
         <mockserver.version>5.15.0</mockserver.version>
     </properties>
 
@@ -37,6 +38,12 @@
             <groupId>org.mock-server</groupId>
             <artifactId>mockserver-netty</artifactId>
             <version>${mockserver.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

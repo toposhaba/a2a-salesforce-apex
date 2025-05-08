@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.a2a.util.Assert;
 
 /**
@@ -16,6 +17,8 @@ import io.a2a.util.Assert;
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Task implements EventType, StreamingEventType {
+
+    public static final TypeReference<Task> TYPE_REFERENCE = new TypeReference<>() {};
 
     static final String TASK = "task";
     private final String id;
@@ -82,6 +85,20 @@ public class Task implements EventType, StreamingEventType {
         private List<Artifact> artifacts;
         private List<Message> history;
         private Map<String, Object> metadata;
+
+        public Builder() {
+
+        }
+
+        public Builder(Task task) {
+            id = task.id;
+            contextId = task.contextId;
+            status = task.status;
+            artifacts = task.artifacts;
+            history = task.history;
+            metadata = task.metadata;
+
+        }
 
         public Builder id(String id) {
             this.id = id;
