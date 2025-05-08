@@ -37,4 +37,35 @@ public final class GetTaskPushNotificationRequest extends JSONRPCRequest {
         this.method = method;
         this.params = paramsMap;
     }
+
+    public static class Builder {
+        private String jsonrpc;
+        private Object id;
+        private String method;
+        private TaskIdParams params;
+
+        public GetTaskPushNotificationRequest.Builder jsonrpc(String jsonrpc) {
+            this.jsonrpc = jsonrpc;
+            return this;
+        }
+
+        public GetTaskPushNotificationRequest.Builder id(Object id) {
+            this.id = id;
+            return this;
+        }
+
+        public GetTaskPushNotificationRequest.Builder method(String method) {
+            this.method = method;
+            return this;
+        }
+
+        public GetTaskPushNotificationRequest.Builder params(TaskIdParams params) {
+            this.params = params;
+            return this;
+        }
+
+        public GetTaskPushNotificationRequest build() {
+            return new GetTaskPushNotificationRequest(jsonrpc, id, method, params);
+        }
+    }
 }

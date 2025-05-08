@@ -1,5 +1,9 @@
 package io.a2a.client;
 
+/**
+ * Request and response messages used by the tests. These have been created following examples from
+ * the <a href="https://google.github.io/A2A/specification/sample-messages">A2A sample messages</a>.
+ */
 public class JsonMessages {
 
     static final String AGENT_CARD = """
@@ -211,6 +215,33 @@ public class JsonMessages {
                "state": "canceled"
               },
               "metadata": {}
+             }
+            }
+            """;
+
+    static final String GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST = """
+            {
+             "jsonrpc": "2.0",
+             "id": "1",
+             "method": "tasks/pushNotification/get",
+             "params": {
+              "id": "de38c76d-d54c-436c-8b9f-4c2703648d64"
+             }
+            }
+            """;
+
+    static final String GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_RESPONSE = """
+            {
+             "jsonrpc": "2.0",
+             "id": 1,
+             "result": {
+              "id": "de38c76d-d54c-436c-8b9f-4c2703648d64",
+              "pushNotificationConfig": {
+               "url": "https://example.com/callback",
+               "authentication": {
+                "schemes": ["jwt"]
+               }
+              }
              }
             }
             """;

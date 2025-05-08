@@ -3,6 +3,8 @@ package io.a2a.client;
 import static io.a2a.client.JsonMessages.AGENT_CARD;
 import static io.a2a.client.JsonMessages.CANCEL_TASK_TEST_REQUEST;
 import static io.a2a.client.JsonMessages.CANCEL_TASK_TEST_RESPONSE;
+import static io.a2a.client.JsonMessages.GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST;
+import static io.a2a.client.JsonMessages.GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_RESPONSE;
 import static io.a2a.client.JsonMessages.GET_TASK_TEST_REQUEST;
 import static io.a2a.client.JsonMessages.GET_TASK_TEST_RESPONSE;
 import static io.a2a.client.JsonMessages.SEND_TASK_ERROR_TEST_RESPONSE;
@@ -21,7 +23,10 @@ import static org.mockserver.model.HttpResponse.response;
 import java.util.HashMap;
 import java.util.List;
 
+import io.a2a.spec.AuthenticationInfo;
 import io.a2a.spec.CancelTaskResponse;
+import io.a2a.spec.GetTaskPushNotificationRequest;
+import io.a2a.spec.GetTaskPushNotificationResponse;
 import io.a2a.spec.GetTaskResponse;
 import io.a2a.spec.JSONRPCError;
 
@@ -34,9 +39,11 @@ import org.mockserver.model.JsonBody;
 import io.a2a.spec.Artifact;
 import io.a2a.spec.Message;
 import io.a2a.spec.Part;
+import io.a2a.spec.PushNotificationConfig;
 import io.a2a.spec.SendTaskResponse;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskIdParams;
+import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
 import io.a2a.spec.TaskSendParams;
 import io.a2a.spec.TaskState;
@@ -212,6 +219,36 @@ public class A2AClientTest {
         assertEquals("c295ea44-7543-4f78-b524-7a38915ad6e4", task.sessionId());
         assertEquals(TaskState.CANCELED, task.status().state());
         assertTrue(task.metadata().isEmpty());
+    }
+
+    @Test
+    public void testA2AClientGetTaskPushNotificationConfig() throws Exception {
+        this.server.when(
+                        request()
+                                .withMethod("POST")
+                                .withPath("/tasks/pushNotification/get")
+                                .withBody(JsonBody.json(GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST))
+
+                )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody(GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_RESPONSE)
+                );
+
+        A2AClient client = new A2AClient("http://localhost:4001");
+        GetTaskPushNotificationResponse response = client.getTaskPushNotificationConfig("1",
+                new TaskIdParams("de38c76d-d54c-436c-8b9f-4c2703648d64", new HashMap<>()));
+        assertEquals("2.0", response.getJsonrpc());
+        assertEquals(1, response.getId());
+        assertInstanceOf(TaskPushNotificationConfig.class, response.getResult());
+        TaskPushNotificationConfig taskPushNotificationConfig = (TaskPushNotificationConfig) response.getResult();
+        PushNotificationConfig pushNotificationConfig = taskPushNotificationConfig.pushNotificationConfig();
+        assertNotNull(pushNotificationConfig);
+        assertEquals("https://example.com/callback", pushNotificationConfig.url());
+        AuthenticationInfo authenticationInfo = pushNotificationConfig.authentication();
+        assertTrue(authenticationInfo.schemes().size() == 1);
+        assertEquals("jwt", authenticationInfo.schemes().get(0));
     }
 
     @Test

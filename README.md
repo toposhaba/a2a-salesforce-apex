@@ -48,8 +48,20 @@ GetTaskResponse response = client.getTask(new TaskQueryParams("task-1234", 10));
 // Cancel the task we previously submitted with id "task-1234"
 CancelTaskResponse response = client.cancelTask("task-1234");
 
-// You can also specify additional properties
+// You can also specify additional properties using a map
+Map<String, Object> metadata = ...        
 CancelTaskResponse response = client.cancelTask(new TaskIdParams("task-1234", metadata));
+```
+
+#### Get the push notification configuration for a task
+
+```java
+// Get task push notification
+GetTaskPushNotificationResponse response = client.getTaskPushNotificationConfig("task-1234");
+
+// You can also specify additional properties using a map
+Map<String, Object> metadata = ...
+GetTaskPushNotificationResponse response = client.getTaskPushNotificationConfig(new TaskIdParams("task-1234", metadata));
 ```
 
 #### Retrieve details about the server agent that this client agent is communicating with

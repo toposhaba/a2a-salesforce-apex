@@ -2,6 +2,7 @@ package io.a2a.client;
 
 import static io.a2a.spec.A2A.AGENT_CARD_REQUEST;
 import static io.a2a.spec.A2A.CANCEL_TASK_REQUEST;
+import static io.a2a.spec.A2A.GET_TASK_PUSH_NOTIFICATION_REQUEST;
 import static io.a2a.spec.A2A.GET_TASK_REQUEST;
 import static io.a2a.spec.A2A.JSONRPC_VERSION;
 import static io.a2a.spec.A2A.SEND_TASK_REQUEST;;
@@ -21,6 +22,8 @@ import io.a2a.spec.A2AServerException;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
+import io.a2a.spec.GetTaskPushNotificationRequest;
+import io.a2a.spec.GetTaskPushNotificationResponse;
 import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
 import io.a2a.spec.SendTaskRequest;
@@ -39,6 +42,7 @@ public class A2AClient {
     private static TypeReference<SendTaskResponse> SEND_TASK_RESPONSE_REFERENCE = new TypeReference<>() {};
     private static TypeReference<GetTaskResponse> GET_TASK_RESPONSE_REFERENCE = new TypeReference<>() {};
     private static TypeReference<CancelTaskResponse> CANCEL_TASK_RESPONSE_REFERENCE = new TypeReference<>() {};
+    private static TypeReference<GetTaskPushNotificationResponse> GET_TASK_PUSH_NOTIFICATION_RESPONSE_REFERENCE = new TypeReference<>() {};
     private final HttpClient httpClient;
     private final String agentUrl;
     private AgentCard agentCard;
@@ -85,7 +89,7 @@ public class A2AClient {
      * interrupted task, or re-open a completed task.
      *
      * @param taskSendParams the parameters for the task to be sent
-     * @return the response from sending the task
+     * @return the response containing the task
      * @throws A2AServerException if sending the task request fails for any reason
      */
     public SendTaskResponse sendTask(TaskSendParams taskSendParams) throws A2AServerException {
@@ -98,7 +102,7 @@ public class A2AClient {
      *
      * @param requestId the request ID to use
      * @param taskSendParams the parameters for the task to be sent
-     * @return the response from sending the task
+     * @return the response containing the task
      * @throws A2AServerException if sending the task request fails for any reason
      */
     public SendTaskResponse sendTask(String requestId, TaskSendParams taskSendParams) throws A2AServerException {
@@ -129,7 +133,7 @@ public class A2AClient {
      * artifacts for a task.
      *
      * @param id the task ID
-     * @return the task response
+     * @return the response containing the task
      * @throws A2AServerException if retrieving the task fails for any reason
      */
     public GetTaskResponse getTask(String id) throws A2AServerException {
@@ -141,7 +145,7 @@ public class A2AClient {
      * artifacts for a task.
      *
      * @param taskQueryParams the params for the task to be queried
-     * @return the task response
+     * @return the response containing the task
      * @throws A2AServerException if retrieving the task fails for any reason
      */
     public GetTaskResponse getTask(TaskQueryParams taskQueryParams) throws A2AServerException {
@@ -153,7 +157,7 @@ public class A2AClient {
      *
      * @param requestId the request ID to use
      * @param taskQueryParams the params for the task to be queried
-     * @return the task response
+     * @return the response containing the task
      * @throws A2AServerException if retrieving the task fails for any reason
      */
     public GetTaskResponse getTask(String requestId, TaskQueryParams taskQueryParams) throws A2AServerException {
@@ -175,7 +179,7 @@ public class A2AClient {
             }
             return unmarshalFrom(httpResponse.body(), GET_TASK_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
-            throw new A2AServerException("Failed to send task: " + e);
+            throw new A2AServerException("Failed to get task: " + e);
         }
     }
 
@@ -183,7 +187,7 @@ public class A2AClient {
      * Cancel a task that was previously submitted to the A2A server.
      *
      * @param id the task ID
-     * @return the response from cancelling the task
+     * @return the response indicating if the task was cancelled
      * @throws A2AServerException if cancelling the task fails for any reason
      */
     public CancelTaskResponse cancelTask(String id) throws A2AServerException {
@@ -194,7 +198,7 @@ public class A2AClient {
      * Cancel a task that was previously submitted to the A2A server.
      *
      * @param taskIdParams the params for the task to be cancelled
-     * @return the response from cancelling the task
+     * @return the response indicating if the task was cancelled
      * @throws A2AServerException if cancelling the task fails for any reason
      */
     public CancelTaskResponse cancelTask(TaskIdParams taskIdParams) throws A2AServerException {
@@ -206,7 +210,7 @@ public class A2AClient {
      *
      * @param requestId the request ID to use
      * @param taskIdParams the params for the task to be cancelled
-     * @return the response from cancelling the task
+     * @return the response indicating if the task was cancelled
      * @throws A2AServerException if retrieving the task fails for any reason
      */
     public CancelTaskResponse cancelTask(String requestId, TaskIdParams taskIdParams) throws A2AServerException {
@@ -228,7 +232,60 @@ public class A2AClient {
             }
             return unmarshalFrom(httpResponse.body(), CANCEL_TASK_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
-            throw new A2AServerException("Failed to send task: " + e);
+            throw new A2AServerException("Failed to cancel task: " + e);
+        }
+    }
+
+    /**
+     * Get the push notification configuration for a task.
+     *
+     * @param id the task ID
+     * @return the response containing the push notification configuration
+     * @throws A2AServerException if getting the push notification configuration fails for any reason
+     */
+    public GetTaskPushNotificationResponse getTaskPushNotificationConfig(String id) throws A2AServerException {
+        return getTaskPushNotificationConfig(null, new TaskIdParams(id));
+    }
+
+    /**
+     * Get the push notification configuration for a task.
+     *
+     * @param taskIdParams the params for the task
+     * @return the response containing the push notification configuration
+     * @throws A2AServerException if getting the push notification configuration fails for any reason
+     */
+    public GetTaskPushNotificationResponse getTaskPushNotificationConfig(TaskIdParams taskIdParams) throws A2AServerException {
+        return getTaskPushNotificationConfig(null, taskIdParams);
+    }
+
+    /**
+     * Get the push notification configuration for a task.
+     *
+     * @param requestId the request ID to use
+     * @param taskIdParams the params for the task
+     * @return the response containing the push notification configuration
+     * @throws A2AServerException if getting the push notification configuration fails for any reason
+     */
+    public GetTaskPushNotificationResponse getTaskPushNotificationConfig(String requestId, TaskIdParams taskIdParams) throws A2AServerException {
+        GetTaskPushNotificationRequest.Builder getTaskPushNotificationRequestBuilder = new GetTaskPushNotificationRequest.Builder()
+                .jsonrpc(JSONRPC_VERSION)
+                .method(GET_TASK_PUSH_NOTIFICATION_REQUEST)
+                .params(taskIdParams);
+
+        if (requestId != null) {
+            getTaskPushNotificationRequestBuilder.id(requestId);
+        }
+
+        GetTaskPushNotificationRequest getTaskPushNotificationRequest = getTaskPushNotificationRequestBuilder.build();
+
+        try {
+            HttpResponse<String> httpResponse = sendPostRequest(GET_TASK_PUSH_NOTIFICATION_REQUEST, getTaskPushNotificationRequest);
+            if (httpResponse.statusCode() != 200) {
+                throw new A2AServerException("Failed to get task push notification config: " + httpResponse.statusCode());
+            }
+            return unmarshalFrom(httpResponse.body(), GET_TASK_PUSH_NOTIFICATION_RESPONSE_REFERENCE);
+        } catch (IOException | InterruptedException e) {
+            throw new A2AServerException("Failed to get task push notification config: " + e);
         }
     }
 
