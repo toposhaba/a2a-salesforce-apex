@@ -7,11 +7,11 @@ import io.a2a.util.Assert;
  */
 public class JSONRPCError {
 
-    private final int code;
+    private final Integer code;
     private final String message;
     private final Object data;
 
-    public JSONRPCError(int code, String message, Object data) {
+    public JSONRPCError(Integer code, String message, Object data) {
         Assert.checkNotNullParam("code", code);
         Assert.checkNotNullParam("message", message);
         this.code = code;
@@ -24,7 +24,7 @@ public class JSONRPCError {
      *
      * @return the error code
      */
-    public int getCode() {
+    public Integer getCode() {
         return code;
     }
 

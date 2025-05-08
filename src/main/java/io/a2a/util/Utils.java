@@ -12,4 +12,10 @@ public class Utils {
         return OBJECT_MAPPER.readValue(data, typeRef);
     }
 
+    public static <T> T defaultIfNull(T value, T defaiultValue) {
+        if (value == null) {
+            return defaiultValue;
+        }
+        return value;
+    }
 }

@@ -1,8 +1,23 @@
 package io.a2a.spec;
 
-public class UnsupportedOperationError extends JSONRPCError {
+import static io.a2a.util.Utils.defaultIfNull;
 
-    public UnsupportedOperationError(int code, String message, Object data) {
-        super(code, message, data);
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonInclude(JsonInclude.Include.NON_ABSENT)
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class UnsupportedOperationError extends JSONRPCError {
+    @JsonCreator
+    public UnsupportedOperationError(
+            @JsonProperty("code") Integer code,
+            @JsonProperty("message") String message,
+            @JsonProperty("data") Object data) {
+        super(
+                defaultIfNull(code, -32704),
+                defaultIfNull(message, "This operation is not supported"),
+                data);
     }
 }
