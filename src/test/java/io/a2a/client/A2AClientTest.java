@@ -11,7 +11,9 @@ import static org.mockserver.model.HttpResponse.response;
 
 import io.a2a.spec.JSONRPCError;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
 
@@ -26,15 +28,15 @@ import io.a2a.spec.TextPart;
 
 public class A2AClientTest {
 
-    private static ClientAndServer server;
+    private ClientAndServer server;
 
-    @BeforeAll
-    public static void setUp() {
+    @BeforeEach
+    public void setUp() {
         server = new ClientAndServer(4001);
     }
 
-    @AfterAll
-    public static void tearDown() {
+    @AfterEach
+    public void tearDown() {
         server.stop();
     }
 
