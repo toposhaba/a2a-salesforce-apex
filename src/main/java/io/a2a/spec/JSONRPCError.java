@@ -1,17 +1,27 @@
 package io.a2a.spec;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.a2a.util.Assert;
 
 /**
  * Represents a JSONRPC error.
  */
+@JsonInclude(JsonInclude.Include.NON_ABSENT)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class JSONRPCError {
 
     private final Integer code;
     private final String message;
     private final Object data;
 
-    public JSONRPCError(Integer code, String message, Object data) {
+    @JsonCreator
+    public JSONRPCError(
+            @JsonProperty("code") Integer code,
+            @JsonProperty("message") String message,
+            @JsonProperty("data") Object data) {
         Assert.checkNotNullParam("code", code);
         Assert.checkNotNullParam("message", message);
         this.code = code;
