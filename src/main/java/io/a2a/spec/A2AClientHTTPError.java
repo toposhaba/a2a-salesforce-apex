@@ -5,14 +5,12 @@ import io.a2a.util.Assert;
 public class A2AClientHTTPError extends A2AClientError {
     private final int code;
     private final String message;
-    private final Object data;
 
     public A2AClientHTTPError(int code, String message, Object data) {
         Assert.checkNotNullParam("code", code);
         Assert.checkNotNullParam("message", message);
         this.code = code;
         this.message = message;
-        this.data = data;
     }
 
     /**
@@ -31,14 +29,5 @@ public class A2AClientHTTPError extends A2AClientError {
      */
     public String getMessage() {
         return message;
-    }
-
-    /**
-     * Gets the data associated with the error.
-     *
-     * @return the data. May be {@code null}
-     */
-    public Object getData() {
-        return data;
     }
 }
