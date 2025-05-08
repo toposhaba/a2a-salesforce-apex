@@ -16,7 +16,7 @@ public class UnsupportedOperationError extends JSONRPCError {
             @JsonProperty("message") String message,
             @JsonProperty("data") Object data) {
         super(
-                defaultIfNull(code, -32704),
+                defaultIfNull(code, -32004),
                 defaultIfNull(message, "This operation is not supported"),
                 data);
     }
