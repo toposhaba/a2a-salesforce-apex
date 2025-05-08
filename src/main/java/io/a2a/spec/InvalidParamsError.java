@@ -16,7 +16,7 @@ public class InvalidParamsError extends JSONRPCError {
             @JsonProperty("message") String message,
             @JsonProperty("data") Object data) {
         super(
-                defaultIfNull(code, -32702),
+                defaultIfNull(code, -32602),
                 defaultIfNull(message, "Invalid parameters"),
                 data);
     }
