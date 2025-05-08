@@ -1,8 +1,13 @@
 package io.a2a.spec;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
  * Represents content within a FilePart.
  */
+@JsonInclude(JsonInclude.Include.NON_ABSENT)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record FileContent(String name, String mimeType, String bytes, String uri) {
 
     public FileContent {

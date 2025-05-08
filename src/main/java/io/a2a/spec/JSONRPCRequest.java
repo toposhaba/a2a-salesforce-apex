@@ -35,20 +35,20 @@ public sealed class JSONRPCRequest implements JSONRPCMessage permits SendTaskReq
     }
 
     @Override
-    public String jsonrpc() {
+    public String getJsonrpc() {
         return this.jsonrpc;
     }
 
     @Override
-    public Object id() {
+    public Object getId() {
         return this.id;
     }
 
-    public String method() {
+    public String getMethod() {
         return this.method;
     }
 
-    public Map<String, Object> params() {
+    public Map<String, Object> getParams() {
         return this.params;
     }
 }

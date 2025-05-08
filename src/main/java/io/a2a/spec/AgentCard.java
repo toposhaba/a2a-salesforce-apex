@@ -3,12 +3,17 @@ package io.a2a.spec;
 import java.util.Collections;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import io.a2a.util.Assert;
 
 /**
  * A public metadata file that describes an agent's capabilities, skills, endpoint URL, and
  * authentication requirements. Clients use this for discovery.
  */
+@JsonInclude(JsonInclude.Include.NON_ABSENT)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record AgentCard(String name, String description, String url, AgentProvider provider,
                         String version, String documentationUrl, AgentCapabilities capabilities,
                         AgentAuthentication authentication, List<String> defaultInputModes,

@@ -31,19 +31,19 @@ public sealed class JSONRPCResponse implements JSONRPCMessage permits SendTaskRe
         this.error = error;
     }
 
-    public String jsonrpc() {
+    public String getJsonrpc() {
         return this.jsonrpc;
     }
 
-    public Object id() {
+    public Object getId() {
         return this.id;
     }
 
-    public Object result() {
+    public Object getResult() {
         return this.result;
     }
 
-    public JSONRPCError error() {
+    public JSONRPCError getError() {
         return this.error;
     }
 }

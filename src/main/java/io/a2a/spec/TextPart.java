@@ -3,6 +3,8 @@ package io.a2a.spec;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.a2a.util.Assert;
@@ -10,6 +12,8 @@ import io.a2a.util.Assert;
 /**
  * A fundamental text unit of an Artifact or Message.
  */
+@JsonInclude(JsonInclude.Include.NON_ABSENT)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TextPart extends Part<String> {
     private String text;
     private Map<String, Object> metadata;
