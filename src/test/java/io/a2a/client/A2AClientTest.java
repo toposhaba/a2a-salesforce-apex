@@ -2,12 +2,14 @@ package io.a2a.client;
 
 import static io.a2a.spec.A2A.toUserMessage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
-import java.util.Collections;
-
+import io.a2a.spec.JSONRPCError;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -47,7 +49,7 @@ public class A2AClientTest {
                 .respond(
                         response()
                                 .withStatusCode(200)
-                                .withBody(TASK_RESPONSE)
+                                .withBody(SEND_TASK_RESPONSE)
                 );
 
         A2AClient client = new A2AClient("http://localhost:4001");
@@ -60,21 +62,55 @@ public class A2AClientTest {
         SendTaskResponse response = client.sendTask(params);
 
         assertEquals("2.0", response.jsonrpc());
-        assertTrue(response.id() != null);
+        assertNotNull(response.id());
         Object result = response.result();
-        assertTrue(result instanceof Task);
+        assertInstanceOf(Task.class, result);
         Task task = (Task) result;
         assertEquals("de38c76d-d54c-436c-8b9f-4c2703648d64", task.id());
-        assertTrue(task.sessionId() != null);
-        assertTrue(task.status().state() == TaskState.COMPLETED);
-        assertTrue(task.artifacts().size() == 1);
+        assertNotNull(task.sessionId());
+        assertEquals(TaskState.COMPLETED,task.status().state());
+        assertEquals(1, task.artifacts().size());
         Artifact artifact = task.artifacts().get(0);
         assertEquals("joke", artifact.name());
-        assertTrue(artifact.parts().size() == 1);
-        Part part = artifact.parts().get(0);
+        assertEquals(1, artifact.parts().size());
+        Part<?> part = artifact.parts().get(0);
         assertEquals(Part.Type.TEXT, part.getType());
         assertEquals("Why did the chicken cross the road? To get to the other side!", ((TextPart) part).getText());
         assertTrue(task.metadata().isEmpty());
+    }
+
+    @Test
+    public void testA2AClientSendTaskWithError() throws Exception {
+        this.server.when(
+                        request()
+                                .withMethod("POST")
+                                .withPath("/tasks/send")
+
+                )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody(SEND_TASK_ERROR_RESPONSE)
+                );
+
+        A2AClient client = new A2AClient("http://localhost:4001");
+        Message message = toUserMessage("tell me a joke");
+        TaskSendParams params = new TaskSendParams.Builder()
+                .id("task-1234")
+                .message(message)
+                .build();
+
+        SendTaskResponse response = client.sendTask(params);
+
+        assertEquals("2.0", response.jsonrpc());
+        assertNotNull(response.id()); // Not in JSON so it is generated
+        Object result = response.result();
+        assertNull(result);
+        JSONRPCError error = response.error();
+        assertNotNull(error);
+        assertEquals(-32702, error.getCode());
+        assertEquals("Invalid parameters", error.getMessage());
+        assertEquals("Hello world", error.getData());
     }
 
     @Test
@@ -94,7 +130,7 @@ public class A2AClientTest {
         assertEquals("Google Maps Agent", client.getAgentCard().name());
     }
 
-    private static final String TASK_RESPONSE = """
+    private static final String SEND_TASK_RESPONSE = """
             {
              "jsonrpc": "2.0",
              "id": 1,
@@ -116,6 +152,16 @@ public class A2AClientTest {
                }
               ],
               "metadata": {}
+             }
+            }""";
+
+        private static final String SEND_TASK_ERROR_RESPONSE = """
+            {
+             "jsonrpc": "2.0",
+             "error": {
+                "code": -32702,
+                "message": "Invalid parameters",
+                "data": "Hello world"
              }
             }""";
 
