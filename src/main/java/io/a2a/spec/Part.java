@@ -4,6 +4,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
  * A fundamental unit with a Message or Artifact.
@@ -21,9 +22,20 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 })
 public abstract class Part<T> {
     public enum Type {
-        TEXT,
-        FILE,
-        DATA;
+        TEXT("text"),
+        FILE("file"),
+        DATA("data");
+
+        private String type;
+
+        Type(String type) {
+            this.type = type;
+        }
+
+        @JsonValue
+        public String asString() {
+            return this.type;
+        }
     }
 
     public abstract Type getType();

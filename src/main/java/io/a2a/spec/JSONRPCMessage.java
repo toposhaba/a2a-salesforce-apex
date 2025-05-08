@@ -5,7 +5,7 @@ package io.a2a.spec;
  */
 public sealed interface JSONRPCMessage permits JSONRPCRequest, JSONRPCResponse {
 
-    String jsonrpc();
-    Object id();
+    String getJsonrpc();
+    Object getId();
 
 }

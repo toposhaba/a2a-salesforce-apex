@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
+import org.mockserver.model.JsonBody;
 
 import io.a2a.spec.Artifact;
 import io.a2a.spec.Message;
@@ -46,6 +47,7 @@ public class A2AClientTest {
                         request()
                                 .withMethod("POST")
                                 .withPath("/tasks/send")
+                                .withBody(JsonBody.json(SEND_TASK_REQUEST))
 
                 )
                 .respond(
@@ -58,14 +60,15 @@ public class A2AClientTest {
         Message message = toUserMessage("tell me a joke");
         TaskSendParams params = new TaskSendParams.Builder()
                 .id("task-1234")
+                .sessionId("session-1234")
                 .message(message)
                 .build();
 
-        SendTaskResponse response = client.sendTask(params);
+        SendTaskResponse response = client.sendTask("request-1234", params);
 
-        assertEquals("2.0", response.jsonrpc());
-        assertNotNull(response.id());
-        Object result = response.result();
+        assertEquals("2.0", response.getJsonrpc());
+        assertNotNull(response.getId());
+        Object result = response.getResult();
         assertInstanceOf(Task.class, result);
         Task task = (Task) result;
         assertEquals("de38c76d-d54c-436c-8b9f-4c2703648d64", task.id());
@@ -87,6 +90,7 @@ public class A2AClientTest {
                         request()
                                 .withMethod("POST")
                                 .withPath("/tasks/send")
+                                .withBody(JsonBody.json(SEND_TASK_WITH_ERROR_REQUEST))
 
                 )
                 .respond(
@@ -99,16 +103,17 @@ public class A2AClientTest {
         Message message = toUserMessage("tell me a joke");
         TaskSendParams params = new TaskSendParams.Builder()
                 .id("task-1234")
+                .sessionId("session-1234")
                 .message(message)
                 .build();
 
-        SendTaskResponse response = client.sendTask(params);
+        SendTaskResponse response = client.sendTask("request-1234-with-error", params);
 
-        assertEquals("2.0", response.jsonrpc());
-        assertNotNull(response.id()); // Not in JSON so it is generated
-        Object result = response.result();
+        assertEquals("2.0", response.getJsonrpc());
+        assertNotNull(response.getId()); // Not in JSON so it is generated
+        Object result = response.getResult();
         assertNull(result);
-        JSONRPCError error = response.error();
+        JSONRPCError error = response.getError();
         assertNotNull(error);
         assertEquals(-32702, error.getCode());
         assertEquals("Invalid parameters", error.getMessage());
@@ -131,6 +136,26 @@ public class A2AClientTest {
         A2AClient client = new A2AClient("http://localhost:4001");
         assertEquals("Google Maps Agent", client.getAgentCard().name());
     }
+
+    private static final String SEND_TASK_REQUEST = """
+                {
+                 "jsonrpc": "2.0",
+                 "id": "request-1234",
+                 "method": "tasks/send",
+                 "params": {
+                  "id": "task-1234",
+                  "sessionId": "session-1234",
+                  "message": {
+                   "role": "user",
+                   "parts": [
+                    {
+                     "type": "text",
+                     "text": "tell me a joke"
+                    }
+                   ]
+                  }
+                 }
+                }""";
 
     private static final String SEND_TASK_RESPONSE = """
             {
@@ -156,6 +181,26 @@ public class A2AClientTest {
               "metadata": {}
              }
             }""";
+
+        private static final String SEND_TASK_WITH_ERROR_REQUEST = """
+                {
+                 "jsonrpc": "2.0",
+                 "id": "request-1234-with-error",
+                 "method": "tasks/send",
+                 "params": {
+                  "id": "task-1234",
+                  "sessionId": "session-1234",
+                  "message": {
+                   "role": "user",
+                   "parts": [
+                    {
+                     "type": "text",
+                     "text": "tell me a joke"
+                    }
+                   ]
+                  }
+                 }
+                }""";
 
         private static final String SEND_TASK_ERROR_RESPONSE = """
             {

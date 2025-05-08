@@ -3,11 +3,16 @@ package io.a2a.spec;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import io.a2a.util.Assert;
 
 /**
  * A central unit of work.
  */
+@JsonInclude(JsonInclude.Include.NON_ABSENT)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record Task(String id, String sessionId, TaskStatus status, List<Artifact> artifacts,
                    List<Message> history, Map<String, Object> metadata) {
 

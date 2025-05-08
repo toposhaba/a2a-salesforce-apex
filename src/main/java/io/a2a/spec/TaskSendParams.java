@@ -4,13 +4,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import io.a2a.util.Assert;
 
 /**
  * Used to specify parameters when initiating a task.
  */
+@JsonInclude(JsonInclude.Include.NON_ABSENT)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record TaskSendParams(String id, String sessionId, Message message, List<String> acceptedOutputModes,
-                             PushNotificationConfig pushNotification, int historyLength, Map<String, Object> metadata) {
+                             PushNotificationConfig pushNotification, Integer historyLength, Map<String, Object> metadata) {
 
     public TaskSendParams {
         Assert.checkNotNullParam("id", id);
@@ -24,7 +29,7 @@ public record TaskSendParams(String id, String sessionId, Message message, List<
         Message message;
         List<String> acceptedOutputModes;
         PushNotificationConfig pushNotification;
-        int historyLength;
+        Integer historyLength;
         Map<String, Object> metadata;
 
         public Builder id(String id) {
@@ -52,7 +57,7 @@ public record TaskSendParams(String id, String sessionId, Message message, List<
             return this;
         }
 
-        public Builder historyLength(int historyLength) {
+        public Builder historyLength(Integer historyLength) {
             this.historyLength = historyLength;
             return this;
         }

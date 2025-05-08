@@ -78,11 +78,26 @@ public class A2AClient {
      * @throws A2AServerException if sending the task request fails for any reason
      */
     public SendTaskResponse sendTask(TaskSendParams taskSendParams) throws A2AServerException {
-        SendTaskRequest sendTaskRequest = new SendTaskRequest.Builder()
+        return sendTask(null, taskSendParams);
+    }
+
+    /**
+     * Send a task to the A2A server.
+     *
+     * @param requestId the request ID to use
+     * @param taskSendParams the parameters for the task to be sent
+     * @return the response
+     * @throws A2AServerException if sending the task request fails for any reason
+     */
+    public SendTaskResponse sendTask(String requestId, TaskSendParams taskSendParams) throws A2AServerException {
+        SendTaskRequest.Builder sendTaskRequestBuilder = new SendTaskRequest.Builder()
                 .jsonrpc(JSONRPC_VERSION)
                 .method(SEND_TASK_REQUEST)
-                .params(taskSendParams)
-                .build();
+                .params(taskSendParams);
+        if (requestId != null) {
+            sendTaskRequestBuilder.id(requestId);
+        }
+        SendTaskRequest sendTaskRequest = sendTaskRequestBuilder.build();
 
         try {
             HttpRequest httpRequest = HttpRequest.newBuilder()
