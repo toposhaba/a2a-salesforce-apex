@@ -37,4 +37,35 @@ public final class CancelTaskRequest extends JSONRPCRequest {
         this.method = method;
         this.params = paramsMap;
     }
+
+    public static class Builder {
+        private String jsonrpc;
+        private Object id;
+        private String method;
+        private TaskIdParams params;
+
+        public CancelTaskRequest.Builder jsonrpc(String jsonrpc) {
+            this.jsonrpc = jsonrpc;
+            return this;
+        }
+
+        public CancelTaskRequest.Builder id(Object id) {
+            this.id = id;
+            return this;
+        }
+
+        public CancelTaskRequest.Builder method(String method) {
+            this.method = method;
+            return this;
+        }
+
+        public CancelTaskRequest.Builder params(TaskIdParams params) {
+            this.params = params;
+            return this;
+        }
+
+        public CancelTaskRequest build() {
+            return new CancelTaskRequest(jsonrpc, id, method, params);
+        }
+    }
 }
