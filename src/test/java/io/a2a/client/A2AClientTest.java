@@ -15,6 +15,7 @@ import static io.a2a.client.JsonMessages.SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_
 import static io.a2a.client.JsonMessages.SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_RESPONSE;
 import static io.a2a.spec.A2A.toUserMessage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -22,10 +23,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import io.a2a.spec.AgentCard;
+import io.a2a.spec.AgentSkill;
 import io.a2a.spec.AuthenticationInfo;
 import io.a2a.spec.CancelTaskResponse;
 import io.a2a.spec.GetTaskPushNotificationRequest;
@@ -304,6 +308,47 @@ public class A2AClientTest {
                 );
 
         A2AClient client = new A2AClient("http://localhost:4001");
-        assertEquals("Google Maps Agent", client.getAgentCard().name());
+        AgentCard agentCard = client.getAgentCard();
+        assertEquals("GeoSpatial Route Planner Agent", agentCard.name());
+        assertEquals("Provides advanced route planning, traffic analysis, and custom map generation services. This agent can calculate optimal routes, estimate travel times considering real-time traffic, and create personalized maps with points of interest.", agentCard.description());
+        assertEquals("https://georoute-agent.example.com/a2a/v1", agentCard.url());
+        assertEquals("Example Geo Services Inc.", agentCard.provider().organization());
+        assertEquals("https://www.examplegeoservices.com", agentCard.provider().url());
+        assertEquals("1.2.0", agentCard.version());
+        assertEquals("https://docs.examplegeoservices.com/georoute-agent/api", agentCard.documentationUrl());
+        assertTrue(agentCard.capabilities().streaming());
+        assertTrue(agentCard.capabilities().pushNotifications());
+        assertFalse(agentCard.capabilities().stateTransitionHistory());
+        assertEquals(1, agentCard.authentication().schemes().size());
+        assertEquals("OAuth2", agentCard.authentication().schemes().get(0));
+        assertEquals("{\"authorizationUrl\": \"https://auth.examplegeoservices.com/authorize\", \"tokenUrl\": \"https://auth.examplegeoservices.com/token\", \"scopes\": {\"route:plan\": \"Allows planning new routes.\", \"map:custom\": \"Allows creating and managing custom maps.\"}}", agentCard.authentication().credentials());
+        List<String> defaultInputModes = List.of("application/json", "text/plain");
+        assertEquals(defaultInputModes, agentCard.defaultInputModes());
+        List<String> defaultOutputModes = List.of("application/json", "image/png");
+        assertEquals(defaultOutputModes, agentCard.defaultOutputModes());
+        List<AgentSkill> skills = agentCard.skills();
+        assertEquals("route-optimizer-traffic", skills.get(0).id());
+        assertEquals("Traffic-Aware Route Optimizer", skills.get(0).name());
+        assertEquals("Calculates the optimal driving route between two or more locations, taking into account real-time traffic conditions, road closures, and user preferences (e.g., avoid tolls, prefer highways).", skills.get(0).description());
+        List<String> tags = List.of("maps", "routing", "navigation", "directions", "traffic");
+        assertEquals(tags, skills.get(0).tags());
+        List<String> examples = List.of("Plan a route from '1600 Amphitheatre Parkway, Mountain View, CA' to 'San Francisco International Airport' avoiding tolls.",
+                "{\"origin\": {\"lat\": 37.422, \"lng\": -122.084}, \"destination\": {\"lat\": 37.7749, \"lng\": -122.4194}, \"preferences\": [\"avoid_ferries\"]}");
+        assertEquals(examples, skills.get(0).examples());
+        assertEquals(defaultInputModes, skills.get(0).inputModes());
+        List<String> outputModes = List.of("application/json", "application/vnd.geo+json", "text/html");
+        assertEquals(outputModes, skills.get(0).outputModes());
+        assertEquals("custom-map-generator", skills.get(1).id());
+        assertEquals("Personalized Map Generator", skills.get(1).name());
+        assertEquals("Creates custom map images or interactive map views based on user-defined points of interest, routes, and style preferences. Can overlay data layers.", skills.get(1).description());
+        tags = List.of("maps", "customization", "visualization", "cartography");
+        assertEquals(tags, skills.get(1).tags());
+        examples = List.of("Generate a map of my upcoming road trip with all planned stops highlighted.",
+                "Show me a map visualizing all coffee shops within a 1-mile radius of my current location.");
+        assertEquals(examples, skills.get(1).examples());
+        List<String> inputModes = List.of("application/json");
+        assertEquals(inputModes, skills.get(1).inputModes());
+        outputModes = List.of("image/png", "image/jpeg", "application/json", "text/html");
+        assertEquals(outputModes, skills.get(1).outputModes());
     }
 }
