@@ -11,6 +11,8 @@ import static io.a2a.client.JsonMessages.SEND_TASK_ERROR_TEST_RESPONSE;
 import static io.a2a.client.JsonMessages.SEND_TASK_TEST_REQUEST;
 import static io.a2a.client.JsonMessages.SEND_TASK_TEST_RESPONSE;
 import static io.a2a.client.JsonMessages.SEND_TASK_WITH_ERROR_TEST_REQUEST;
+import static io.a2a.client.JsonMessages.SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST;
+import static io.a2a.client.JsonMessages.SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_RESPONSE;
 import static io.a2a.spec.A2A.toUserMessage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -20,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -41,6 +44,7 @@ import io.a2a.spec.Message;
 import io.a2a.spec.Part;
 import io.a2a.spec.PushNotificationConfig;
 import io.a2a.spec.SendTaskResponse;
+import io.a2a.spec.SetTaskPushNotificationResponse;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskPushNotificationConfig;
@@ -250,6 +254,41 @@ public class A2AClientTest {
         assertTrue(authenticationInfo.schemes().size() == 1);
         assertEquals("jwt", authenticationInfo.schemes().get(0));
     }
+
+    @Test
+    public void testA2AClientSetTaskPushNotificationConfig() throws Exception {
+        this.server.when(
+                        request()
+                                .withMethod("POST")
+                                .withPath("/tasks/pushNotification/set")
+                                .withBody(JsonBody.json(SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST))
+
+                )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody(SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_RESPONSE)
+                );
+
+        A2AClient client = new A2AClient("http://localhost:4001");
+        SetTaskPushNotificationResponse response = client.setTaskPushNotificationConfig("1",
+                "de38c76d-d54c-436c-8b9f-4c2703648d64",
+                new PushNotificationConfig.Builder()
+                        .url("https://example.com/callback")
+                        .authenticationInfo(new AuthenticationInfo(Collections.singletonList("jwt"), null))
+                        .build());
+        assertEquals("2.0", response.getJsonrpc());
+        assertEquals(1, response.getId());
+        assertInstanceOf(TaskPushNotificationConfig.class, response.getResult());
+        TaskPushNotificationConfig taskPushNotificationConfig = (TaskPushNotificationConfig) response.getResult();
+        PushNotificationConfig pushNotificationConfig = taskPushNotificationConfig.pushNotificationConfig();
+        assertNotNull(pushNotificationConfig);
+        assertEquals("https://example.com/callback", pushNotificationConfig.url());
+        AuthenticationInfo authenticationInfo = pushNotificationConfig.authentication();
+        assertTrue(authenticationInfo.schemes().size() == 1);
+        assertEquals("jwt", authenticationInfo.schemes().get(0));
+    }
+
 
     @Test
     public void testA2AClientGetAgentCard() throws Exception {

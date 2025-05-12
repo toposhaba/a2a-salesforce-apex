@@ -246,4 +246,36 @@ public class JsonMessages {
             }
             """;
 
+    static final String SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST = """
+            {
+             "jsonrpc": "2.0",
+             "id": "1",
+             "method": "tasks/pushNotification/set",
+             "params": {
+              "id": "de38c76d-d54c-436c-8b9f-4c2703648d64",
+              "pushNotificationConfig": {
+               "url": "https://example.com/callback",
+               "authentication": {
+                "schemes": ["jwt"]
+               }
+              }
+             }
+            }""";
+
+    static final String SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_RESPONSE = """
+            {
+             "jsonrpc": "2.0",
+             "id": 1,
+             "result": {
+              "id": "de38c76d-d54c-436c-8b9f-4c2703648d64",
+              "pushNotificationConfig": {
+               "url": "https://example.com/callback",
+               "authentication": {
+                "schemes": ["jwt"]
+               }
+              }
+             }
+            }
+            """;
+
 }

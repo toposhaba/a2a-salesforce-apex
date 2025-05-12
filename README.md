@@ -64,6 +64,17 @@ Map<String, Object> metadata = ...
 GetTaskPushNotificationResponse response = client.getTaskPushNotificationConfig(new TaskIdParams("task-1234", metadata));
 ```
 
+#### Set the push notification configuration for a task
+
+```java
+// Set task push notification configuration
+PushNotificationConfig pushNotificationConfig = new PushNotificationConfig.Builder()
+        .url("https://example.com/callback")
+        .authenticationInfo(new AuthenticationInfo(Collections.singletonList("jwt"), null))
+        .build());
+SetTaskPushNotificationResponse response = client.setTaskPushNotificationConfig("task-1234", pushNotificationConfig);
+```
+
 #### Retrieve details about the server agent that this client agent is communicating with
 ```java
 AgentCard serverAgentCard = client.getAgentCard();
