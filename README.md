@@ -80,6 +80,12 @@ SetTaskPushNotificationResponse response = client.setTaskPushNotificationConfig(
 AgentCard serverAgentCard = client.getAgentCard();
 ```
 
+An agent card can also be retrieved using the `A2A#getAgentCard` method:
+```java
+// http://localhost:1234 is the base URL for the agent whose card we want to retrieve
+AgentCard agentCard = A2A.getAgentCard("http://localhost:1234");
+```
+
 ## Server
 
 TODO

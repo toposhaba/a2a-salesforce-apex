@@ -1,6 +1,5 @@
 package io.a2a.client;
 
-import static io.a2a.spec.A2A.AGENT_CARD_REQUEST;
 import static io.a2a.spec.A2A.CANCEL_TASK_REQUEST;
 import static io.a2a.spec.A2A.GET_TASK_PUSH_NOTIFICATION_REQUEST;
 import static io.a2a.spec.A2A.GET_TASK_REQUEST;
@@ -19,6 +18,7 @@ import java.net.http.HttpResponse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import io.a2a.spec.A2A;
 import io.a2a.spec.A2AServerException;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.CancelTaskRequest;
@@ -43,7 +43,6 @@ import io.a2a.util.Assert;
  */
 public class A2AClient {
 
-    private static TypeReference<AgentCard> AGENT_CARD_TYPE_REFERENCE = new TypeReference<>() {};
     private static TypeReference<SendTaskResponse> SEND_TASK_RESPONSE_REFERENCE = new TypeReference<>() {};
     private static TypeReference<GetTaskResponse> GET_TASK_RESPONSE_REFERENCE = new TypeReference<>() {};
     private static TypeReference<CancelTaskResponse> CANCEL_TASK_RESPONSE_REFERENCE = new TypeReference<>() {};
@@ -85,7 +84,7 @@ public class A2AClient {
      */
     public AgentCard getAgentCard() throws A2AServerException {
         if (this.agentCard == null) {
-            this.agentCard = getAgentCardFromUrl(this.agentUrl);
+            this.agentCard = A2A.getAgentCard(this.httpClient, this.agentUrl);
         }
         return this.agentCard;
     }
@@ -338,24 +337,6 @@ public class A2AClient {
             return unmarshalFrom(httpResponse.body(), SET_TASK_PUSH_NOTIFICATION_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
             throw new A2AServerException("Failed to set task push notification config: " + e);
-        }
-    }
-
-    private AgentCard getAgentCardFromUrl(String url) throws A2AServerException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .header("Content-Type", "application/json")
-                .uri(URI.create(getRequestEndpoint(agentUrl, AGENT_CARD_REQUEST)))
-                .GET()
-                .build();
-
-        try {
-            HttpResponse<String> response = this.httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() != 200) {
-                throw new A2AServerException("Failed to obtain agent card: " + response.statusCode());
-            }
-            return unmarshalFrom(response.body(), AGENT_CARD_TYPE_REFERENCE);
-        } catch (IOException | InterruptedException e) {
-            throw new A2AServerException("Failed to obtain agent card", e);
         }
     }
 
