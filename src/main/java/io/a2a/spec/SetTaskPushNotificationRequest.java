@@ -24,7 +24,7 @@ public final class SetTaskPushNotificationRequest extends JSONRPCRequest {
 
     @JsonCreator
     public SetTaskPushNotificationRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
-                                          @JsonProperty("method") String method, @JsonProperty("params") TaskQueryParams params) {
+                                          @JsonProperty("method") String method, @JsonProperty("params") TaskPushNotificationConfig params) {
         Assert.checkNotNullParam("method", method);
         Assert.checkNotNullParam("params", params);
 
@@ -37,5 +37,36 @@ public final class SetTaskPushNotificationRequest extends JSONRPCRequest {
         this.id = id == null ? UUID.randomUUID().toString() : id;
         this.method = method;
         this.params = paramsMap;
+    }
+
+    public static class Builder {
+        private String jsonrpc;
+        private Object id;
+        private String method;
+        private TaskPushNotificationConfig params;
+
+        public SetTaskPushNotificationRequest.Builder jsonrpc(String jsonrpc) {
+            this.jsonrpc = jsonrpc;
+            return this;
+        }
+
+        public SetTaskPushNotificationRequest.Builder id(Object id) {
+            this.id = id;
+            return this;
+        }
+
+        public SetTaskPushNotificationRequest.Builder method(String method) {
+            this.method = method;
+            return this;
+        }
+
+        public SetTaskPushNotificationRequest.Builder params(TaskPushNotificationConfig params) {
+            this.params = params;
+            return this;
+        }
+
+        public SetTaskPushNotificationRequest build() {
+            return new SetTaskPushNotificationRequest(jsonrpc, id, method, params);
+        }
     }
 }
