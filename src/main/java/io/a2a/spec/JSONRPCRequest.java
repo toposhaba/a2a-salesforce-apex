@@ -16,7 +16,7 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public sealed class JSONRPCRequest implements JSONRPCMessage permits SendTaskStreamingRequest,
+public abstract sealed class JSONRPCRequest implements JSONRPCMessage permits SendTaskStreamingRequest,
         GetTaskRequest, CancelTaskRequest, SetTaskPushNotificationRequest, GetTaskPushNotificationRequest,
         TaskResubscriptionRequest, SendMessageRequest {
 
