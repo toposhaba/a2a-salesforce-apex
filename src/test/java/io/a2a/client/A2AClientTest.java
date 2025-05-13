@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -32,7 +31,6 @@ import io.a2a.spec.AgentCard;
 import io.a2a.spec.AgentSkill;
 import io.a2a.spec.AuthenticationInfo;
 import io.a2a.spec.CancelTaskResponse;
-import io.a2a.spec.GetTaskPushNotificationRequest;
 import io.a2a.spec.GetTaskPushNotificationResponse;
 import io.a2a.spec.GetTaskResponse;
 import io.a2a.spec.JSONRPCError;
@@ -41,6 +39,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
+import org.mockserver.matchers.MatchType;
 import org.mockserver.model.JsonBody;
 
 import io.a2a.spec.Artifact;
@@ -55,7 +54,6 @@ import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
 import io.a2a.spec.TaskSendParams;
 import io.a2a.spec.TaskState;
-import io.a2a.spec.TaskStatus;
 import io.a2a.spec.TextPart;
 
 public class A2AClientTest {
@@ -78,7 +76,7 @@ public class A2AClientTest {
                         request()
                                 .withMethod("POST")
                                 .withPath("/tasks/send")
-                                .withBody(JsonBody.json(SEND_TASK_TEST_REQUEST))
+                                .withBody(JsonBody.json(SEND_TASK_TEST_REQUEST, MatchType.STRICT))
 
                 )
                 .respond(
@@ -88,7 +86,7 @@ public class A2AClientTest {
                 );
 
         A2AClient client = new A2AClient("http://localhost:4001");
-        Message message = toUserMessage("tell me a joke");
+        Message message = toUserMessage("tell me a joke", "message-1234");
         TaskSendParams params = new TaskSendParams.Builder()
                 .id("task-1234")
                 .sessionId("session-1234")
@@ -121,7 +119,7 @@ public class A2AClientTest {
                         request()
                                 .withMethod("POST")
                                 .withPath("/tasks/send")
-                                .withBody(JsonBody.json(SEND_TASK_WITH_ERROR_TEST_REQUEST))
+                                .withBody(JsonBody.json(SEND_TASK_WITH_ERROR_TEST_REQUEST, MatchType.STRICT))
 
                 )
                 .respond(
@@ -131,7 +129,7 @@ public class A2AClientTest {
                 );
 
         A2AClient client = new A2AClient("http://localhost:4001");
-        Message message = toUserMessage("tell me a joke");
+        Message message = toUserMessage("tell me a joke", "message-1234");
         TaskSendParams params = new TaskSendParams.Builder()
                 .id("task-1234")
                 .sessionId("session-1234")
@@ -157,7 +155,7 @@ public class A2AClientTest {
                         request()
                                 .withMethod("POST")
                                 .withPath("/tasks/get")
-                                .withBody(JsonBody.json(GET_TASK_TEST_REQUEST))
+                                .withBody(JsonBody.json(GET_TASK_TEST_REQUEST, MatchType.STRICT))
 
                 )
                 .respond(
@@ -205,7 +203,7 @@ public class A2AClientTest {
                         request()
                                 .withMethod("POST")
                                 .withPath("/tasks/cancel")
-                                .withBody(JsonBody.json(CANCEL_TASK_TEST_REQUEST))
+                                .withBody(JsonBody.json(CANCEL_TASK_TEST_REQUEST, MatchType.STRICT))
 
                 )
                 .respond(
@@ -235,7 +233,7 @@ public class A2AClientTest {
                         request()
                                 .withMethod("POST")
                                 .withPath("/tasks/pushNotification/get")
-                                .withBody(JsonBody.json(GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST))
+                                .withBody(JsonBody.json(GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST, MatchType.STRICT))
 
                 )
                 .respond(
@@ -265,7 +263,7 @@ public class A2AClientTest {
                         request()
                                 .withMethod("POST")
                                 .withPath("/tasks/pushNotification/set")
-                                .withBody(JsonBody.json(SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST))
+                                .withBody(JsonBody.json(SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST, MatchType.STRICT))
 
                 )
                 .respond(

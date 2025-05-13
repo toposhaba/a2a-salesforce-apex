@@ -80,7 +80,8 @@ public class JsonMessages {
                      "type": "text",
                      "text": "tell me a joke"
                     }
-                   ]
+                   ],
+                   "messageId": "message-1234"
                   }
                  }
                 }""";
@@ -125,7 +126,8 @@ public class JsonMessages {
                      "type": "text",
                      "text": "tell me a joke"
                     }
-                   ]
+                   ],
+                   "messageId": "message-1234"
                   }
                  }
                 }""";
@@ -221,7 +223,8 @@ public class JsonMessages {
              "id": "1",
              "method": "tasks/pushNotification/get",
              "params": {
-              "id": "de38c76d-d54c-436c-8b9f-4c2703648d64"
+              "id": "de38c76d-d54c-436c-8b9f-4c2703648d64",
+              "metadata": {},
              }
             }
             """;

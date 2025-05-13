@@ -23,12 +23,19 @@ A2AClient client = new A2AClient("http://localhost:1234");
 
 ```java
 // Send a text message to the server agent
-Message message = A2A.toUserMessage("tell me a joke");
+Message message = A2A.toUserMessage("tell me a joke"); // the message ID will be automatically generated for you
 TaskSendParams params = new TaskSendParams.Builder()
         .id("task-1234") // id is optional
         .message(message)
         .build();
 SendTaskResponse response = client.sendTask(params);        
+```
+
+Note that `A2A#toUserMessage` will automatically generate a message ID for you when creating the `Message` 
+if you don't specify it. You can also explicitly specify a message ID like this:
+
+```java
+Message message = A2A.toUserMessage("tell me a joke", "message-1234"); // messageId is message-1234
 ```
 
 #### Get a task
