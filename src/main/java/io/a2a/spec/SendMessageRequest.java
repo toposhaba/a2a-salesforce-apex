@@ -1,7 +1,7 @@
 package io.a2a.spec;
 
 import static io.a2a.spec.A2A.JSONRPC_VERSION;
-import static io.a2a.spec.A2A.SEND_TASK_REQUEST;
+import static io.a2a.spec.A2A.SEND_MESSAGE_REQUEST;
 import static io.a2a.util.Utils.OBJECT_MAPPER;
 import static io.a2a.util.Utils.defaultIfNull;
 
@@ -16,20 +16,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.a2a.util.Assert;
 
 /**
- * Used to initiate a task.
+ * Used to send a message request.
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class SendTaskRequest extends JSONRPCRequest {
+public final class SendMessageRequest extends JSONRPCRequest {
 
     @JsonCreator
-    public SendTaskRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
-                           @JsonProperty("method") String method, @JsonProperty("params") TaskSendParams params) {
+    public SendMessageRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
+                              @JsonProperty("method") String method, @JsonProperty("params") MessageSendParams params) {
         Assert.checkNotNullParam("method", method);
         Assert.checkNotNullParam("params", params);
 
-        if (! method.equals(SEND_TASK_REQUEST)) {
-            throw new IllegalArgumentException("Invalid SendTaskRequest method");
+        if (! method.equals(SEND_MESSAGE_REQUEST)) {
+            throw new IllegalArgumentException("Invalid SendMessageRequest method");
         }
 
         Map<String, Object> paramsMap = OBJECT_MAPPER.convertValue(params, Map.class);
@@ -43,7 +43,7 @@ public final class SendTaskRequest extends JSONRPCRequest {
         private String jsonrpc;
         private Object id;
         private String method;
-        private TaskSendParams params;
+        private MessageSendParams params;
 
         public Builder jsonrpc(String jsonrpc) {
             this.jsonrpc = jsonrpc;
@@ -60,13 +60,13 @@ public final class SendTaskRequest extends JSONRPCRequest {
             return this;
         }
 
-        public Builder params(TaskSendParams params) {
+        public Builder params(MessageSendParams params) {
             this.params = params;
             return this;
         }
 
-        public SendTaskRequest build() {
-            return new SendTaskRequest(jsonrpc, id, method, params);
+        public SendMessageRequest build() {
+            return new SendMessageRequest(jsonrpc, id, method, params);
         }
     }
 }

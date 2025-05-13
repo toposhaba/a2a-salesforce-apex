@@ -23,6 +23,7 @@ public class A2A {
     public static final String SEND_TASK_REQUEST = "tasks/send";
     public static final String SEND_TASK_RESUBSCRIPTION_REQUEST = "tasks/resubscribe";
     public static final String SEND_TASK_STREAMING_REQUEST = "tasks/sendSubscribe";
+    public static final String SEND_MESSAGE_REQUEST = "message/send";
 
     public static final String JSONRPC_VERSION = "2.0";
 

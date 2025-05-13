@@ -65,28 +65,32 @@ public class JsonMessages {
                ]
              }""";
 
-    static final String SEND_TASK_TEST_REQUEST = """
+    static final String SEND_MESSAGE_TEST_REQUEST = """
+            {
+             "jsonrpc": "2.0",
+             "id": "request-1234",
+             "method": "message/send",
+             "params": {
+              "id": "1234",
+              "message": {
+               "role": "user",
+               "parts": [
                 {
-                 "jsonrpc": "2.0",
-                 "id": "request-1234",
-                 "method": "tasks/send",
-                 "params": {
-                  "id": "task-1234",
-                  "contextId": "context-1234",
-                  "message": {
-                   "role": "user",
-                   "parts": [
-                    {
-                     "type": "text",
-                     "text": "tell me a joke"
-                    }
-                   ],
-                   "messageId": "message-1234"
-                  }
-                 }
-                }""";
+                 "type": "text",
+                 "text": "tell me a joke"
+                }
+               ],
+               "messageId": "message-1234",
+               "contextId": "context-1234",
+              },
+              "configuration": {
+                "acceptedOutputModes": ["text"],
+                "blocking": true
+              }
+             }
+            }""";
 
-    static final String SEND_TASK_TEST_RESPONSE = """
+    static final String SEND_MESSAGE_TEST_RESPONSE = """
             {
              "jsonrpc": "2.0",
              "id": 1,
@@ -111,28 +115,32 @@ public class JsonMessages {
              }
             }""";
 
-    static final String SEND_TASK_WITH_ERROR_TEST_REQUEST = """
+    static final String SEND_MESSAGE_WITH_ERROR_TEST_REQUEST = """
+            {
+             "jsonrpc": "2.0",
+             "id": "request-1234-with-error",
+             "method": "message/send",
+             "params": {
+              "id": "1234",
+              "message": {
+               "role": "user",
+               "parts": [
                 {
-                 "jsonrpc": "2.0",
-                 "id": "request-1234-with-error",
-                 "method": "tasks/send",
-                 "params": {
-                  "id": "task-1234",
-                  "contextId": "context-1234",
-                  "message": {
-                   "role": "user",
-                   "parts": [
-                    {
-                     "type": "text",
-                     "text": "tell me a joke"
-                    }
-                   ],
-                   "messageId": "message-1234"
-                  }
-                 }
-                }""";
+                 "type": "text",
+                 "text": "tell me a joke"
+                }
+               ],
+               "messageId": "message-1234",
+               "contextId": "context-1234",
+              },
+              "configuration": {
+                "acceptedOutputModes": ["text"],
+                "blocking": true
+              }
+             }
+            }""";
 
-    static final String SEND_TASK_ERROR_TEST_RESPONSE = """
+    static final String SEND_MESSAGE_ERROR_TEST_RESPONSE = """
             {
              "jsonrpc": "2.0",
              "error": {
