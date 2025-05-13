@@ -72,7 +72,7 @@ public class JsonMessages {
                  "method": "tasks/send",
                  "params": {
                   "id": "task-1234",
-                  "sessionId": "session-1234",
+                  "contextId": "context-1234",
                   "message": {
                    "role": "user",
                    "parts": [
@@ -92,7 +92,7 @@ public class JsonMessages {
              "id": 1,
              "result": {
               "id": "de38c76d-d54c-436c-8b9f-4c2703648d64",
-              "sessionId": "c295ea44-7543-4f78-b524-7a38915ad6e4",
+              "contextId": "c295ea44-7543-4f78-b524-7a38915ad6e4",
               "status": {
                "state": "completed"
               },
@@ -118,7 +118,7 @@ public class JsonMessages {
                  "method": "tasks/send",
                  "params": {
                   "id": "task-1234",
-                  "sessionId": "session-1234",
+                  "contextId": "context-1234",
                   "message": {
                    "role": "user",
                    "parts": [
@@ -160,7 +160,7 @@ public class JsonMessages {
              "id": 1,
              "result": {
               "id": "de38c76d-d54c-436c-8b9f-4c2703648d64",
-              "sessionId": "c295ea44-7543-4f78-b524-7a38915ad6e4",
+              "contextId": "c295ea44-7543-4f78-b524-7a38915ad6e4",
               "status": {
                "state": "completed"
               },
@@ -208,7 +208,7 @@ public class JsonMessages {
              "id": 1,
              "result": {
               "id": "de38c76d-d54c-436c-8b9f-4c2703648d64",
-              "sessionId": "c295ea44-7543-4f78-b524-7a38915ad6e4",
+              "contextId": "c295ea44-7543-4f78-b524-7a38915ad6e4",
               "status": {
                "state": "canceled"
               },

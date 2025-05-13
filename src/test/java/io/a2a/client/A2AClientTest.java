@@ -89,7 +89,7 @@ public class A2AClientTest {
         Message message = toUserMessage("tell me a joke", "message-1234");
         TaskSendParams params = new TaskSendParams.Builder()
                 .id("task-1234")
-                .sessionId("session-1234")
+                .contextId("context-1234")
                 .message(message)
                 .build();
 
@@ -101,7 +101,7 @@ public class A2AClientTest {
         assertInstanceOf(Task.class, result);
         Task task = (Task) result;
         assertEquals("de38c76d-d54c-436c-8b9f-4c2703648d64", task.id());
-        assertNotNull(task.sessionId());
+        assertNotNull(task.contextId());
         assertEquals(TaskState.COMPLETED,task.status().state());
         assertEquals(1, task.artifacts().size());
         Artifact artifact = task.artifacts().get(0);
@@ -132,7 +132,7 @@ public class A2AClientTest {
         Message message = toUserMessage("tell me a joke", "message-1234");
         TaskSendParams params = new TaskSendParams.Builder()
                 .id("task-1234")
-                .sessionId("session-1234")
+                .contextId("context-1234")
                 .message(message)
                 .build();
 
@@ -174,7 +174,7 @@ public class A2AClientTest {
         assertInstanceOf(Task.class, result);
         Task task = (Task) result;
         assertEquals("de38c76d-d54c-436c-8b9f-4c2703648d64", task.id());
-        assertEquals("c295ea44-7543-4f78-b524-7a38915ad6e4", task.sessionId());
+        assertEquals("c295ea44-7543-4f78-b524-7a38915ad6e4", task.contextId());
         assertEquals(TaskState.COMPLETED, task.status().state());
         assertEquals(1, task.artifacts().size());
         Artifact artifact = task.artifacts().get(0);
@@ -222,7 +222,7 @@ public class A2AClientTest {
         assertInstanceOf(Task.class, result);
         Task task = (Task) result;
         assertEquals("de38c76d-d54c-436c-8b9f-4c2703648d64", task.id());
-        assertEquals("c295ea44-7543-4f78-b524-7a38915ad6e4", task.sessionId());
+        assertEquals("c295ea44-7543-4f78-b524-7a38915ad6e4", task.contextId());
         assertEquals(TaskState.CANCELED, task.status().state());
         assertTrue(task.metadata().isEmpty());
     }

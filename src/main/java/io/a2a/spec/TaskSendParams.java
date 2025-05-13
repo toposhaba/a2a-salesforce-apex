@@ -14,18 +14,18 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record TaskSendParams(String id, String sessionId, Message message, List<String> acceptedOutputModes,
+public record TaskSendParams(String id, String contextId, Message message, List<String> acceptedOutputModes,
                              PushNotificationConfig pushNotification, Integer historyLength, Map<String, Object> metadata) {
 
     public TaskSendParams {
         Assert.checkNotNullParam("id", id);
         Assert.checkNotNullParam("message", message);
-        sessionId = sessionId == null ? UUID.randomUUID().toString() : sessionId;
+        contextId = contextId == null ? UUID.randomUUID().toString() : contextId;
     }
 
     public static class Builder {
         String id;
-        String sessionId;
+        String contextId;
         Message message;
         List<String> acceptedOutputModes;
         PushNotificationConfig pushNotification;
@@ -37,8 +37,8 @@ public record TaskSendParams(String id, String sessionId, Message message, List<
             return this;
         }
 
-        public Builder sessionId(String sessionId) {
-            this.sessionId = sessionId;
+        public Builder contextId(String contextId) {
+            this.contextId = contextId;
             return this;
         }
 
@@ -68,7 +68,7 @@ public record TaskSendParams(String id, String sessionId, Message message, List<
         }
 
         public TaskSendParams build() {
-            return new TaskSendParams(id, sessionId, message, acceptedOutputModes, pushNotification, historyLength, metadata);
+            return new TaskSendParams(id, contextId, message, acceptedOutputModes, pushNotification, historyLength, metadata);
         }
     }
 }
