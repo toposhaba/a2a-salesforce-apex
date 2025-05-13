@@ -23,6 +23,7 @@ public class A2A {
     public static final String SEND_TASK_REQUEST = "tasks/send";
     public static final String SEND_TASK_RESUBSCRIPTION_REQUEST = "tasks/resubscribe";
     public static final String SEND_TASK_STREAMING_REQUEST = "tasks/sendSubscribe";
+    public static final String SEND_MESSAGE_REQUEST = "message/send";
 
     public static final String JSONRPC_VERSION = "2.0";
 
@@ -41,7 +42,18 @@ public class A2A {
      * @return the user message
      */
     public static Message toUserMessage(String text) {
-        return toMessage(text, Message.Role.USER);
+        return toMessage(text, Message.Role.USER, null);
+    }
+
+    /**
+     * Convert the given text to a user message.
+     *
+     * @param text the message text
+     * @param messageId the message ID to use
+     * @return the user message
+     */
+    public static Message toUserMessage(String text, String messageId) {
+        return toMessage(text, Message.Role.USER, messageId);
     }
 
     /**
@@ -51,14 +63,29 @@ public class A2A {
      * @return the agent message
      */
     public static Message toAgentMessage(String text) {
-        return toMessage(text, Message.Role.AGENT);
+        return toMessage(text, Message.Role.AGENT, null);
     }
 
-    private static Message toMessage(String text, Message.Role role) {
-        return new Message.Builder()
+    /**
+     * Convert the given text to an agent message.
+     *
+     * @param text the message text
+     * @param messageId the message ID to use
+     * @return the agent message
+     */
+    public static Message toAgentMessage(String text, String messageId) {
+        return toMessage(text, Message.Role.AGENT, messageId);
+    }
+
+
+    private static Message toMessage(String text, Message.Role role, String messageId) {
+        Message.Builder messageBuilder = new Message.Builder()
                 .role(role)
-                .parts(Collections.singletonList(new TextPart(text)))
-                .build();
+                .parts(Collections.singletonList(new TextPart(text)));
+        if (messageId != null) {
+            messageBuilder.messageId(messageId);
+        }
+        return messageBuilder.build();
     }
 
     /**

@@ -65,33 +65,38 @@ public class JsonMessages {
                ]
              }""";
 
-    static final String SEND_TASK_TEST_REQUEST = """
+    static final String SEND_MESSAGE_TEST_REQUEST = """
+            {
+             "jsonrpc": "2.0",
+             "id": "request-1234",
+             "method": "message/send",
+             "params": {
+              "id": "1234",
+              "message": {
+               "role": "user",
+               "parts": [
                 {
-                 "jsonrpc": "2.0",
-                 "id": "request-1234",
-                 "method": "tasks/send",
-                 "params": {
-                  "id": "task-1234",
-                  "sessionId": "session-1234",
-                  "message": {
-                   "role": "user",
-                   "parts": [
-                    {
-                     "type": "text",
-                     "text": "tell me a joke"
-                    }
-                   ]
-                  }
-                 }
-                }""";
+                 "type": "text",
+                 "text": "tell me a joke"
+                }
+               ],
+               "messageId": "message-1234",
+               "contextId": "context-1234",
+              },
+              "configuration": {
+                "acceptedOutputModes": ["text"],
+                "blocking": true
+              }
+             }
+            }""";
 
-    static final String SEND_TASK_TEST_RESPONSE = """
+    static final String SEND_MESSAGE_TEST_RESPONSE = """
             {
              "jsonrpc": "2.0",
              "id": 1,
              "result": {
               "id": "de38c76d-d54c-436c-8b9f-4c2703648d64",
-              "sessionId": "c295ea44-7543-4f78-b524-7a38915ad6e4",
+              "contextId": "c295ea44-7543-4f78-b524-7a38915ad6e4",
               "status": {
                "state": "completed"
               },
@@ -110,27 +115,32 @@ public class JsonMessages {
              }
             }""";
 
-    static final String SEND_TASK_WITH_ERROR_TEST_REQUEST = """
+    static final String SEND_MESSAGE_WITH_ERROR_TEST_REQUEST = """
+            {
+             "jsonrpc": "2.0",
+             "id": "request-1234-with-error",
+             "method": "message/send",
+             "params": {
+              "id": "1234",
+              "message": {
+               "role": "user",
+               "parts": [
                 {
-                 "jsonrpc": "2.0",
-                 "id": "request-1234-with-error",
-                 "method": "tasks/send",
-                 "params": {
-                  "id": "task-1234",
-                  "sessionId": "session-1234",
-                  "message": {
-                   "role": "user",
-                   "parts": [
-                    {
-                     "type": "text",
-                     "text": "tell me a joke"
-                    }
-                   ]
-                  }
-                 }
-                }""";
+                 "type": "text",
+                 "text": "tell me a joke"
+                }
+               ],
+               "messageId": "message-1234",
+               "contextId": "context-1234",
+              },
+              "configuration": {
+                "acceptedOutputModes": ["text"],
+                "blocking": true
+              }
+             }
+            }""";
 
-    static final String SEND_TASK_ERROR_TEST_RESPONSE = """
+    static final String SEND_MESSAGE_ERROR_TEST_RESPONSE = """
             {
              "jsonrpc": "2.0",
              "error": {
@@ -158,7 +168,7 @@ public class JsonMessages {
              "id": 1,
              "result": {
               "id": "de38c76d-d54c-436c-8b9f-4c2703648d64",
-              "sessionId": "c295ea44-7543-4f78-b524-7a38915ad6e4",
+              "contextId": "c295ea44-7543-4f78-b524-7a38915ad6e4",
               "status": {
                "state": "completed"
               },
@@ -206,7 +216,7 @@ public class JsonMessages {
              "id": 1,
              "result": {
               "id": "de38c76d-d54c-436c-8b9f-4c2703648d64",
-              "sessionId": "c295ea44-7543-4f78-b524-7a38915ad6e4",
+              "contextId": "c295ea44-7543-4f78-b524-7a38915ad6e4",
               "status": {
                "state": "canceled"
               },
@@ -221,7 +231,8 @@ public class JsonMessages {
              "id": "1",
              "method": "tasks/pushNotification/get",
              "params": {
-              "id": "de38c76d-d54c-436c-8b9f-4c2703648d64"
+              "id": "de38c76d-d54c-436c-8b9f-4c2703648d64",
+              "metadata": {},
              }
             }
             """;

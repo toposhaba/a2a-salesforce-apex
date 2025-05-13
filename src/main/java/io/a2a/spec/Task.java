@@ -13,17 +13,18 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record Task(String id, String sessionId, TaskStatus status, List<Artifact> artifacts,
+public record Task(String id, String contextId, TaskStatus status, List<Artifact> artifacts,
                    List<Message> history, Map<String, Object> metadata) {
 
     public Task {
         Assert.checkNotNullParam("id", id);
+        Assert.checkNotNullParam("contextId", contextId);
         Assert.checkNotNullParam("status", status);
     }
 
     public static class Builder {
         private String id;
-        private String sessionId;
+        private String contextId;
         private TaskStatus status;
         private List<Artifact> artifacts;
         private List<Message> history;
@@ -34,8 +35,8 @@ public record Task(String id, String sessionId, TaskStatus status, List<Artifact
             return this;
         }
 
-        public Builder sessionId(String sessionId) {
-            this.sessionId = sessionId;
+        public Builder contextId(String contextId) {
+            this.contextId = contextId;
             return this;
         }
 
@@ -60,7 +61,7 @@ public record Task(String id, String sessionId, TaskStatus status, List<Artifact
         }
 
         public Task build() {
-            return new Task(id, sessionId, status, artifacts, history, metadata);
+            return new Task(id, contextId, status, artifacts, history, metadata);
         }
     }
 }

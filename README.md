@@ -19,16 +19,23 @@ An *initial* [A2AClient](https://github.com/fjuma/a2a-java-sdk/blob/main/src/mai
 A2AClient client = new A2AClient("http://localhost:1234");
 ```
 
-#### Send a task
+#### Send a message
 
 ```java
 // Send a text message to the server agent
-Message message = A2A.toUserMessage("tell me a joke");
-TaskSendParams params = new TaskSendParams.Builder()
+Message message = A2A.toUserMessage("tell me a joke"); // the message ID will be automatically generated for you
+MessageSendParams params = new MessageSendParams.Builder()
         .id("task-1234") // id is optional
         .message(message)
         .build();
-SendTaskResponse response = client.sendTask(params);        
+SendMessageResponse response = client.sendMessage(params);        
+```
+
+Note that `A2A#toUserMessage` will automatically generate a message ID for you when creating the `Message` 
+if you don't specify it. You can also explicitly specify a message ID like this:
+
+```java
+Message message = A2A.toUserMessage("tell me a joke", "message-1234"); // messageId is message-1234
 ```
 
 #### Get a task

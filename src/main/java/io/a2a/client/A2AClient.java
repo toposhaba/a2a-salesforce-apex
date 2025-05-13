@@ -4,7 +4,7 @@ import static io.a2a.spec.A2A.CANCEL_TASK_REQUEST;
 import static io.a2a.spec.A2A.GET_TASK_PUSH_NOTIFICATION_REQUEST;
 import static io.a2a.spec.A2A.GET_TASK_REQUEST;
 import static io.a2a.spec.A2A.JSONRPC_VERSION;
-import static io.a2a.spec.A2A.SEND_TASK_REQUEST;;
+import static io.a2a.spec.A2A.SEND_MESSAGE_REQUEST;
 import static io.a2a.spec.A2A.SET_TASK_PUSH_NOTIFICATION_REQUEST;
 import static io.a2a.spec.A2A.getRequestEndpoint;
 import static io.a2a.util.Utils.OBJECT_MAPPER;
@@ -27,15 +27,15 @@ import io.a2a.spec.GetTaskPushNotificationRequest;
 import io.a2a.spec.GetTaskPushNotificationResponse;
 import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
+import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.PushNotificationConfig;
-import io.a2a.spec.SendTaskRequest;
-import io.a2a.spec.SendTaskResponse;
+import io.a2a.spec.SendMessageRequest;
+import io.a2a.spec.SendMessageResponse;
 import io.a2a.spec.SetTaskPushNotificationRequest;
 import io.a2a.spec.SetTaskPushNotificationResponse;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
-import io.a2a.spec.TaskSendParams;
 import io.a2a.util.Assert;
 
 /**
@@ -43,7 +43,7 @@ import io.a2a.util.Assert;
  */
 public class A2AClient {
 
-    private static TypeReference<SendTaskResponse> SEND_TASK_RESPONSE_REFERENCE = new TypeReference<>() {};
+    private static TypeReference<SendMessageResponse> SEND_MESSAGE_RESPONSE_REFERENCE = new TypeReference<>() {};
     private static TypeReference<GetTaskResponse> GET_TASK_RESPONSE_REFERENCE = new TypeReference<>() {};
     private static TypeReference<CancelTaskResponse> CANCEL_TASK_RESPONSE_REFERENCE = new TypeReference<>() {};
     private static TypeReference<GetTaskPushNotificationResponse> GET_TASK_PUSH_NOTIFICATION_RESPONSE_REFERENCE = new TypeReference<>() {};
@@ -90,46 +90,44 @@ public class A2AClient {
     }
 
     /**
-     * Send a task to the A2A server. This method can be used to start a new task, resume an
-     * interrupted task, or re-open a completed task.
+     * Send a message to the remote agent.
      *
-     * @param taskSendParams the parameters for the task to be sent
-     * @return the response containing the task
-     * @throws A2AServerException if sending the task request fails for any reason
+     * @param messageSendParams the parameters for the message to be sent
+     * @return the response, may contain a message or a task
+     * @throws A2AServerException if sending the message fails for any reason
      */
-    public SendTaskResponse sendTask(TaskSendParams taskSendParams) throws A2AServerException {
-        return sendTask(null, taskSendParams);
+    public SendMessageResponse sendMessage(MessageSendParams messageSendParams) throws A2AServerException {
+        return sendMessage(null, messageSendParams);
     }
 
     /**
-     * Send a task to the A2A server. This method can be used to start a new task, resume an
-     * interrupted task, or re-open a completed task.
+     * Send a message to the remote agent.
      *
      * @param requestId the request ID to use
-     * @param taskSendParams the parameters for the task to be sent
-     * @return the response containing the task
-     * @throws A2AServerException if sending the task request fails for any reason
+     * @param messageSendParams the parameters for the message to be sent
+     * @return the response, may contain a message or a task
+     * @throws A2AServerException if sending the message fails for any reason
      */
-    public SendTaskResponse sendTask(String requestId, TaskSendParams taskSendParams) throws A2AServerException {
-        SendTaskRequest.Builder sendTaskRequestBuilder = new SendTaskRequest.Builder()
+    public SendMessageResponse sendMessage(String requestId, MessageSendParams messageSendParams) throws A2AServerException {
+        SendMessageRequest.Builder sendMessageRequestBuilder = new SendMessageRequest.Builder()
                 .jsonrpc(JSONRPC_VERSION)
-                .method(SEND_TASK_REQUEST)
-                .params(taskSendParams);
+                .method(SEND_MESSAGE_REQUEST)
+                .params(messageSendParams);
 
         if (requestId != null) {
-            sendTaskRequestBuilder.id(requestId);
+            sendMessageRequestBuilder.id(requestId);
         }
 
-        SendTaskRequest sendTaskRequest = sendTaskRequestBuilder.build();
+        SendMessageRequest sendMessageRequest = sendMessageRequestBuilder.build();
 
         try {
-            HttpResponse<String> httpResponse = sendPostRequest(SEND_TASK_REQUEST, sendTaskRequest);
+            HttpResponse<String> httpResponse = sendPostRequest(SEND_MESSAGE_REQUEST, sendMessageRequest);
             if (httpResponse.statusCode() != 200) {
-                throw new A2AServerException("Failed to send task: " + httpResponse.statusCode());
+                throw new A2AServerException("Failed to send message: " + httpResponse.statusCode());
             }
-            return unmarshalFrom(httpResponse.body(), SEND_TASK_RESPONSE_REFERENCE);
+            return unmarshalFrom(httpResponse.body(), SEND_MESSAGE_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
-            throw new A2AServerException("Failed to send task: " + e);
+            throw new A2AServerException("Failed to send message: " + e);
         }
     }
 

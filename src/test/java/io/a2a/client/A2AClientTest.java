@@ -7,13 +7,12 @@ import static io.a2a.client.JsonMessages.GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_
 import static io.a2a.client.JsonMessages.GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_RESPONSE;
 import static io.a2a.client.JsonMessages.GET_TASK_TEST_REQUEST;
 import static io.a2a.client.JsonMessages.GET_TASK_TEST_RESPONSE;
-import static io.a2a.client.JsonMessages.SEND_TASK_ERROR_TEST_RESPONSE;
-import static io.a2a.client.JsonMessages.SEND_TASK_TEST_REQUEST;
-import static io.a2a.client.JsonMessages.SEND_TASK_TEST_RESPONSE;
-import static io.a2a.client.JsonMessages.SEND_TASK_WITH_ERROR_TEST_REQUEST;
+import static io.a2a.client.JsonMessages.SEND_MESSAGE_ERROR_TEST_RESPONSE;
+import static io.a2a.client.JsonMessages.SEND_MESSAGE_TEST_REQUEST;
+import static io.a2a.client.JsonMessages.SEND_MESSAGE_TEST_RESPONSE;
+import static io.a2a.client.JsonMessages.SEND_MESSAGE_WITH_ERROR_TEST_REQUEST;
 import static io.a2a.client.JsonMessages.SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST;
 import static io.a2a.client.JsonMessages.SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_RESPONSE;
-import static io.a2a.spec.A2A.toUserMessage;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -23,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -32,7 +30,6 @@ import io.a2a.spec.AgentCard;
 import io.a2a.spec.AgentSkill;
 import io.a2a.spec.AuthenticationInfo;
 import io.a2a.spec.CancelTaskResponse;
-import io.a2a.spec.GetTaskPushNotificationRequest;
 import io.a2a.spec.GetTaskPushNotificationResponse;
 import io.a2a.spec.GetTaskResponse;
 import io.a2a.spec.JSONRPCError;
@@ -41,21 +38,22 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
+import org.mockserver.matchers.MatchType;
 import org.mockserver.model.JsonBody;
 
 import io.a2a.spec.Artifact;
 import io.a2a.spec.Message;
+import io.a2a.spec.MessageSendConfiguration;
+import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.Part;
 import io.a2a.spec.PushNotificationConfig;
-import io.a2a.spec.SendTaskResponse;
+import io.a2a.spec.SendMessageResponse;
 import io.a2a.spec.SetTaskPushNotificationResponse;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
-import io.a2a.spec.TaskSendParams;
 import io.a2a.spec.TaskState;
-import io.a2a.spec.TaskStatus;
 import io.a2a.spec.TextPart;
 
 public class A2AClientTest {
@@ -73,29 +71,38 @@ public class A2AClientTest {
     }
 
     @Test
-    public void testA2AClientSendTask() throws Exception {
+    public void testA2AClientSendMessage() throws Exception {
         this.server.when(
                         request()
                                 .withMethod("POST")
-                                .withPath("/tasks/send")
-                                .withBody(JsonBody.json(SEND_TASK_TEST_REQUEST))
+                                .withPath("/message/send")
+                                .withBody(JsonBody.json(SEND_MESSAGE_TEST_REQUEST, MatchType.STRICT))
 
                 )
                 .respond(
                         response()
                                 .withStatusCode(200)
-                                .withBody(SEND_TASK_TEST_RESPONSE)
+                                .withBody(SEND_MESSAGE_TEST_RESPONSE)
                 );
 
         A2AClient client = new A2AClient("http://localhost:4001");
-        Message message = toUserMessage("tell me a joke");
-        TaskSendParams params = new TaskSendParams.Builder()
-                .id("task-1234")
-                .sessionId("session-1234")
+        Message message = new Message.Builder()
+                .role(Message.Role.USER)
+                .parts(Collections.singletonList(new TextPart("tell me a joke")))
+                .contextId("context-1234")
+                .messageId("message-1234")
+                .build();
+        MessageSendConfiguration configuration = new MessageSendConfiguration.Builder()
+                .acceptedOutputModes(List.of("text"))
+                .blocking(true)
+                .build();
+        MessageSendParams params = new MessageSendParams.Builder()
+                .id("1234")
                 .message(message)
+                .configuration(configuration)
                 .build();
 
-        SendTaskResponse response = client.sendTask("request-1234", params);
+        SendMessageResponse response = client.sendMessage("request-1234", params);
 
         assertEquals("2.0", response.getJsonrpc());
         assertNotNull(response.getId());
@@ -103,7 +110,7 @@ public class A2AClientTest {
         assertInstanceOf(Task.class, result);
         Task task = (Task) result;
         assertEquals("de38c76d-d54c-436c-8b9f-4c2703648d64", task.id());
-        assertNotNull(task.sessionId());
+        assertNotNull(task.contextId());
         assertEquals(TaskState.COMPLETED,task.status().state());
         assertEquals(1, task.artifacts().size());
         Artifact artifact = task.artifacts().get(0);
@@ -116,29 +123,38 @@ public class A2AClientTest {
     }
 
     @Test
-    public void testA2AClientSendTaskWithError() throws Exception {
+    public void testA2AClientSendMessageWithError() throws Exception {
         this.server.when(
                         request()
                                 .withMethod("POST")
-                                .withPath("/tasks/send")
-                                .withBody(JsonBody.json(SEND_TASK_WITH_ERROR_TEST_REQUEST))
+                                .withPath("/message/send")
+                                .withBody(JsonBody.json(SEND_MESSAGE_WITH_ERROR_TEST_REQUEST, MatchType.STRICT))
 
                 )
                 .respond(
                         response()
                                 .withStatusCode(200)
-                                .withBody(SEND_TASK_ERROR_TEST_RESPONSE)
+                                .withBody(SEND_MESSAGE_ERROR_TEST_RESPONSE)
                 );
 
         A2AClient client = new A2AClient("http://localhost:4001");
-        Message message = toUserMessage("tell me a joke");
-        TaskSendParams params = new TaskSendParams.Builder()
-                .id("task-1234")
-                .sessionId("session-1234")
+        Message message = new Message.Builder()
+                .role(Message.Role.USER)
+                .parts(Collections.singletonList(new TextPart("tell me a joke")))
+                .contextId("context-1234")
+                .messageId("message-1234")
+                .build();
+        MessageSendConfiguration configuration = new MessageSendConfiguration.Builder()
+                .acceptedOutputModes(List.of("text"))
+                .blocking(true)
+                .build();
+        MessageSendParams params = new MessageSendParams.Builder()
+                .id("1234")
                 .message(message)
+                .configuration(configuration)
                 .build();
 
-        SendTaskResponse response = client.sendTask("request-1234-with-error", params);
+        SendMessageResponse response = client.sendMessage("request-1234-with-error", params);
 
         assertEquals("2.0", response.getJsonrpc());
         assertNotNull(response.getId()); // Not in JSON so it is generated
@@ -157,7 +173,7 @@ public class A2AClientTest {
                         request()
                                 .withMethod("POST")
                                 .withPath("/tasks/get")
-                                .withBody(JsonBody.json(GET_TASK_TEST_REQUEST))
+                                .withBody(JsonBody.json(GET_TASK_TEST_REQUEST, MatchType.STRICT))
 
                 )
                 .respond(
@@ -176,7 +192,7 @@ public class A2AClientTest {
         assertInstanceOf(Task.class, result);
         Task task = (Task) result;
         assertEquals("de38c76d-d54c-436c-8b9f-4c2703648d64", task.id());
-        assertEquals("c295ea44-7543-4f78-b524-7a38915ad6e4", task.sessionId());
+        assertEquals("c295ea44-7543-4f78-b524-7a38915ad6e4", task.contextId());
         assertEquals(TaskState.COMPLETED, task.status().state());
         assertEquals(1, task.artifacts().size());
         Artifact artifact = task.artifacts().get(0);
@@ -205,7 +221,7 @@ public class A2AClientTest {
                         request()
                                 .withMethod("POST")
                                 .withPath("/tasks/cancel")
-                                .withBody(JsonBody.json(CANCEL_TASK_TEST_REQUEST))
+                                .withBody(JsonBody.json(CANCEL_TASK_TEST_REQUEST, MatchType.STRICT))
 
                 )
                 .respond(
@@ -224,7 +240,7 @@ public class A2AClientTest {
         assertInstanceOf(Task.class, result);
         Task task = (Task) result;
         assertEquals("de38c76d-d54c-436c-8b9f-4c2703648d64", task.id());
-        assertEquals("c295ea44-7543-4f78-b524-7a38915ad6e4", task.sessionId());
+        assertEquals("c295ea44-7543-4f78-b524-7a38915ad6e4", task.contextId());
         assertEquals(TaskState.CANCELED, task.status().state());
         assertTrue(task.metadata().isEmpty());
     }
@@ -235,7 +251,7 @@ public class A2AClientTest {
                         request()
                                 .withMethod("POST")
                                 .withPath("/tasks/pushNotification/get")
-                                .withBody(JsonBody.json(GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST))
+                                .withBody(JsonBody.json(GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST, MatchType.STRICT))
 
                 )
                 .respond(
@@ -265,7 +281,7 @@ public class A2AClientTest {
                         request()
                                 .withMethod("POST")
                                 .withPath("/tasks/pushNotification/set")
-                                .withBody(JsonBody.json(SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST))
+                                .withBody(JsonBody.json(SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST, MatchType.STRICT))
 
                 )
                 .respond(

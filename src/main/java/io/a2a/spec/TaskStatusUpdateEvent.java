@@ -12,10 +12,11 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record TaskStatusUpdateEvent(String id, TaskStatus status, boolean isFinal, Map<String, Object> metadata) {
+public record TaskStatusUpdateEvent(String id, TaskStatus status, String contextId, boolean isFinal, Map<String, Object> metadata) {
 
     public TaskStatusUpdateEvent {
         Assert.checkNotNullParam("id", id);
         Assert.checkNotNullParam("status", status);
+        Assert.checkNotNullParam("contextId", contextId);
     }
 }

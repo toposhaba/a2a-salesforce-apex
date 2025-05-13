@@ -13,8 +13,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public sealed class JSONRPCResponse implements JSONRPCMessage permits SendTaskResponse, SendTaskStreamingResponse,
-        GetTaskResponse, CancelTaskResponse, SetTaskPushNotificationResponse, GetTaskPushNotificationResponse {
+public abstract sealed class JSONRPCResponse implements JSONRPCMessage permits SendTaskStreamingResponse,
+        GetTaskResponse, CancelTaskResponse, SetTaskPushNotificationResponse, GetTaskPushNotificationResponse,
+        SendMessageResponse {
 
     protected String jsonrpc;
     protected Object id;
