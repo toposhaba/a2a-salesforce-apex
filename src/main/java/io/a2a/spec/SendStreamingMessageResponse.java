@@ -19,9 +19,7 @@ public final class SendStreamingMessageResponse extends JSONRPCResponse {
 
     @JsonCreator
     public SendStreamingMessageResponse(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
-                                     @JsonProperty("result") Object result, @JsonProperty("error") JSONRPCError error) {
-        // TODO fix result handling
-
+                                     @JsonProperty("result") StreamingEventType result, @JsonProperty("error") JSONRPCError error) {
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
         this.id = id == null ? UUID.randomUUID().toString() : id;
         this.result = result;

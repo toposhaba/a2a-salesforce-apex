@@ -1,14 +1,13 @@
 package io.a2a.spec;
 
-import static io.a2a.spec.A2A.JSONRPC_VERSION;
-import static io.a2a.util.Utils.defaultIfNull;
-
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 import io.a2a.util.Assert;
@@ -18,11 +17,64 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record Message(Role role, List<Part> parts, String messageId, String contextId, String taskId, Map<String, Object> metadata) {
+public class Message implements EventType, StreamingEventType {
 
-    public Message {
+    static final String MESSAGE = "message";
+    private final Role role;
+    private final List<Part> parts;
+    private final String messageId;
+    private final String contextId;
+    private final String taskId;
+    private final Map<String, Object> metadata;
+    private final String type;
+
+    public Message(Role role, List<Part> parts, String messageId, String contextId, String taskId,
+                   Map<String, Object> metadata) {
+        this(role, parts, messageId, contextId, taskId, metadata, MESSAGE);
+    }
+
+    @JsonCreator
+    public Message(@JsonProperty("role") Role role, @JsonProperty("parts") List<Part> parts,
+                   @JsonProperty("messageId") String messageId, @JsonProperty("contextId") String contextId,
+                   @JsonProperty("taskId") String taskId, @JsonProperty("metadata") Map<String, Object> metadata,
+                   @JsonProperty("type") String type) {
         Assert.checkNotNullParam("parts", parts);
-        messageId = messageId == null ? UUID.randomUUID().toString() : messageId;
+        this.role = role;
+        this.parts = parts;
+        this.messageId = messageId == null ? UUID.randomUUID().toString() : messageId;
+        this.contextId = contextId;
+        this.taskId = taskId;
+        this.metadata = metadata;
+        this.type = type;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public List<Part> getParts() {
+        return parts;
+    }
+
+    public String getMessageId() {
+        return messageId;
+    }
+
+    public String getContextId() {
+        return contextId;
+    }
+
+    public String getTaskId() {
+        return taskId;
+    }
+
+    public Map<String, Object> getMetadata() {
+        return metadata;
+    }
+
+    @Override
+    public String getType() {
+        return type;
     }
 
     public enum Role {

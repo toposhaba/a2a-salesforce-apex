@@ -9,7 +9,9 @@ import static io.a2a.client.JsonMessages.GET_TASK_TEST_REQUEST;
 import static io.a2a.client.JsonMessages.GET_TASK_TEST_RESPONSE;
 import static io.a2a.client.JsonMessages.SEND_MESSAGE_ERROR_TEST_RESPONSE;
 import static io.a2a.client.JsonMessages.SEND_MESSAGE_TEST_REQUEST;
+import static io.a2a.client.JsonMessages.SEND_MESSAGE_TEST_REQUEST_WITH_MESSAGE_RESPONSE;
 import static io.a2a.client.JsonMessages.SEND_MESSAGE_TEST_RESPONSE;
+import static io.a2a.client.JsonMessages.SEND_MESSAGE_TEST_RESPONSE_WITH_MESSAGE_RESPONSE;
 import static io.a2a.client.JsonMessages.SEND_MESSAGE_WITH_ERROR_TEST_REQUEST;
 import static io.a2a.client.JsonMessages.SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST;
 import static io.a2a.client.JsonMessages.SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_RESPONSE;
@@ -17,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockserver.model.HttpRequest.request;
@@ -34,7 +35,6 @@ import io.a2a.spec.AuthenticationInfo;
 import io.a2a.spec.CancelTaskResponse;
 import io.a2a.spec.GetTaskPushNotificationResponse;
 import io.a2a.spec.GetTaskResponse;
-import io.a2a.spec.JSONRPCError;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -111,18 +111,65 @@ public class A2AClientTest {
         Object result = response.getResult();
         assertInstanceOf(Task.class, result);
         Task task = (Task) result;
-        assertEquals("de38c76d-d54c-436c-8b9f-4c2703648d64", task.id());
-        assertNotNull(task.contextId());
-        assertEquals(TaskState.COMPLETED,task.status().state());
-        assertEquals(1, task.artifacts().size());
-        Artifact artifact = task.artifacts().get(0);
+        assertEquals("de38c76d-d54c-436c-8b9f-4c2703648d64", task.getId());
+        assertNotNull(task.getContextId());
+        assertEquals(TaskState.COMPLETED,task.getStatus().state());
+        assertEquals(1, task.getArtifacts().size());
+        Artifact artifact = task.getArtifacts().get(0);
         assertEquals("joke", artifact.name());
         assertEquals(1, artifact.parts().size());
         Part<?> part = artifact.parts().get(0);
         assertEquals(Part.Type.TEXT, part.getType());
         assertEquals("Why did the chicken cross the road? To get to the other side!", ((TextPart) part).getText());
-        assertTrue(task.metadata().isEmpty());
+        assertTrue(task.getMetadata().isEmpty());
     }
+
+    @Test
+    public void testA2AClientSendMessageWithMessageResponse() throws Exception {
+        this.server.when(
+                        request()
+                                .withMethod("POST")
+                                .withPath("/message/send")
+                                .withBody(JsonBody.json(SEND_MESSAGE_TEST_REQUEST_WITH_MESSAGE_RESPONSE, MatchType.STRICT))
+
+                )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody(SEND_MESSAGE_TEST_RESPONSE_WITH_MESSAGE_RESPONSE)
+                );
+
+        A2AClient client = new A2AClient("http://localhost:4001");
+        Message message = new Message.Builder()
+                .role(Message.Role.USER)
+                .parts(Collections.singletonList(new TextPart("tell me a joke")))
+                .contextId("context-1234")
+                .messageId("message-1234")
+                .build();
+        MessageSendConfiguration configuration = new MessageSendConfiguration.Builder()
+                .acceptedOutputModes(List.of("text"))
+                .blocking(true)
+                .build();
+        MessageSendParams params = new MessageSendParams.Builder()
+                .id("1234")
+                .message(message)
+                .configuration(configuration)
+                .build();
+
+        SendMessageResponse response = client.sendMessage("request-1234-with-message-response", params);
+
+        assertEquals("2.0", response.getJsonrpc());
+        assertNotNull(response.getId());
+        Object result = response.getResult();
+        assertInstanceOf(Message.class, result);
+        Message agentMessage = (Message) result;
+        assertEquals(Message.Role.AGENT, agentMessage.getRole());
+        Part part = agentMessage.getParts().get(0);
+        assertEquals(Part.Type.TEXT, part.getType());
+        assertEquals("Why did the chicken cross the road? To get to the other side!", ((TextPart) part).getText());
+        assertEquals("msg-456", agentMessage.getMessageId());
+    }
+
 
     @Test
     public void testA2AClientSendMessageWithError() throws Exception {
@@ -188,28 +235,28 @@ public class A2AClientTest {
         Object result = response.getResult();
         assertInstanceOf(Task.class, result);
         Task task = (Task) result;
-        assertEquals("de38c76d-d54c-436c-8b9f-4c2703648d64", task.id());
-        assertEquals("c295ea44-7543-4f78-b524-7a38915ad6e4", task.contextId());
-        assertEquals(TaskState.COMPLETED, task.status().state());
-        assertEquals(1, task.artifacts().size());
-        Artifact artifact = task.artifacts().get(0);
+        assertEquals("de38c76d-d54c-436c-8b9f-4c2703648d64", task.getId());
+        assertEquals("c295ea44-7543-4f78-b524-7a38915ad6e4", task.getContextId());
+        assertEquals(TaskState.COMPLETED, task.getStatus().state());
+        assertEquals(1, task.getArtifacts().size());
+        Artifact artifact = task.getArtifacts().get(0);
         assertEquals(1, artifact.parts().size());
         Part<?> part = artifact.parts().get(0);
         assertEquals(Part.Type.TEXT, part.getType());
         assertEquals("Why did the chicken cross the road? To get to the other side!", ((TextPart) part).getText());
-        assertTrue(task.metadata().isEmpty());
-        List<Message> history = task.history();
+        assertTrue(task.getMetadata().isEmpty());
+        List<Message> history = task.getHistory();
         assertNotNull(history);
         assertEquals(1, history.size());
         Message message = history.get(0);
-        assertEquals(Message.Role.USER, message.role());
-        List<Part> parts = message.parts();
+        assertEquals(Message.Role.USER, message.getRole());
+        List<Part> parts = message.getParts();
         assertNotNull(parts);
         assertEquals(1, parts.size());
         part = parts.get(0);
         assertEquals(Part.Type.TEXT, part.getType());
         assertEquals("tell me a joke", ((TextPart)part).getText());
-        assertTrue(task.metadata().isEmpty());
+        assertTrue(task.getMetadata().isEmpty());
     }
 
     @Test
@@ -236,10 +283,10 @@ public class A2AClientTest {
         Object result = response.getResult();
         assertInstanceOf(Task.class, result);
         Task task = (Task) result;
-        assertEquals("de38c76d-d54c-436c-8b9f-4c2703648d64", task.id());
-        assertEquals("c295ea44-7543-4f78-b524-7a38915ad6e4", task.contextId());
-        assertEquals(TaskState.CANCELED, task.status().state());
-        assertTrue(task.metadata().isEmpty());
+        assertEquals("de38c76d-d54c-436c-8b9f-4c2703648d64", task.getId());
+        assertEquals("c295ea44-7543-4f78-b524-7a38915ad6e4", task.getContextId());
+        assertEquals(TaskState.CANCELED, task.getStatus().state());
+        assertTrue(task.getMetadata().isEmpty());
     }
 
     @Test
