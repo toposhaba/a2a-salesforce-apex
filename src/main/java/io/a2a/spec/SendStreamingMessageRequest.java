@@ -1,7 +1,7 @@
 package io.a2a.spec;
 
 import static io.a2a.spec.A2A.JSONRPC_VERSION;
-import static io.a2a.spec.A2A.SEND_TASK_STREAMING_REQUEST;
+import static io.a2a.spec.A2A.SEND_STREAMING_MESSAGE_REQUEST;
 import static io.a2a.util.Utils.OBJECT_MAPPER;
 import static io.a2a.util.Utils.defaultIfNull;
 
@@ -20,16 +20,16 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class SendTaskStreamingRequest extends JSONRPCRequest {
+public final class SendStreamingMessageRequest extends JSONRPCRequest {
 
     @JsonCreator
-    public SendTaskStreamingRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
-                                    @JsonProperty("method") String method, @JsonProperty("params") TaskSendParams params) {
+    public SendStreamingMessageRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
+                                       @JsonProperty("method") String method, @JsonProperty("params") MessageSendParams params) {
         Assert.checkNotNullParam("method", method);
         Assert.checkNotNullParam("params", params);
 
-        if (! method.equals(SEND_TASK_STREAMING_REQUEST)) {
-            throw new IllegalArgumentException("Invalid SendTaskStreamingRequest method");
+        if (! method.equals(SEND_STREAMING_MESSAGE_REQUEST)) {
+            throw new IllegalArgumentException("Invalid SendStreamingMessageRequest method");
         }
 
         Map<String, Object> paramsMap = OBJECT_MAPPER.convertValue(params, Map.class);

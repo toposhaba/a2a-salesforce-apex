@@ -15,14 +15,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class SendTaskStreamingResponse extends JSONRPCResponse {
+public final class SendStreamingMessageResponse extends JSONRPCResponse {
 
     @JsonCreator
-    public SendTaskStreamingResponse(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
+    public SendStreamingMessageResponse(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
                                      @JsonProperty("result") Object result, @JsonProperty("error") JSONRPCError error) {
-        if (result != null && ! (result instanceof TaskStatusUpdateEvent) && ! (result instanceof TaskArtifactUpdateEvent)) {
-            throw new IllegalArgumentException("Invalid result");
-        }
+        // TODO fix result handling
 
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
         this.id = id == null ? UUID.randomUUID().toString() : id;
