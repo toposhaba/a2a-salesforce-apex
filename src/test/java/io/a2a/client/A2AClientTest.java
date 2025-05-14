@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
@@ -26,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import io.a2a.spec.A2AServerException;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.AgentSkill;
 import io.a2a.spec.AuthenticationInfo;
@@ -154,17 +156,12 @@ public class A2AClientTest {
                 .configuration(configuration)
                 .build();
 
-        SendMessageResponse response = client.sendMessage("request-1234-with-error", params);
-
-        assertEquals("2.0", response.getJsonrpc());
-        assertNotNull(response.getId()); // Not in JSON so it is generated
-        Object result = response.getResult();
-        assertNull(result);
-        JSONRPCError error = response.getError();
-        assertNotNull(error);
-        assertEquals(-32702, error.getCode());
-        assertEquals("Invalid parameters", error.getMessage());
-        assertEquals("Hello world", error.getData());
+        try {
+            client.sendMessage("request-1234-with-error", params);
+            fail(); // should not reach here
+        } catch (A2AServerException e) {
+            assertTrue(e.getMessage().contains("Invalid parameters: Hello world"));
+        }
     }
 
     @Test
