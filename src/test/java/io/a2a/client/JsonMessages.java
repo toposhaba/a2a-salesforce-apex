@@ -82,11 +82,12 @@ public class JsonMessages {
                ],
                "messageId": "message-1234",
                "contextId": "context-1234",
+               "type": "message"
               },
               "configuration": {
                 "acceptedOutputModes": ["text"],
                 "blocking": true
-              }
+              },
              }
             }""";
 
@@ -111,7 +112,52 @@ public class JsonMessages {
                 ]
                }
               ],
-              "metadata": {}
+              "metadata": {},
+              "type": "task"
+             }
+            }""";
+
+    static final String SEND_MESSAGE_TEST_REQUEST_WITH_MESSAGE_RESPONSE = """
+            {
+             "jsonrpc": "2.0",
+             "id": "request-1234-with-message-response",
+             "method": "message/send",
+             "params": {
+              "id": "1234",
+              "message": {
+               "role": "user",
+               "parts": [
+                {
+                 "type": "text",
+                 "text": "tell me a joke"
+                }
+               ],
+               "messageId": "message-1234",
+               "contextId": "context-1234",
+               "type": "message"
+              },
+              "configuration": {
+                "acceptedOutputModes": ["text"],
+                "blocking": true
+              },
+             }
+            }""";
+
+
+    static final String SEND_MESSAGE_TEST_RESPONSE_WITH_MESSAGE_RESPONSE = """
+            {
+             "jsonrpc": "2.0",
+             "id": 1,
+             "result": {
+              "role": "agent",
+                "parts": [
+                 {
+                  "type": "text",
+                  "text": "Why did the chicken cross the road? To get to the other side!"
+                 }
+                ],
+                "messageId": "msg-456",
+                "type": "message"
              }
             }""";
 
@@ -132,11 +178,12 @@ public class JsonMessages {
                ],
                "messageId": "message-1234",
                "contextId": "context-1234",
+               "type": "message"
               },
               "configuration": {
                 "acceptedOutputModes": ["text"],
                 "blocking": true
-              }
+              },
              }
             }""";
 
@@ -190,10 +237,12 @@ public class JsonMessages {
                   "type": "text",
                   "text": "tell me a joke"
                  }
-                ]
+                ],
+                "type": "message"
                }
               ],
-              "metadata": {}
+              "metadata": {},
+              "type": "task"
              }
             }
             """;
@@ -220,7 +269,8 @@ public class JsonMessages {
               "status": {
                "state": "canceled"
               },
-              "metadata": {}
+              "metadata": {},
+              "type" : "task"
              }
             }
             """;

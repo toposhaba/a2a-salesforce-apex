@@ -19,8 +19,7 @@ public final class SendMessageResponse extends JSONRPCResponse {
 
     @JsonCreator
     public SendMessageResponse(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
-                               @JsonProperty("result") Task result, @JsonProperty("error") JSONRPCError error) {
-        // TODO: Need to update this to handle a result that's either a Task or a Message (will create an issue for this)
+                               @JsonProperty("result") EventType result, @JsonProperty("error") JSONRPCError error) {
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
         this.id = id == null ? UUID.randomUUID().toString() : id;
         this.result = result;

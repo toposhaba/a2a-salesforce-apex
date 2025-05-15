@@ -20,9 +20,8 @@ public class A2A {
     public static final String GET_TASK_PUSH_NOTIFICATION_REQUEST = "tasks/pushNotification/get";
     public static final String GET_TASK_REQUEST = "tasks/get";
     public static final String SET_TASK_PUSH_NOTIFICATION_REQUEST = "tasks/pushNotification/set";
-    public static final String SEND_TASK_REQUEST = "tasks/send";
     public static final String SEND_TASK_RESUBSCRIPTION_REQUEST = "tasks/resubscribe";
-    public static final String SEND_TASK_STREAMING_REQUEST = "tasks/sendSubscribe";
+    public static final String SEND_STREAMING_MESSAGE_REQUEST = "message/stream";
     public static final String SEND_MESSAGE_REQUEST = "message/send";
 
     public static final String JSONRPC_VERSION = "2.0";

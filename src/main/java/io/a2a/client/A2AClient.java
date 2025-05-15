@@ -16,6 +16,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import io.a2a.spec.A2A;
@@ -27,6 +28,8 @@ import io.a2a.spec.GetTaskPushNotificationRequest;
 import io.a2a.spec.GetTaskPushNotificationResponse;
 import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
+import io.a2a.spec.JSONRPCError;
+import io.a2a.spec.JSONRPCResponse;
 import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.PushNotificationConfig;
 import io.a2a.spec.SendMessageRequest;
@@ -125,7 +128,7 @@ public class A2AClient {
             if (httpResponse.statusCode() != 200) {
                 throw new A2AServerException("Failed to send message: " + httpResponse.statusCode());
             }
-            return unmarshalFrom(httpResponse.body(), SEND_MESSAGE_RESPONSE_REFERENCE);
+            return unmarshalResponse(httpResponse.body(), SEND_MESSAGE_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
             throw new A2AServerException("Failed to send message: " + e);
         }
@@ -180,7 +183,7 @@ public class A2AClient {
             if (httpResponse.statusCode() != 200) {
                 throw new A2AServerException("Failed to get task: " + httpResponse.statusCode());
             }
-            return unmarshalFrom(httpResponse.body(), GET_TASK_RESPONSE_REFERENCE);
+            return unmarshalResponse(httpResponse.body(), GET_TASK_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
             throw new A2AServerException("Failed to get task: " + e);
         }
@@ -233,7 +236,7 @@ public class A2AClient {
             if (httpResponse.statusCode() != 200) {
                 throw new A2AServerException("Failed to cancel task: " + httpResponse.statusCode());
             }
-            return unmarshalFrom(httpResponse.body(), CANCEL_TASK_RESPONSE_REFERENCE);
+            return unmarshalResponse(httpResponse.body(), CANCEL_TASK_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
             throw new A2AServerException("Failed to cancel task: " + e);
         }
@@ -286,7 +289,7 @@ public class A2AClient {
             if (httpResponse.statusCode() != 200) {
                 throw new A2AServerException("Failed to get task push notification config: " + httpResponse.statusCode());
             }
-            return unmarshalFrom(httpResponse.body(), GET_TASK_PUSH_NOTIFICATION_RESPONSE_REFERENCE);
+            return unmarshalResponse(httpResponse.body(), GET_TASK_PUSH_NOTIFICATION_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
             throw new A2AServerException("Failed to get task push notification config: " + e);
         }
@@ -332,7 +335,7 @@ public class A2AClient {
             if (httpResponse.statusCode() != 200) {
                 throw new A2AServerException("Failed to set task push notification config: " + httpResponse.statusCode());
             }
-            return unmarshalFrom(httpResponse.body(), SET_TASK_PUSH_NOTIFICATION_RESPONSE_REFERENCE);
+            return unmarshalResponse(httpResponse.body(), SET_TASK_PUSH_NOTIFICATION_RESPONSE_REFERENCE);
         } catch (IOException | InterruptedException e) {
             throw new A2AServerException("Failed to set task push notification config: " + e);
         }
@@ -346,5 +349,15 @@ public class A2AClient {
                 .build();
 
         return httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private <T extends JSONRPCResponse> T unmarshalResponse(String response, TypeReference<T> typeReference)
+            throws A2AServerException, JsonProcessingException {
+        T value = unmarshalFrom(response, typeReference);
+        JSONRPCError error = value.getError();
+        if (error != null) {
+            throw new A2AServerException(error.getMessage() + (error.getData() != null ? ": " + error.getData() : ""));
+        }
+        return value;
     }
 }
