@@ -103,6 +103,7 @@ public class JsonMessages {
               },
               "artifacts": [
                {
+                "artifactId": "artifact-1",
                 "name": "joke",
                 "parts": [
                  {
@@ -221,6 +222,7 @@ public class JsonMessages {
               },
               "artifacts": [
                {
+                "artifactId": "artifact-1",
                 "parts": [
                  {
                   "type": "text",
