@@ -136,20 +136,20 @@ public class TaskManager {
         }
     }
 
-    private Task ensureTask(String eventTaskId, String eventSessionId) {
+    private Task ensureTask(String eventTaskId, String eventContextId) {
         Task task = taskStore.get(taskId);
         if (task == null) {
-            task = createTask(eventTaskId, eventSessionId);
+            task = createTask(eventTaskId, eventContextId);
             saveTask(task);
         }
         return task;
     }
 
-    private Task createTask(String taskId, String sessionId) {
+    private Task createTask(String taskId, String contextId) {
         List<Message> history = initialMessage != null ? List.of(initialMessage) : null;
         return new Task.Builder()
                 .id(taskId)
-                .contextId(sessionId)
+                .contextId(contextId)
                 .status(new TaskStatus(SUBMITTED))
                 .history(history)
                 .build();
