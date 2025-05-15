@@ -20,4 +20,8 @@ public class InternalError extends JSONRPCError {
                 defaultIfNull(message, "Internal Error"),
                 data);
     }
+
+    public InternalError(String message) {
+        this(null, message, null);
+    }
 }

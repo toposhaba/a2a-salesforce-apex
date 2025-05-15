@@ -17,32 +17,36 @@ import io.a2a.util.Assert;
 public class TaskArtifactUpdateEvent implements EventType, StreamingEventType {
 
     static final String ARTIFACT_UPDATE = "artifact-update";
-    private final String id;
+    private final String taskId;
+    private final Boolean append;
     private final Artifact artifact;
     private final String contextId;
     private final Map<String, Object> metadata;
     private final String type;
 
-    public TaskArtifactUpdateEvent(String id, Artifact artifact, String contextId, Map<String, Object> metadata) {
-        this(id, artifact, contextId, metadata, ARTIFACT_UPDATE);
+    public TaskArtifactUpdateEvent(String taskId, Artifact artifact, String contextId, Boolean append, Map<String, Object> metadata) {
+        this(taskId, artifact, contextId, append, metadata, ARTIFACT_UPDATE);
     }
 
     @JsonCreator
-    public TaskArtifactUpdateEvent(@JsonProperty("id") String id, @JsonProperty("artifact") Artifact artifact,
-                                   @JsonProperty("contextId") String contextId, @JsonProperty("metadata") Map<String, Object> metadata,
+    public TaskArtifactUpdateEvent(@JsonProperty("taskId") String taskId, @JsonProperty("artifact") Artifact artifact,
+                                   @JsonProperty("contextId") String contextId,
+                                   @JsonProperty("append") Boolean append,
+                                   @JsonProperty("metadata") Map<String, Object> metadata,
                                    @JsonProperty("type") String type) {
-        Assert.checkNotNullParam("id", id);
+        Assert.checkNotNullParam("taskId", taskId);
         Assert.checkNotNullParam("artifact", artifact);
         Assert.checkNotNullParam("contextId", contextId);
-        this.id = id;
+        this.taskId = taskId;
         this.artifact = artifact;
         this.contextId = contextId;
+        this.append = append;
         this.metadata = metadata;
         this.type = type;
     }
 
-    public String getId() {
-        return id;
+    public String getTaskId() {
+        return taskId;
     }
 
     public Artifact getArtifact() {
@@ -51,6 +55,10 @@ public class TaskArtifactUpdateEvent implements EventType, StreamingEventType {
 
     public String getContextId() {
         return contextId;
+    }
+
+    public Boolean getAppend() {
+        return append;
     }
 
     public Map<String, Object> getMetadata() {
@@ -64,14 +72,15 @@ public class TaskArtifactUpdateEvent implements EventType, StreamingEventType {
 
     public static class Builder {
 
-        private String id;
+        private String taskId;
         private Artifact artifact;
         private String contextId;
+        private Boolean append;
         private Map<String, Object> metadata;
         private String type;
 
-        public Builder id(String id) {
-            this.id = id;
+        public Builder taskId(String taskId) {
+            this.taskId = taskId;
             return this;
         }
 
@@ -82,6 +91,11 @@ public class TaskArtifactUpdateEvent implements EventType, StreamingEventType {
 
         public Builder contextId(String contextId) {
             this.contextId = contextId;
+            return this;
+        }
+
+        public Builder append(Boolean append) {
+            this.append = append;
             return this;
         }
 
@@ -96,7 +110,7 @@ public class TaskArtifactUpdateEvent implements EventType, StreamingEventType {
         }
 
         public TaskArtifactUpdateEvent build() {
-            return new TaskArtifactUpdateEvent(id, artifact, contextId, metadata);
+            return new TaskArtifactUpdateEvent(taskId, artifact, contextId, append, metadata);
         }
     }
 }

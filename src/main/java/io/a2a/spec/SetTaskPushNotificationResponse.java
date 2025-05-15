@@ -18,4 +18,12 @@ public final class SetTaskPushNotificationResponse extends JSONRPCResponse {
                                            @JsonProperty("error") JSONRPCError error) {
         super(jsonrpc, id, result, error);
     }
+
+    public SetTaskPushNotificationResponse(Object id, JSONRPCError error) {
+        super(null, id, null, error);
+    }
+
+    public SetTaskPushNotificationResponse(Object id, TaskPushNotificationConfig result) {
+        this(null, id, result, null);
+    }
 }

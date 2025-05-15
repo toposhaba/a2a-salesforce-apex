@@ -10,6 +10,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TaskNotCancelableError extends JSONRPCError {
+    public TaskNotCancelableError() {
+        this(null, null, null);
+    }
+
     @JsonCreator
     public TaskNotCancelableError(
             @JsonProperty("code") Integer code,
@@ -20,4 +24,5 @@ public class TaskNotCancelableError extends JSONRPCError {
                 defaultIfNull(message, "Task cannot be canceled"),
                 data);
     }
+
 }

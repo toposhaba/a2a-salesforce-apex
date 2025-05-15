@@ -11,10 +11,9 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class JSONRPCError {
+public class JSONRPCError extends Error {
 
     private final Integer code;
-    private final String message;
     private final Object data;
 
     @JsonCreator
@@ -22,10 +21,10 @@ public class JSONRPCError {
             @JsonProperty("code") Integer code,
             @JsonProperty("message") String message,
             @JsonProperty("data") Object data) {
+        super(message);
         Assert.checkNotNullParam("code", code);
         Assert.checkNotNullParam("message", message);
         this.code = code;
-        this.message = message;
         this.data = data;
     }
 
@@ -36,15 +35,6 @@ public class JSONRPCError {
      */
     public Integer getCode() {
         return code;
-    }
-
-    /**
-     * Gets the error message
-     *
-     * @return the error message
-     */
-    public String getMessage() {
-        return message;
     }
 
     /**

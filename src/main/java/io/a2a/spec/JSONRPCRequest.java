@@ -3,12 +3,10 @@ package io.a2a.spec;
 import static io.a2a.spec.A2A.JSONRPC_VERSION;
 import static io.a2a.util.Utils.defaultIfNull;
 
-import java.util.Map;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-
 import io.a2a.util.Assert;
 
 /**
@@ -16,19 +14,20 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public abstract sealed class JSONRPCRequest implements JSONRPCMessage permits GetTaskRequest,
+public abstract sealed class JSONRPCRequest<T> implements JSONRPCMessage permits GetTaskRequest,
         CancelTaskRequest, SetTaskPushNotificationRequest, GetTaskPushNotificationRequest,
         TaskResubscriptionRequest, SendMessageRequest, SendStreamingMessageRequest {
 
     protected String jsonrpc;
     protected Object id;
     protected String method;
-    protected Map<String, Object> params;
+    protected T params;
 
     public JSONRPCRequest() {
     }
 
-    public JSONRPCRequest(String jsonrpc, Object id, String method, Map<String, Object> params) {
+    public JSONRPCRequest(String jsonrpc, Object id, String method, T params) {
+        Assert.checkNotNullParam("jsonrpc", jsonrpc);
         Assert.checkNotNullParam("method", method);
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
         this.id = id == null ? UUID.randomUUID().toString() : id;
@@ -50,7 +49,7 @@ public abstract sealed class JSONRPCRequest implements JSONRPCMessage permits Ge
         return this.method;
     }
 
-    public Map<String, Object> getParams() {
+    public T getParams() {
         return this.params;
     }
 }

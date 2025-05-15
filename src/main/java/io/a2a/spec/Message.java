@@ -21,20 +21,20 @@ public class Message implements EventType, StreamingEventType {
 
     static final String MESSAGE = "message";
     private final Role role;
-    private final List<Part> parts;
+    private final List<Part<?>> parts;
     private final String messageId;
     private final String contextId;
     private final String taskId;
     private final Map<String, Object> metadata;
     private final String type;
 
-    public Message(Role role, List<Part> parts, String messageId, String contextId, String taskId,
+    public Message(Role role, List<Part<?>> parts, String messageId, String contextId, String taskId,
                    Map<String, Object> metadata) {
         this(role, parts, messageId, contextId, taskId, metadata, MESSAGE);
     }
 
     @JsonCreator
-    public Message(@JsonProperty("role") Role role, @JsonProperty("parts") List<Part> parts,
+    public Message(@JsonProperty("role") Role role, @JsonProperty("parts") List<Part<?>> parts,
                    @JsonProperty("messageId") String messageId, @JsonProperty("contextId") String contextId,
                    @JsonProperty("taskId") String taskId, @JsonProperty("metadata") Map<String, Object> metadata,
                    @JsonProperty("type") String type) {
@@ -52,7 +52,7 @@ public class Message implements EventType, StreamingEventType {
         return role;
     }
 
-    public List<Part> getParts() {
+    public List<Part<?>> getParts() {
         return parts;
     }
 
@@ -96,7 +96,7 @@ public class Message implements EventType, StreamingEventType {
     public static class Builder {
 
         private Role role;
-        private List<Part> parts;
+        private List<Part<?>> parts;
         private String messageId;
         private String contextId;
         private String taskId;
@@ -107,7 +107,7 @@ public class Message implements EventType, StreamingEventType {
             return this;
         }
 
-        public Builder parts(List<Part> parts) {
+        public Builder parts(List<Part<?>> parts) {
             this.parts = parts;
             return this;
         }

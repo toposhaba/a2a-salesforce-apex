@@ -17,7 +17,7 @@ import io.a2a.util.Assert;
 public class TaskStatusUpdateEvent implements EventType, StreamingEventType {
 
     static final String STATUS_UPDATE = "status-update";
-    private final String id;
+    private final String taskId;
     private final TaskStatus status;
     private final String contextId;
     private final boolean isFinal;
@@ -25,19 +25,19 @@ public class TaskStatusUpdateEvent implements EventType, StreamingEventType {
     private final String type;
 
 
-    public TaskStatusUpdateEvent(String id, TaskStatus status, String contextId, boolean isFinal,
+    public TaskStatusUpdateEvent(String taskId, TaskStatus status, String contextId, boolean isFinal,
                                  Map<String, Object> metadata) {
-        this(id, status, contextId, isFinal, metadata, STATUS_UPDATE);
+        this(taskId, status, contextId, isFinal, metadata, STATUS_UPDATE);
     }
 
     @JsonCreator
-    public TaskStatusUpdateEvent(@JsonProperty("id") String id, @JsonProperty("status") TaskStatus status,
+    public TaskStatusUpdateEvent(@JsonProperty("taskId") String taskId, @JsonProperty("status") TaskStatus status,
                                  @JsonProperty("contextId") String contextId, @JsonProperty("final") boolean isFinal,
                                  @JsonProperty("metadata") Map<String, Object> metadata, @JsonProperty("type") String type) {
-        Assert.checkNotNullParam("id", id);
+        Assert.checkNotNullParam("taskId", taskId);
         Assert.checkNotNullParam("status", status);
         Assert.checkNotNullParam("contextId", contextId);
-        this.id = id;
+        this.taskId = taskId;
         this.status = status;
         this.contextId = contextId;
         this.isFinal = isFinal;
@@ -45,8 +45,8 @@ public class TaskStatusUpdateEvent implements EventType, StreamingEventType {
         this.type = type;
     }
 
-    public String getId() {
-        return id;
+    public String getTaskId() {
+        return taskId;
     }
 
     public TaskStatus getStatus() {
@@ -71,15 +71,15 @@ public class TaskStatusUpdateEvent implements EventType, StreamingEventType {
     }
 
     public static class Builder {
-        private String id;
+        private String taskId;
         private TaskStatus status;
         private String contextId;
         private boolean isFinal;
         private Map<String, Object> metadata;
         private String type;
 
-        public Builder id(String id) {
-            this.id = id;
+        public Builder taskId(String id) {
+            this.taskId = id;
             return this;
         }
 
@@ -109,7 +109,7 @@ public class TaskStatusUpdateEvent implements EventType, StreamingEventType {
         }
 
         public TaskStatusUpdateEvent build() {
-            return new TaskStatusUpdateEvent(id, status, contextId, isFinal, metadata);
+            return new TaskStatusUpdateEvent(taskId, status, contextId, isFinal, metadata, type);
         }
     }
 }

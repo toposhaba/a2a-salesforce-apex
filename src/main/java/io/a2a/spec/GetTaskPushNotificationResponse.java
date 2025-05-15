@@ -18,4 +18,12 @@ public final class GetTaskPushNotificationResponse extends JSONRPCResponse {
                                            @JsonProperty("error") JSONRPCError error) {
         super(jsonrpc, id, result, error);
     }
+
+    public GetTaskPushNotificationResponse(String id, InternalError error) {
+        this(null, id, null, error);
+    }
+
+    public GetTaskPushNotificationResponse(String id, TaskPushNotificationConfig result) {
+        this(null, id, result, null);
+    }
 }
