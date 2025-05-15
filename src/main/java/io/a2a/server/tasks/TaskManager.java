@@ -87,6 +87,7 @@ public class TaskManager {
             if (curr.artifactId() != null && curr.artifactId().equals(artifactId)) {
                 existingArtifact = curr;
                 existingArtifactIndex = i;
+                break;
             }
         }
 
