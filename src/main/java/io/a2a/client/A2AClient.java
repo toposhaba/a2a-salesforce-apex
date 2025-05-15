@@ -5,16 +5,19 @@ import static io.a2a.spec.A2A.GET_TASK_PUSH_NOTIFICATION_REQUEST;
 import static io.a2a.spec.A2A.GET_TASK_REQUEST;
 import static io.a2a.spec.A2A.JSONRPC_VERSION;
 import static io.a2a.spec.A2A.SEND_MESSAGE_REQUEST;
+import static io.a2a.spec.A2A.SEND_STREAMING_MESSAGE_REQUEST;
 import static io.a2a.spec.A2A.SET_TASK_PUSH_NOTIFICATION_REQUEST;
 import static io.a2a.spec.A2A.getRequestEndpoint;
 import static io.a2a.util.Utils.OBJECT_MAPPER;
 import static io.a2a.util.Utils.unmarshalFrom;
 
 import java.io.IOException;
+import java.util.function.Consumer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import io.a2a.client.sse.SSEEventListener;
 import io.a2a.spec.A2A;
 import io.a2a.spec.A2AServerException;
 import io.a2a.spec.AgentCard;
@@ -30,8 +33,10 @@ import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.PushNotificationConfig;
 import io.a2a.spec.SendMessageRequest;
 import io.a2a.spec.SendMessageResponse;
+import io.a2a.spec.SendStreamingMessageRequest;
 import io.a2a.spec.SetTaskPushNotificationRequest;
 import io.a2a.spec.SetTaskPushNotificationResponse;
+import io.a2a.spec.StreamingEventType;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
@@ -330,8 +335,49 @@ public class A2AClient {
         }
     }
 
+    /**
+     * Send a streaming message to the remote agent.
+     *
+     * @param requestId the request ID to use
+     * @param messageSendParams the parameters for the message to be sent
+     * @param eventHandler a consumer that will be invoked for each event received from the remote agent
+     * @param errorHandler a consumer that will be invoked if the remote agent returns an error
+     * @param failureHandler a consumer that will be invoked if a failure occurs when processing events
+     * @throws A2AServerException if sending the streaming message fails for any reason
+     */
+    public void sendStreamingMessage(String requestId, MessageSendParams messageSendParams, Consumer<StreamingEventType> eventHandler,
+                                     Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
+        SendStreamingMessageRequest.Builder sendStreamingMessageRequestBuilder = new SendStreamingMessageRequest.Builder()
+                .jsonrpc(JSONRPC_VERSION)
+                .method(SEND_MESSAGE_REQUEST)
+                .params(messageSendParams);
+
+        if (requestId != null) {
+            sendStreamingMessageRequestBuilder.id(requestId);
+        }
+
+        SendStreamingMessageRequest sendStreamingMessageRequest = sendStreamingMessageRequestBuilder.build();
+        SSEEventListener sseEventListener = new SSEEventListener.Builder()
+                .eventHandler(eventHandler)
+                .errorHandler(errorHandler)
+                .failureHandler(failureHandler)
+                .build();
+        try {
+            EventSources.createFactory(httpClient)
+                    .newEventSource(createPostRequest(SEND_STREAMING_MESSAGE_REQUEST, sendStreamingMessageRequest,
+                            true), sseEventListener);
+        } catch (IOException e) {
+            throw new A2AServerException("Failed to send streaming message request: " + e);
+        }
+    }
+
     private String sendPostRequest(String request, Object value) throws IOException, InterruptedException{
-        Request okRequest = createPostRequest(request, value);
+        return sendPostRequest(request, value, false);
+    }
+
+
+    private String sendPostRequest(String request, Object value, boolean addEventStreamHeader) throws IOException, InterruptedException{
+        Request okRequest = createPostRequest(request, value, addEventStreamHeader);
         try (Response response = httpClient.newCall(okRequest).execute()) {
             if (! response.isSuccessful()) {
                 throw new IOException("Request failed " + response.code());
@@ -342,11 +388,18 @@ public class A2AClient {
     }
 
     private Request createPostRequest(String request, Object value) throws IOException {
-        return new Request.Builder()
+        return createPostRequest(request, value, false);
+    }
+
+    private Request createPostRequest(String request, Object value, boolean addEventStreamHeader) throws IOException {
+        Request.Builder builder = new Request.Builder()
                 .url(getRequestEndpoint(agentUrl, request))
                 .addHeader("Content-Type", "application/json")
-                .post(RequestBody.create(OBJECT_MAPPER.writeValueAsString(value), JSON_MEDIA_TYPE))
-                .build();
+                .post(RequestBody.create(OBJECT_MAPPER.writeValueAsString(value), JSON_MEDIA_TYPE));
+        if (addEventStreamHeader) {
+            builder.addHeader("Accept", "text/event-stream");
+        }
+        return builder.build();
     }
 
 

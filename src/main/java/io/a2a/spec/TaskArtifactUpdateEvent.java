@@ -16,7 +16,7 @@ import io.a2a.util.Assert;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TaskArtifactUpdateEvent implements EventType, StreamingEventType {
 
-    static final String ARTIFACT_UPDATE = "artifact-update";
+    public static final String ARTIFACT_UPDATE = "artifact-update";
     private final String taskId;
     private final Boolean append;
     private final Artifact artifact;

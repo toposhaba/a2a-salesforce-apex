@@ -16,7 +16,7 @@ import io.a2a.util.Assert;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TaskStatusUpdateEvent implements EventType, StreamingEventType {
 
-    static final String STATUS_UPDATE = "status-update";
+    public static final String STATUS_UPDATE = "status-update";
     private final String taskId;
     private final TaskStatus status;
     private final String contextId;
