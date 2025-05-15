@@ -14,21 +14,25 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record Artifact(String name, String description, List<Part> parts, Map<String, Object> metadata,
-                       int index, boolean append, boolean lastChunk) {
+public record Artifact(String artifactId, String name, String description, List<Part> parts, Map<String, Object> metadata) {
 
     public Artifact {
+        Assert.checkNotNullParam("artifactId", artifactId);
         Assert.checkNotNullParam("parts", parts);
     }
 
     public static class Builder {
+        private String artifactId;
         private String name;
         private String description;
         private List<Part> parts;
         private Map<String, Object> metadata;
-        private int index;
-        boolean append;
-        boolean lastChunk;
+
+        public Builder artifactId(String artifactId) {
+            this.artifactId = artifactId;
+            return this;
+        }
+
 
         public Builder name(String name) {
             this.name = name;
@@ -50,23 +54,8 @@ public record Artifact(String name, String description, List<Part> parts, Map<St
             return this;
         }
 
-        public Builder index(int index) {
-            this.index = index;
-            return this;
-        }
-
-        public Builder append(boolean append) {
-            this.append = append;
-            return this;
-        }
-
-        public Builder lastChunk(boolean lastChunk) {
-            this.lastChunk = lastChunk;
-            return this;
-        }
-
         public Artifact build() {
-            return new Artifact(name, description, parts, metadata, index, append, lastChunk);
+            return new Artifact(artifactId, name, description, parts, metadata);
         }
     }
 }

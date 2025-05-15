@@ -116,6 +116,7 @@ public class A2AClientTest {
         assertEquals(TaskState.COMPLETED,task.getStatus().state());
         assertEquals(1, task.getArtifacts().size());
         Artifact artifact = task.getArtifacts().get(0);
+        assertEquals("artifact-1", artifact.artifactId());
         assertEquals("joke", artifact.name());
         assertEquals(1, artifact.parts().size());
         Part<?> part = artifact.parts().get(0);
@@ -241,6 +242,7 @@ public class A2AClientTest {
         assertEquals(1, task.getArtifacts().size());
         Artifact artifact = task.getArtifacts().get(0);
         assertEquals(1, artifact.parts().size());
+        assertEquals("artifact-1", artifact.artifactId());
         Part<?> part = artifact.parts().get(0);
         assertEquals(Part.Type.TEXT, part.getType());
         assertEquals("Why did the chicken cross the road? To get to the other side!", ((TextPart) part).getText());
