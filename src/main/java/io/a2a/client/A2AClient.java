@@ -8,6 +8,7 @@ import static io.a2a.spec.A2A.SEND_MESSAGE_REQUEST;
 import static io.a2a.spec.A2A.SEND_STREAMING_MESSAGE_REQUEST;
 import static io.a2a.spec.A2A.SET_TASK_PUSH_NOTIFICATION_REQUEST;
 import static io.a2a.spec.A2A.getRequestEndpoint;
+import static io.a2a.util.Assert.checkNotNullParam;
 import static io.a2a.util.Utils.OBJECT_MAPPER;
 import static io.a2a.util.Utils.unmarshalFrom;
 
@@ -71,7 +72,7 @@ public class A2AClient {
      * @param agentCard the agent card for the A2A server this client will be communicating with
      */
     public A2AClient(AgentCard agentCard) {
-        Assert.checkNotNullParam("agentCard", agentCard);
+        checkNotNullParam("agentCard", agentCard);
         this.agentCard = agentCard;
         this.agentUrl = agentCard.url();
         this.httpClient = new OkHttpClient();
@@ -83,7 +84,7 @@ public class A2AClient {
      * @param agentUrl the URL for the A2A server this client will be communicating with
      */
     public A2AClient(String agentUrl) {
-        Assert.checkNotNullParam("agentUrl", agentUrl);
+        checkNotNullParam("agentUrl", agentUrl);
         this.agentUrl = agentUrl;
         this.httpClient = new OkHttpClient();
     }
@@ -338,6 +339,20 @@ public class A2AClient {
     /**
      * Send a streaming message to the remote agent.
      *
+     * @param messageSendParams the parameters for the message to be sent
+     * @param eventHandler a consumer that will be invoked for each event received from the remote agent
+     * @param errorHandler a consumer that will be invoked if the remote agent returns an error
+     * @param failureHandler a consumer that will be invoked if a failure occurs when processing events
+     * @throws A2AServerException if sending the streaming message fails for any reason
+     */
+    public void sendStreamingMessage(MessageSendParams messageSendParams, Consumer<StreamingEventType> eventHandler,
+                                     Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
+        sendStreamingMessage(null, messageSendParams, eventHandler, errorHandler, failureHandler);
+    }
+
+    /**
+     * Send a streaming message to the remote agent.
+     *
      * @param requestId the request ID to use
      * @param messageSendParams the parameters for the message to be sent
      * @param eventHandler a consumer that will be invoked for each event received from the remote agent
@@ -347,6 +362,11 @@ public class A2AClient {
      */
     public void sendStreamingMessage(String requestId, MessageSendParams messageSendParams, Consumer<StreamingEventType> eventHandler,
                                      Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
+        checkNotNullParam("messageSendParams", messageSendParams);
+        checkNotNullParam("eventHandler", eventHandler);
+        checkNotNullParam("errorHandler", errorHandler);
+        checkNotNullParam("failureHandler", failureHandler);
+
         SendStreamingMessageRequest.Builder sendStreamingMessageRequestBuilder = new SendStreamingMessageRequest.Builder()
                 .jsonrpc(JSONRPC_VERSION)
                 .method(SEND_STREAMING_MESSAGE_REQUEST)

@@ -4,6 +4,7 @@ import static io.a2a.spec.Message.MESSAGE;
 import static io.a2a.spec.Task.TASK;
 import static io.a2a.spec.TaskArtifactUpdateEvent.ARTIFACT_UPDATE;
 import static io.a2a.spec.TaskStatusUpdateEvent.STATUS_UPDATE;
+import static io.a2a.util.Assert.checkNotNullParam;
 import static io.a2a.util.Utils.OBJECT_MAPPER;
 
 import java.util.function.Consumer;
@@ -20,6 +21,7 @@ import io.a2a.spec.StreamingEventType;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskArtifactUpdateEvent;
 import io.a2a.spec.TaskStatusUpdateEvent;
+import io.a2a.util.Assert;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
@@ -45,6 +47,9 @@ public class SSEEventListener extends EventSourceListener {
 
     public SSEEventListener(boolean logEvents, Consumer<StreamingEventType> eventHandler,
                             Consumer<JSONRPCError> errorHandler, Runnable failureHandler) {
+        checkNotNullParam("eventHandler", eventHandler);
+        checkNotNullParam("errorHandler", errorHandler);
+        checkNotNullParam("failureHandler", failureHandler);
         this.logEvents = logEvents;
         this.eventHandler = eventHandler;
         this.errorHandler = errorHandler;

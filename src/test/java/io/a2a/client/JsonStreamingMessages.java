@@ -88,9 +88,34 @@ public class JsonStreamingMessages {
                   }
              }""";
 
-    public static final String STREAMING_COMPLETE_SEQUENCE = 
-            STREAMING_TASK_EVENT + 
-            STREAMING_MESSAGE_EVENT + 
-            STREAMING_ARTIFACT_UPDATE_EVENT + 
-            STREAMING_STATUS_UPDATE_EVENT;
+    public static final String SEND_MESSAGE_STREAMING_TEST_REQUEST = """
+            {
+             "jsonrpc": "2.0",
+             "id": "request-1234",
+             "method": "message/stream",
+             "params": {
+              "id": "1234",
+              "message": {
+               "role": "user",
+               "parts": [
+                {
+                 "type": "text",
+                 "text": "tell me some jokes"
+                }
+               ],
+               "messageId": "message-1234",
+               "contextId": "context-1234",
+               "type": "message"
+              },
+              "configuration": {
+                "acceptedOutputModes": ["text"],
+                "blocking": false
+              },
+             }
+            }""";
+
+    static final String SEND_MESSAGE_STREAMING_TEST_RESPONSE =
+            "event: message\n" +
+            "data: {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"id\":\"2\",\"contextId\":\"context-1234\",\"status\":{\"state\":\"completed\"},\"artifacts\":[{\"artifactId\":\"artifact-1\",\"name\":\"joke\",\"parts\":[{\"type\":\"text\",\"text\":\"Why did the chicken cross the road? To get to the other side!\"}]}],\"metadata\":{},\"type\":\"task\"}}\n\n";
+
 } 
