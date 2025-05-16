@@ -349,7 +349,7 @@ public class A2AClient {
                                      Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
         SendStreamingMessageRequest.Builder sendStreamingMessageRequestBuilder = new SendStreamingMessageRequest.Builder()
                 .jsonrpc(JSONRPC_VERSION)
-                .method(SEND_MESSAGE_REQUEST)
+                .method(SEND_STREAMING_MESSAGE_REQUEST)
                 .params(messageSendParams);
 
         if (requestId != null) {
