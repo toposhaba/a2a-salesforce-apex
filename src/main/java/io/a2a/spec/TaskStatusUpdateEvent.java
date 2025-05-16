@@ -57,6 +57,7 @@ public class TaskStatusUpdateEvent implements EventType, StreamingEventType {
         return contextId;
     }
 
+    @JsonProperty("final")
     public boolean isFinal() {
         return isFinal;
     }
@@ -109,7 +110,7 @@ public class TaskStatusUpdateEvent implements EventType, StreamingEventType {
         }
 
         public TaskStatusUpdateEvent build() {
-            return new TaskStatusUpdateEvent(taskId, status, contextId, isFinal, metadata, type);
+            return new TaskStatusUpdateEvent(taskId, status, contextId, isFinal, metadata);
         }
     }
 }

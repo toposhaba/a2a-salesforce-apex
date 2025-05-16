@@ -95,31 +95,10 @@ public class SSEEventListener extends EventSourceListener {
             } else if (jsonNode.has("result")) {
                 // result can be a Task, Message, TaskStatusUpdateEvent, or TaskArtifactUpdateEvent
                 JsonNode result = jsonNode.path("result");
-
-                String type = result.get("type").asText();
-                switch (type) {
-                    case TASK:
-                        Task task = OBJECT_MAPPER.treeToValue(result, Task.class);
-                        eventHandler.accept(task);
-                        break;
-                    case MESSAGE:
-                        Message message = OBJECT_MAPPER.treeToValue(result, Message.class);
-                        eventHandler.accept(message);
-                        break;
-                    case STATUS_UPDATE:
-                        TaskStatusUpdateEvent taskStatusUpdateEvent = OBJECT_MAPPER.treeToValue(result, TaskStatusUpdateEvent.class);
-                        eventHandler.accept(taskStatusUpdateEvent);
-                        if (taskStatusUpdateEvent.isFinal()) {
-                            // final event has been received, close SSE channel
-                            eventSource.cancel();
-                        }
-                        break;
-                    case ARTIFACT_UPDATE:
-                        TaskArtifactUpdateEvent taskArtifactUpdateEvent = OBJECT_MAPPER.treeToValue(result, TaskArtifactUpdateEvent.class);
-                        eventHandler.accept(taskArtifactUpdateEvent);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Unknown result type");
+                StreamingEventType event = OBJECT_MAPPER.treeToValue(result, StreamingEventType.class);
+                eventHandler.accept(event);
+                if (event instanceof TaskStatusUpdateEvent && ((TaskStatusUpdateEvent) event).isFinal()) {
+                    eventSource.cancel(); // close SSE channel
                 }
             } else {
                 throw new IllegalArgumentException("Unknown message type");

@@ -44,11 +44,13 @@ public class JsonStreamingMessages {
                   "jsonrpc": "2.0",
                   "id": "1234",
                   "result": {
-                    "type": "status-update",
-                    "taskId": "task-123",
+                    "taskId": "1",
+                    "contextId": "2",
                     "status": {
-                      "state": "completed"
-                    }
+                        "state": "submitted"
+                    },
+                    "final": false,
+                    "type": "status-update"
                   }
             }""";
 
@@ -58,18 +60,22 @@ public class JsonStreamingMessages {
                   "id": "1234",
                   "result": {
                     "type": "artifact-update",
-                    "taskId": "task-123",
-                    "artifactId": "artifact-1",
-                    "name": "joke",
-                    "parts": [
-                      {
-                        "type": "text",
-                        "text": "Why did the chicken cross the road? To get to the other side!"
-                      }
-                    ]
+                    "taskId": "1",
+                    "contextId": "2",
+                    "append": false,
+                    "lastChunk": true,
+                    "artifact": {
+                        "artifactId": "artifact-1",
+                        "parts": [
+                         {
+                            "type": "text",
+                            "text": "Why did the chicken cross the road? To get to the other side!"
+                         }
+                        ]
+                    }
                   }
-            }            
-            """;
+               }
+            }""";
 
     public static final String STREAMING_ERROR_EVENT = """
             data: {
