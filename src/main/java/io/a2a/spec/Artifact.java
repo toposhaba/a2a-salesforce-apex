@@ -60,6 +60,11 @@ public record Artifact(String artifactId, String name, String description, List<
             return this;
         }
 
+        public Builder parts(Part<?>... parts) {
+            this.parts = List.of(parts);
+            return this;
+        }
+
         public Builder metadata(Map<String, Object> metadata) {
             this.metadata = metadata;
             return this;

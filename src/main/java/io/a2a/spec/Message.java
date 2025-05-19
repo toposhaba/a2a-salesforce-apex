@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.a2a.server.events.Event;
 import io.a2a.util.Assert;
 
@@ -19,6 +20,8 @@ import io.a2a.util.Assert;
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Message implements EventType, StreamingEventType, Event {
+
+    public static final TypeReference<Message> TYPE_REFERENCE = new TypeReference<>() {};
 
     public static final String MESSAGE = "message";
     private final Role role;
