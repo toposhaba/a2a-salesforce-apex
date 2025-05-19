@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.a2a.server.events.Event;
 import io.a2a.util.Assert;
 
 /**
@@ -11,7 +12,7 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class JSONRPCError extends Error {
+public class JSONRPCError extends Error implements Event, A2AError {
 
     private final Integer code;
     private final Object data;
