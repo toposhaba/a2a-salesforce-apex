@@ -19,7 +19,7 @@ public final class GetTaskPushNotificationResponse extends JSONRPCResponse {
         super(jsonrpc, id, result, error);
     }
 
-    public GetTaskPushNotificationResponse(String id, InternalError error) {
+    public GetTaskPushNotificationResponse(String id, JSONRPCError error) {
         this(null, id, null, error);
     }
 

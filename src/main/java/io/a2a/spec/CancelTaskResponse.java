@@ -18,7 +18,7 @@ public final class CancelTaskResponse extends JSONRPCResponse {
         super(jsonrpc, id, result, error);
     }
 
-    public CancelTaskResponse(Object id, TaskNotFoundError error) {
+    public CancelTaskResponse(Object id, JSONRPCError error) {
         this(null, id, null, error);
     }
 

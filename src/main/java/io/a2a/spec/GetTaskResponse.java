@@ -18,7 +18,7 @@ public final class GetTaskResponse extends JSONRPCResponse {
         super(jsonrpc, id, result, error);
     }
 
-    public GetTaskResponse(Object id, TaskNotFoundError error) {
+    public GetTaskResponse(Object id, JSONRPCError error) {
         this(null, id, null, error);
     }
 
