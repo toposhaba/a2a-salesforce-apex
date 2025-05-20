@@ -1,0 +1,87 @@
+package io.a2a.server.tasks;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import io.a2a.server.events.EventQueue;
+import io.a2a.spec.Artifact;
+import io.a2a.spec.Message;
+import io.a2a.spec.Part;
+import io.a2a.spec.TaskArtifactUpdateEvent;
+import io.a2a.spec.TaskState;
+import io.a2a.spec.TaskStatus;
+import io.a2a.spec.TaskStatusUpdateEvent;
+
+public class TaskUpdater {
+    private final EventQueue eventQueue;
+    private final String taskId;
+    private final String contextId;
+
+    public TaskUpdater(EventQueue eventQueue, String taskId, String contextId) {
+        this.eventQueue = eventQueue;
+        this.taskId = taskId;
+        this.contextId = contextId;
+    }
+
+    public void updateStatus(TaskState state, Message message) {
+        updateStatus(state, message, false);
+    }
+
+    private void updateStatus(TaskState state, Message message, boolean isFinal) {
+
+        TaskStatusUpdateEvent event = new TaskStatusUpdateEvent.Builder()
+                .taskId(taskId)
+                .contextId(contextId)
+                .isFinal(isFinal)
+                .status(new TaskStatus(state, message, null))
+                .build();
+        eventQueue.enqueueEvent(event);
+    }
+
+    public void addArtifact(List<Part<?>> parts, String artifactId, String name, Map<String, Object> metadata) {
+        if (artifactId == null) {
+            artifactId = UUID.randomUUID().toString();
+        }
+        TaskArtifactUpdateEvent event = new TaskArtifactUpdateEvent.Builder()
+                .taskId(taskId)
+                .contextId(contextId)
+                .artifact(
+                        new Artifact.Builder()
+                                .artifactId(artifactId)
+                                .name(name)
+                                .parts(parts)
+                                .metadata(metadata)
+                                .build()
+                )
+                .build();
+        eventQueue.enqueueEvent(event);
+    }
+
+    public void complete(Message message) {
+        updateStatus(TaskState.COMPLETED, message, true);
+    }
+
+    public void failed(Message message) {
+        updateStatus(TaskState.FAILED, message, true);
+    }
+
+    public void submit(Message message) {
+        updateStatus(TaskState.SUBMITTED, message);
+    }
+
+    public void startWork(Message message) {
+        updateStatus(TaskState.WORKING, message);
+    }
+
+    public Message newAgentMessage(List<Part<?>> parts, Map<String, Object> metadata) {
+        return new Message.Builder()
+                .role(Message.Role.AGENT)
+                .taskId(taskId)
+                .contextId(contextId)
+                .messageId(UUID.randomUUID().toString())
+                .metadata(metadata)
+                .parts(parts)
+                .build();
+    }
+}
