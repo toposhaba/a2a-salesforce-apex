@@ -1,0 +1,84 @@
+package io.a2a.server.events;
+
+
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Flow;
+
+import io.a2a.spec.A2AServerException;
+import io.a2a.spec.Message;
+import io.a2a.spec.Task;
+import io.a2a.spec.TaskStatusUpdateEvent;
+import mutiny.zero.BackpressureStrategy;
+import mutiny.zero.TubeConfiguration;
+import mutiny.zero.ZeroPublisher;
+
+public class EventConsumer {
+    private final EventQueue queue;
+    private Exception exception;
+    private final Executor executor = Executors.newCachedThreadPool();
+
+
+    private static final String ERROR_MSG = "Agent did not return any response";
+    private static final int NO_WAIT = -1;
+    private static final int QUEUE_WAIT_MILLISECONDS = 500;
+
+    public EventConsumer(EventQueue queue) {
+        this.queue = queue;
+    }
+
+    public Event consumeOne() throws A2AServerException {
+        Event event = queue.dequeueEvent(NO_WAIT);
+        if (event == null) {
+            throw new A2AServerException(ERROR_MSG, new InternalError(ERROR_MSG));
+        }
+        return event;
+    }
+
+    public Flow.Publisher<Event> consumeAll() {
+        TubeConfiguration conf = new TubeConfiguration()
+                .withBackpressureStrategy(BackpressureStrategy.BUFFER)
+                .withBufferSize(256);
+        return ZeroPublisher.create(conf, tube -> {
+            try {
+                while (true) {
+                    // We use a timeout when waiting for an event from the queue.
+                    // This is required because it allows the loop to check if
+                    // `self._exception` has been set by the `agent_task_callback`.
+                    // Without the timeout, loop might hang indefinitely if no events are
+                    // enqueued by the agent and the agent simply threw an exception
+
+                    Event event;
+                    try {
+                        event = queue.dequeueEvent(QUEUE_WAIT_MILLISECONDS);
+                        tube.send(event);
+                    } catch (Exception e) {
+                        // Continue polling until there is a final event
+                        continue;
+                    }
+
+                    boolean isFinalEvent = false;
+                    if (event instanceof TaskStatusUpdateEvent tue && tue.isFinal()) {
+                        isFinalEvent = true;
+                    } else if (event instanceof Message) {
+                        isFinalEvent = true;
+                    } else if (event instanceof Task task) {
+                        switch (task.getStatus().state()) {
+                            case COMPLETED:
+                            case CANCELED:
+                            case FAILED:
+                                isFinalEvent = true;
+                        }
+                    }
+
+                    if (isFinalEvent) {
+                        queue.close();
+                        break;
+                    }
+                }
+            } finally {
+                tube.complete();
+            }
+        });
+    }
+}

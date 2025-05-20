@@ -3,10 +3,10 @@ package io.a2a.server.tasks;
 import static io.a2a.spec.TaskState.SUBMITTED;
 import static io.a2a.util.Assert.checkNotNullParam;
 
-import java.rmi.ServerError;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.a2a.spec.A2AServerException;
 import io.a2a.spec.Artifact;
 import io.a2a.spec.InvalidParamsError;
 import io.a2a.spec.Message;
@@ -45,12 +45,12 @@ public class TaskManager {
         return taskStore.get(taskId);
     }
 
-    public void saveTaskEvent(Task task) throws ServerError {
+    public void saveTaskEvent(Task task) throws A2AServerException {
         checkIdsAndUpdateIfNecessary(task.getId(), task.getContextId());
         saveTask(task);
     }
 
-    public void saveTaskEvent(TaskStatusUpdateEvent event) throws ServerError {
+    public void saveTaskEvent(TaskStatusUpdateEvent event) throws A2AServerException {
         checkIdsAndUpdateIfNecessary(event.getTaskId(), event.getContextId());
         Task task = ensureTask(event.getTaskId(), event.getContextId());
 
@@ -68,7 +68,7 @@ public class TaskManager {
         saveTask(task);
     }
 
-    public void saveTaskEvent(TaskArtifactUpdateEvent event) throws ServerError {
+    public void saveTaskEvent(TaskArtifactUpdateEvent event) throws A2AServerException {
         checkIdsAndUpdateIfNecessary(event.getTaskId(), event.getContextId());
         Task task = ensureTask(event.getTaskId(), event.getContextId());
 
@@ -123,9 +123,9 @@ public class TaskManager {
         saveTask(task);
     }
 
-    private void checkIdsAndUpdateIfNecessary(String eventTaskId, String eventContextId) throws ServerError {
+    private void checkIdsAndUpdateIfNecessary(String eventTaskId, String eventContextId) throws A2AServerException {
         if (taskId != null && !eventTaskId.equals(taskId)) {
-            throw new ServerError(
+            throw new A2AServerException(
                     "Invalid task id",
                     new InvalidParamsError(String.format("Task in event doesn't match TaskManager ")));
         }

@@ -5,10 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
-import java.rmi.ServerError;
 import java.util.Collections;
 import java.util.HashMap;
 
+import io.a2a.spec.A2AServerException;
 import io.a2a.spec.Artifact;
 import io.a2a.spec.Message;
 import io.a2a.spec.Task;
@@ -56,14 +56,14 @@ public class TaskManagerTest {
     }
 
     @Test
-    public void testSaveTaskEventNewTask() throws ServerError {
+    public void testSaveTaskEventNewTask() throws A2AServerException {
         taskManager.saveTaskEvent(minimalTask);
         Task retrieved = taskManager.getTask();
         assertSame(minimalTask, retrieved);
     }
 
     @Test
-    public void testSaveTaskEventStatusUpdate() throws ServerError {
+    public void testSaveTaskEventStatusUpdate() throws A2AServerException {
         Task initialTask = minimalTask;
         taskStore.save(initialTask);
 
@@ -96,7 +96,7 @@ public class TaskManagerTest {
     }
 
     @Test
-    public void testSaveTaskEventArtifactUpdate() throws ServerError {
+    public void testSaveTaskEventArtifactUpdate() throws A2AServerException {
         Task initialTask = minimalTask;
         Artifact newArtifact = new Artifact.Builder()
                 .artifactId("artifact-id")
@@ -126,7 +126,7 @@ public class TaskManagerTest {
     }
 
     @Test
-    public void testEnsureTaskNonExistentForStatusUpdate() throws ServerError {
+    public void testEnsureTaskNonExistentForStatusUpdate() throws A2AServerException {
         // Tests that an update event instantiates a new task and that
         TaskManager taskManagerWithoutId = new TaskManager(null, null, taskStore, null);
         TaskStatusUpdateEvent event = new TaskStatusUpdateEvent.Builder()
@@ -147,7 +147,7 @@ public class TaskManagerTest {
     }
 
     @Test
-    public void testSaveTaskEventNewTaskNoTaskId() throws ServerError {
+    public void testSaveTaskEventNewTaskNoTaskId() throws A2AServerException {
         TaskManager taskManagerWithoutId = new TaskManager(null, null, taskStore, null);
         Task task = new Task.Builder()
                 .id("new-task-id")
