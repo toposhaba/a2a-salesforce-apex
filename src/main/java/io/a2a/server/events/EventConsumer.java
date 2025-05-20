@@ -48,6 +48,7 @@ public class EventConsumer {
                     // Without the timeout, loop might hang indefinitely if no events are
                     // enqueued by the agent and the agent simply threw an exception
 
+                    // TODO the callback mentioned above seems unused in the Python 0.2.1 tag
                     Event event;
                     try {
                         event = queue.dequeueEvent(QUEUE_WAIT_MILLISECONDS);

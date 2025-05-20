@@ -22,6 +22,7 @@ public class TaskManager {
     private volatile String contextId;
     private final TaskStore taskStore;
     private final Message initialMessage;
+    private volatile Task currentTask;
 
     public TaskManager(String taskId, String contextId, TaskStore taskStore, Message initialMessage) {
         checkNotNullParam("taskStore", taskStore);
@@ -133,6 +134,19 @@ public class TaskManager {
             saveTaskEvent(taskArtifactUpdateEvent);
         }
         return event;
+    }
+
+    public Task updateWithMessage(Message message, Task task) {
+        List<Message> history = task.getHistory() == null ? new ArrayList<>() : new ArrayList<>(task.getHistory());
+        if (task.getStatus().message() != null) {
+            history.add(task.getStatus().message());
+        }
+        history.add(message);
+        task = new Task.Builder()
+                .history(history)
+                .build();
+        currentTask = task;
+        return task;
     }
 
     private void checkIdsAndUpdateIfNecessary(String eventTaskId, String eventContextId) throws A2AServerException {
