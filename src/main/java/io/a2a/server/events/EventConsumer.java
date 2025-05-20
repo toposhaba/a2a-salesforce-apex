@@ -67,6 +67,8 @@ public class EventConsumer {
                             case COMPLETED:
                             case CANCELED:
                             case FAILED:
+                            case REJECTED:
+                            case UNKNOWN:
                                 isFinalEvent = true;
                         }
                     }

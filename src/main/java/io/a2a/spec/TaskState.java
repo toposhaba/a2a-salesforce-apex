@@ -13,6 +13,7 @@ public enum TaskState {
     COMPLETED("completed"),
     CANCELED("canceled"),
     FAILED("failed"),
+    REJECTED("rejected"),
     UNKNOWN("unknown");
 
     private final String state;
@@ -42,6 +43,8 @@ public enum TaskState {
                 return CANCELED;
             case "failed":
                 return FAILED;
+            case "rejected":
+                return REJECTED;
             case "unknown":
                 return UNKNOWN;
             default:
