@@ -25,4 +25,12 @@ public final class SendMessageResponse extends JSONRPCResponse {
         this.result = result;
         this.error = error;
     }
+
+    public SendMessageResponse(Object id, EventType result) {
+        this(null, id, result, null);
+    }
+
+    public SendMessageResponse(Object id, JSONRPCError error) {
+        this(null, id, null, error);
+    }
 }

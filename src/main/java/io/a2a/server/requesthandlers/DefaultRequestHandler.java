@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
 
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
@@ -20,13 +19,10 @@ import io.a2a.server.tasks.PushNotifier;
 import io.a2a.server.tasks.ResultAggregator;
 import io.a2a.server.tasks.TaskManager;
 import io.a2a.server.tasks.TaskStore;
-import io.a2a.spec.A2AServerException;
 import io.a2a.spec.EventType;
-import io.a2a.spec.GetTaskPushNotificationResponse;
+import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.PushNotificationConfig;
-import io.a2a.spec.SendStreamingMessageResponse;
-import io.a2a.spec.SetTaskPushNotificationResponse;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskNotFoundError;
@@ -54,19 +50,19 @@ public class DefaultRequestHandler implements RequestHandler {
     }
 
     @Override
-    public Task onGetTask(TaskQueryParams params) throws A2AServerException {
+    public Task onGetTask(TaskQueryParams params) throws JSONRPCError {
         Task task = taskStore.get(params.id());
         if (task == null) {
-            throw new A2AServerException(new TaskNotFoundError());
+            throw new TaskNotFoundError();
         }
         return task;
     }
 
     @Override
-    public Task onCancelTask(TaskIdParams params) throws A2AServerException {
+    public Task onCancelTask(TaskIdParams params) throws JSONRPCError {
         Task task = taskStore.get(params.id());
         if (task == null) {
-            throw new A2AServerException(new TaskNotFoundError());
+            throw new TaskNotFoundError();
         }
         TaskManager taskManager = new TaskManager(
                 task.getId(),
@@ -92,11 +88,11 @@ public class DefaultRequestHandler implements RequestHandler {
             return task;
         }
 
-        throw new A2AServerException(new InternalError("Agent did not return a valid response"));
+        throw new InternalError("Agent did not return a valid response");
     }
 
     @Override
-    public EventType onMessageSend(MessageSendParams params) throws A2AServerException {
+    public EventType onMessageSend(MessageSendParams params) throws JSONRPCError {
         TaskManager taskManager = new TaskManager(
                 params.message().getTaskId(),
                 params.message().getContextId(),
@@ -139,7 +135,7 @@ public class DefaultRequestHandler implements RequestHandler {
 
         try {
             if (etai == null) {
-                throw new A2AServerException(new InternalError());
+                throw new InternalError();
             }
             interrupted = etai.interrupted();
         } finally {
@@ -155,7 +151,7 @@ public class DefaultRequestHandler implements RequestHandler {
     }
 
     @Override
-    public Flow.Publisher<Event> onMessageSendStream(MessageSendParams params) throws A2AServerException {
+    public Flow.Publisher<Event> onMessageSendStream(MessageSendParams params) throws JSONRPCError {
         TaskManager taskManager = new TaskManager(
                 params.message().getTaskId(),
                 params.message().getContextId(),
@@ -235,13 +231,13 @@ public class DefaultRequestHandler implements RequestHandler {
     }
 
     @Override
-    public TaskPushNotificationConfig onSetTaskPushNotificationConfig(TaskPushNotificationConfig params) throws A2AServerException {
+    public TaskPushNotificationConfig onSetTaskPushNotificationConfig(TaskPushNotificationConfig params) throws JSONRPCError {
         if (pushNotifier == null) {
-            throw new A2AServerException(new UnsupportedOperationError());
+            throw new UnsupportedOperationError();
         }
         Task task = taskStore.get(params.id());
         if (task == null) {
-            throw new A2AServerException(new TaskNotFoundError());
+            throw new TaskNotFoundError();
         }
 
         pushNotifier.setInfo(params.id(), params.pushNotificationConfig());
@@ -250,28 +246,28 @@ public class DefaultRequestHandler implements RequestHandler {
     }
 
     @Override
-    public TaskPushNotificationConfig onGetTaskPushNotificationConfig(TaskIdParams params) throws A2AServerException {
+    public TaskPushNotificationConfig onGetTaskPushNotificationConfig(TaskIdParams params) throws JSONRPCError {
         if (pushNotifier == null) {
-            throw new A2AServerException(new UnsupportedOperationError());
+            throw new UnsupportedOperationError();
         }
         Task task = taskStore.get(params.id());
         if (task == null) {
-            throw new A2AServerException(new TaskNotFoundError());
+            throw new TaskNotFoundError();
         }
 
         PushNotificationConfig pushNotificationConfig = pushNotifier.getInfo(params.id());
         if (pushNotificationConfig == null) {
-            throw new A2AServerException(new InternalError());
+            throw new InternalError();
         }
 
         return new TaskPushNotificationConfig(params.id(), pushNotificationConfig);
     }
 
     @Override
-    public Flow.Publisher<Event> onResubscribeToTask(TaskIdParams params) throws A2AServerException {
+    public Flow.Publisher<Event> onResubscribeToTask(TaskIdParams params) throws JSONRPCError {
         Task task = taskStore.get(params.id());
         if (task == null) {
-            throw new A2AServerException(new TaskNotFoundError());
+            throw new TaskNotFoundError();
         }
 
         TaskManager taskManager = new TaskManager(task.getId(), task.getContextId(), taskStore, null);
@@ -279,7 +275,7 @@ public class DefaultRequestHandler implements RequestHandler {
         EventQueue queue = queueManager.tap(task.getId());
 
         if (queue == null) {
-            throw new A2AServerException(new TaskNotFoundError());
+            throw new TaskNotFoundError();
         }
 
         EventConsumer consumer = new EventConsumer(queue);

@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import io.a2a.spec.A2AServerException;
 import io.a2a.spec.InvalidParamsError;
 import io.a2a.spec.Message;
 import io.a2a.spec.MessageSendConfiguration;
@@ -22,7 +21,7 @@ public class RequestContext {
     private Task task;
     private List<Task> relatedTasks;
 
-    public RequestContext(MessageSendParams params, String taskId, String contextId, Task task, List<Task> relatedTasks) throws A2AServerException {
+    public RequestContext(MessageSendParams params, String taskId, String contextId, Task task, List<Task> relatedTasks) throws InvalidParamsError {
         this.params = params;
         this.taskId = taskId;
         this.contextId = contextId;
@@ -34,12 +33,12 @@ public class RequestContext {
         // if the taskId and contextId were specified, they must match the params
         if (params != null) {
             if (taskId != null && params.message().getTaskId() != taskId) {
-                throw new A2AServerException(new InvalidParamsError("bad task id"));
+                throw new InvalidParamsError("bad task id");
             } else {
                 checkOrGenerateTaskId();
             }
             if (contextId != null && params.message().getContextId() != contextId) {
-                throw new A2AServerException(new InvalidParamsError("bad context id"));
+                throw new InvalidParamsError("bad context id");
             } else {
                 checkOrGenerateContextId();
             }
