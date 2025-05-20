@@ -9,6 +9,7 @@ public enum TaskState {
     SUBMITTED("submitted"),
     WORKING("working"),
     INPUT_REQUIRED("input-required"),
+    AUTH_REQUIRED("auth-required"),
     COMPLETED("completed"),
     CANCELED("canceled"),
     FAILED("failed"),
@@ -33,6 +34,8 @@ public enum TaskState {
                 return WORKING;
             case "input-required":
                 return INPUT_REQUIRED;
+            case "auth-required":
+                return AUTH_REQUIRED;
             case "completed":
                 return COMPLETED;
             case "canceled":

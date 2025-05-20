@@ -6,6 +6,7 @@ import static io.a2a.util.Assert.checkNotNullParam;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.a2a.server.events.Event;
 import io.a2a.spec.A2AServerException;
 import io.a2a.spec.Artifact;
 import io.a2a.spec.InvalidParamsError;
@@ -121,6 +122,17 @@ public class TaskManager {
                 .build();
 
         saveTask(task);
+    }
+
+    public Event process(Event event) throws A2AServerException {
+        if (event instanceof Task task) {
+            saveTask(task);
+        } else if (event instanceof TaskStatusUpdateEvent taskStatusUpdateEvent) {
+            saveTaskEvent(taskStatusUpdateEvent);
+        } else if (event instanceof TaskArtifactUpdateEvent taskArtifactUpdateEvent) {
+            saveTaskEvent(taskArtifactUpdateEvent);
+        }
+        return event;
     }
 
     private void checkIdsAndUpdateIfNecessary(String eventTaskId, String eventContextId) throws A2AServerException {
