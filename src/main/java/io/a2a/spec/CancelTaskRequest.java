@@ -22,17 +22,20 @@ public final class CancelTaskRequest extends JSONRPCRequest<TaskIdParams> {
     @JsonCreator
     public CancelTaskRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
                              @JsonProperty("method") String method, @JsonProperty("params") TaskIdParams params) {
-        Assert.checkNotNullParam("method", method);
         Assert.checkNotNullParam("params", params);
 
-        if (! method.equals(CANCEL_TASK_REQUEST)) {
+        this.method = defaultIfNull(method, CANCEL_TASK_REQUEST);
+        if (!this.method.equals(CANCEL_TASK_REQUEST)) {
             throw new IllegalArgumentException("Invalid CancelTaskRequest method");
         }
 
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);;
         this.id = id == null ? UUID.randomUUID().toString() : id;
-        this.method = method;
         this.params = params;
+    }
+
+    public CancelTaskRequest(Object id, TaskIdParams params) {
+        this(null, id, null, params);
     }
 
     public static class Builder {

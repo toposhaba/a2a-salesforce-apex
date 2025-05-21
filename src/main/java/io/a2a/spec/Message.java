@@ -124,6 +124,11 @@ public class Message implements EventType, StreamingEventType, Event {
             return this;
         }
 
+        public Builder parts(Part<?>...parts) {
+            this.parts = List.of(parts);
+            return this;
+        }
+
         public Builder messageId(String messageId) {
             this.messageId = messageId;
             return this;
