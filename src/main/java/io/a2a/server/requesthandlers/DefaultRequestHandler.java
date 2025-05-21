@@ -1,6 +1,7 @@
 package io.a2a.server.requesthandlers;
 
 import static io.a2a.util.AsyncUtils.createTubeConfig;
+import static io.a2a.util.AsyncUtils.processor;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,8 +30,6 @@ import io.a2a.spec.TaskNotFoundError;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
 import io.a2a.spec.UnsupportedOperationError;
-import io.a2a.util.AsyncUtils;
-import mutiny.zero.ZeroPublisher;
 
 public class DefaultRequestHandler implements RequestHandler {
 
@@ -191,40 +190,33 @@ public class DefaultRequestHandler implements RequestHandler {
 
             Flow.Publisher<Event> all = consumer.consumeAll();
 
-            return ZeroPublisher.create(createTubeConfig(), tube -> {
-                all.subscribe(
-                        new AsyncUtils.PublishingSubscriber<>(
-                                tube,
-                                ((subscriber, event) -> {
-                                    if (event instanceof Task createdTask && !taskId.get().equals(createdTask.getId())) {
-                                        try {
-                                            queueManager.add(createdTask.getId(), queue);
-                                            taskId.set(createdTask.getId());
-                                        } catch (TaskQueueExistsException e) {
-                                            // TODO Log
-                                        }
-                                        if (pushNotifier != null &&
-                                                params.configuration() != null &&
-                                                params.configuration().pushNotification() != null) {
+            return processor(createTubeConfig(), all, ((errorConsumer, event) -> {
+                if (event instanceof Task createdTask && !taskId.get().equals(createdTask.getId())) {
+                    try {
+                        queueManager.add(createdTask.getId(), queue);
+                        taskId.set(createdTask.getId());
+                    } catch (TaskQueueExistsException e) {
+                        // TODO Log
+                    }
+                    if (pushNotifier != null &&
+                            params.configuration() != null &&
+                            params.configuration().pushNotification() != null) {
 
-                                            pushNotifier.setInfo(
-                                                    createdTask.getId(),
-                                                    params.configuration().pushNotification());
-                                        }
+                        pushNotifier.setInfo(
+                                createdTask.getId(),
+                                params.configuration().pushNotification());
+                    }
 
-                                    }
-                                    if (pushNotifier != null && taskId.get() != null) {
-                                        EventType latest = resultAggregator.getCurrentResult();
-                                        if (latest instanceof Task latestTask) {
-                                            pushNotifier.sendNotification(latestTask);
-                                        }
-                                    }
+                }
+                if (pushNotifier != null && taskId.get() != null) {
+                    EventType latest = resultAggregator.getCurrentResult();
+                    if (latest instanceof Task latestTask) {
+                        pushNotifier.sendNotification(latestTask);
+                    }
+                }
 
-                                    return true;
-                                })));
-            });
-
-
+                return true;
+            }));
         } finally {
             cleanupProducer(producerRunnable, taskId.get());
         }
@@ -280,12 +272,7 @@ public class DefaultRequestHandler implements RequestHandler {
 
         EventConsumer consumer = new EventConsumer(queue);
 
-        Flow.Publisher<Event> all = resultAggregator.consumeAndEmit(consumer);
-        return ZeroPublisher.create(createTubeConfig(), tube -> {
-            all.subscribe(
-                    new AsyncUtils.PublishingSubscriber<Event>(tube, (subscriber, event) -> true)
-            );
-        });
+        return resultAggregator.consumeAndEmit(consumer);
     }
 
     private boolean shouldAddPushInfo(MessageSendParams params) {
