@@ -33,9 +33,9 @@ public class A2A {
 
     public static final String AGENT_CARD_REQUEST = ".well-known/agent.json";
 
-    private static TypeReference<AgentCard> AGENT_CARD_TYPE_REFERENCE = new TypeReference<>() {};
+    private static final TypeReference<AgentCard> AGENT_CARD_TYPE_REFERENCE = new TypeReference<>() {};
 
-    public static final String getRequestEndpoint(String agentUrl, String request) {
+    public static String getRequestEndpoint(String agentUrl, String request) {
         return agentUrl.endsWith("/") ? agentUrl + request : agentUrl + "/" + request;
     }
 
