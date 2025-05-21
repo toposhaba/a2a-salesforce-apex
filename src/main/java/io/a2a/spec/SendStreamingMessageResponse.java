@@ -25,4 +25,12 @@ public final class SendStreamingMessageResponse extends JSONRPCResponse {
         this.result = result;
         this.error = error;
     }
+
+    public SendStreamingMessageResponse(Object id, StreamingEventType result) {
+        this(null, id, result, null);
+    }
+
+    public SendStreamingMessageResponse(Object id, JSONRPCError error) {
+        this(null, id, null, error);
+    }
 }

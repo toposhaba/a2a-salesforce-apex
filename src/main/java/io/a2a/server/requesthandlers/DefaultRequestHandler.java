@@ -1,5 +1,6 @@
 package io.a2a.server.requesthandlers;
 
+import static io.a2a.util.AsyncUtils.convertingProcessor;
 import static io.a2a.util.AsyncUtils.createTubeConfig;
 import static io.a2a.util.AsyncUtils.processor;
 
@@ -24,6 +25,7 @@ import io.a2a.spec.EventType;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.PushNotificationConfig;
+import io.a2a.spec.StreamingEventType;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskNotFoundError;
@@ -150,7 +152,7 @@ public class DefaultRequestHandler implements RequestHandler {
     }
 
     @Override
-    public Flow.Publisher<Event> onMessageSendStream(MessageSendParams params) throws JSONRPCError {
+    public Flow.Publisher<StreamingEventType> onMessageSendStream(MessageSendParams params) throws JSONRPCError {
         TaskManager taskManager = new TaskManager(
                 params.message().getTaskId(),
                 params.message().getContextId(),
@@ -190,7 +192,8 @@ public class DefaultRequestHandler implements RequestHandler {
 
             Flow.Publisher<Event> all = consumer.consumeAll();
 
-            return processor(createTubeConfig(), all, ((errorConsumer, event) -> {
+            Flow.Publisher<Event> eventPublisher =
+                    processor(createTubeConfig(), all, ((errorConsumer, event) -> {
                 if (event instanceof Task createdTask && !taskId.get().equals(createdTask.getId())) {
                     try {
                         queueManager.add(createdTask.getId(), queue);
@@ -217,6 +220,8 @@ public class DefaultRequestHandler implements RequestHandler {
 
                 return true;
             }));
+
+            return convertingProcessor(createTubeConfig(), eventPublisher, event -> (StreamingEventType) event);
         } finally {
             cleanupProducer(producerRunnable, taskId.get());
         }

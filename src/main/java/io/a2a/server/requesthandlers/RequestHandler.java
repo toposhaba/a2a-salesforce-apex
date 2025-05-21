@@ -6,6 +6,7 @@ import io.a2a.server.events.Event;
 import io.a2a.spec.EventType;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.MessageSendParams;
+import io.a2a.spec.StreamingEventType;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskPushNotificationConfig;
@@ -18,7 +19,7 @@ public interface RequestHandler {
 
     EventType onMessageSend(MessageSendParams params) throws JSONRPCError;
 
-    Flow.Publisher<Event> onMessageSendStream(MessageSendParams params) throws JSONRPCError;
+    Flow.Publisher<StreamingEventType> onMessageSendStream(MessageSendParams params) throws JSONRPCError;
 
     TaskPushNotificationConfig onSetTaskPushNotificationConfig(TaskPushNotificationConfig params) throws JSONRPCError;
 
