@@ -1,7 +1,7 @@
 package io.a2a.spec;
 
 import static io.a2a.spec.A2A.JSONRPC_VERSION;
-import static io.a2a.spec.A2A.SEND_TASK_RESUBSCRIPTION_REQUEST;
+import static io.a2a.spec.A2A.SEND_TASK_RESUBSCRIPTION_METHOD;
 import static io.a2a.util.Utils.defaultIfNull;
 
 import java.util.UUID;
@@ -25,7 +25,7 @@ public final class TaskResubscriptionRequest extends JSONRPCRequest<TaskIdParams
         Assert.checkNotNullParam("method", method);
         Assert.checkNotNullParam("params", params);
 
-        if (! method.equals(SEND_TASK_RESUBSCRIPTION_REQUEST)) {
+        if (! method.equals(SEND_TASK_RESUBSCRIPTION_METHOD)) {
             throw new IllegalArgumentException("Invalid TaskResubscriptionRequest method");
         }
 
