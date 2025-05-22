@@ -18,6 +18,9 @@ The Python A2A server is part of the [a2a-python](https://github.com/google/a2a-
    ```bash
    git clone https://github.com/google/a2a-python.git
    cd a2a-python
+   
+   # Temporarily check out the v0.2.1a1 tag until https://github.com/fjuma/a2a-java-sdk/issues/61 is resolved
+   git checkout v0.2.1a1
    ```
 
 2. **Recommended method**: Install dependencies using uv (much faster Python package installer):
