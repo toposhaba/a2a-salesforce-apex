@@ -1,6 +1,6 @@
 package io.a2a.spec;
 
-import static io.a2a.spec.A2A.GET_TASK_PUSH_NOTIFICATION_REQUEST;
+import static io.a2a.spec.A2A.GET_TASK_PUSH_NOTIFICATION_METHOD;
 import static io.a2a.spec.A2A.JSONRPC_VERSION;
 import static io.a2a.util.Utils.defaultIfNull;
 
@@ -25,7 +25,7 @@ public final class GetTaskPushNotificationRequest extends JSONRPCRequest<TaskIdP
         Assert.checkNotNullParam("method", method);
 
 
-        if (! method.equals(GET_TASK_PUSH_NOTIFICATION_REQUEST)) {
+        if (! method.equals(GET_TASK_PUSH_NOTIFICATION_METHOD)) {
             throw new IllegalArgumentException("Invalid GetTaskPushNotificationRequest method");
         }
 

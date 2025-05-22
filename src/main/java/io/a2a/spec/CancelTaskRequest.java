@@ -1,6 +1,6 @@
 package io.a2a.spec;
 
-import static io.a2a.spec.A2A.CANCEL_TASK_REQUEST;
+import static io.a2a.spec.A2A.CANCEL_TASK_METHOD;
 import static io.a2a.spec.A2A.JSONRPC_VERSION;
 import static io.a2a.util.Utils.defaultIfNull;
 
@@ -25,7 +25,7 @@ public final class CancelTaskRequest extends JSONRPCRequest<TaskIdParams> {
         Assert.checkNotNullParam("method", method);
         Assert.checkNotNullParam("params", params);
 
-        if (! method.equals(CANCEL_TASK_REQUEST)) {
+        if (! method.equals(CANCEL_TASK_METHOD)) {
             throw new IllegalArgumentException("Invalid CancelTaskRequest method");
         }
 

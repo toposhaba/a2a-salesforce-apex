@@ -1,7 +1,7 @@
 package io.a2a.spec;
 
 import static io.a2a.spec.A2A.JSONRPC_VERSION;
-import static io.a2a.spec.A2A.SEND_STREAMING_MESSAGE_REQUEST;
+import static io.a2a.spec.A2A.SEND_STREAMING_MESSAGE_METHOD;
 import static io.a2a.util.Utils.defaultIfNull;
 
 import java.util.UUID;
@@ -25,7 +25,7 @@ public final class SendStreamingMessageRequest extends JSONRPCRequest<MessageSen
         Assert.checkNotNullParam("method", method);
         Assert.checkNotNullParam("params", params);
 
-        if (! method.equals(SEND_STREAMING_MESSAGE_REQUEST)) {
+        if (! method.equals(SEND_STREAMING_MESSAGE_METHOD)) {
             throw new IllegalArgumentException("Invalid SendStreamingMessageRequest method");
         }
 

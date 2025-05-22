@@ -3,10 +3,6 @@ package io.a2a.spec;
 import static io.a2a.util.Utils.unmarshalFrom;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.Collections;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -21,13 +17,13 @@ import okhttp3.Response;
  */
 public class A2A {
 
-    public static final String CANCEL_TASK_REQUEST = "tasks/cancel";
-    public static final String GET_TASK_PUSH_NOTIFICATION_REQUEST = "tasks/pushNotification/get";
-    public static final String GET_TASK_REQUEST = "tasks/get";
-    public static final String SET_TASK_PUSH_NOTIFICATION_REQUEST = "tasks/pushNotification/set";
-    public static final String SEND_TASK_RESUBSCRIPTION_REQUEST = "tasks/resubscribe";
-    public static final String SEND_STREAMING_MESSAGE_REQUEST = "message/stream";
-    public static final String SEND_MESSAGE_REQUEST = "message/send";
+    public static final String CANCEL_TASK_METHOD = "tasks/cancel";
+    public static final String GET_TASK_PUSH_NOTIFICATION_METHOD = "tasks/pushNotification/get";
+    public static final String GET_TASK_METHOD = "tasks/get";
+    public static final String SET_TASK_PUSH_NOTIFICATION_METHOD = "tasks/pushNotification/set";
+    public static final String SEND_TASK_RESUBSCRIPTION_METHOD = "tasks/resubscribe";
+    public static final String SEND_STREAMING_MESSAGE_METHOD = "message/stream";
+    public static final String SEND_MESSAGE_METHOD = "message/send";
 
     public static final String JSONRPC_VERSION = "2.0";
 

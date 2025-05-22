@@ -91,7 +91,7 @@ public class A2AClientStreamingTest {
         this.server.when(
                         request()
                                 .withMethod("POST")
-                                .withPath("/message/stream")
+                                .withPath("/")
                                 .withBody(JsonBody.json(SEND_MESSAGE_STREAMING_TEST_REQUEST, MatchType.STRICT))
 
                 )
