@@ -3,7 +3,6 @@ package io.a2a.server.events;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class InMemoryQueueManager implements QueueManager {
 

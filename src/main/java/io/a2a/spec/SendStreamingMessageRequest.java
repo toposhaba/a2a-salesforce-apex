@@ -35,34 +35,38 @@ public final class SendStreamingMessageRequest extends JSONRPCRequest<MessageSen
         this.params = params;
     }
 
+    public SendStreamingMessageRequest(Object id,  MessageSendParams params) {
+        this(null, id, SEND_STREAMING_MESSAGE_METHOD, params);
+    }
+
     public static class Builder {
-        private String jsonrpc;
-        private Object id;
-        private String method;
-        private MessageSendParams params;
+            private String jsonrpc;
+            private Object id;
+            private String method = SEND_STREAMING_MESSAGE_METHOD;
+            private MessageSendParams params;
 
-        public Builder jsonrpc(String jsonrpc) {
-            this.jsonrpc = jsonrpc;
-            return this;
-        }
+            public Builder jsonrpc(String jsonrpc) {
+                this.jsonrpc = jsonrpc;
+                return this;
+            }
 
-        public Builder id(Object id) {
-            this.id = id;
-            return this;
-        }
+            public Builder id(Object id) {
+                this.id = id;
+                return this;
+            }
 
-        public Builder method(String method) {
-            this.method = method;
-            return this;
-        }
+            public Builder method(String method) {
+                this.method = method;
+                return this;
+            }
 
-        public Builder params(MessageSendParams params) {
-            this.params = params;
-            return this;
-        }
+            public Builder params(MessageSendParams params) {
+                this.params = params;
+                return this;
+            }
 
-        public SendStreamingMessageRequest build() {
-            return new SendStreamingMessageRequest(jsonrpc, id, method, params);
+            public SendStreamingMessageRequest build() {
+                return new SendStreamingMessageRequest(jsonrpc, id, method, params);
+            }
         }
     }
-}

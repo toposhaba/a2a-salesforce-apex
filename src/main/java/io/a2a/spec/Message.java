@@ -114,6 +114,18 @@ public class Message implements EventType, StreamingEventType, Event {
         private String taskId;
         private Map<String, Object> metadata;
 
+        public Builder() {
+        }
+
+        public Builder(Message message) {
+            role = message.role;
+            parts = message.parts;
+            messageId = message.messageId;
+            contextId = message.contextId;
+            taskId = message.taskId;
+            metadata = message.metadata;
+        }
+
         public Builder role(Role role) {
             this.role = role;
             return this;
@@ -121,6 +133,11 @@ public class Message implements EventType, StreamingEventType, Event {
 
         public Builder parts(List<Part<?>> parts) {
             this.parts = parts;
+            return this;
+        }
+
+        public Builder parts(Part<?>...parts) {
+            this.parts = List.of(parts);
             return this;
         }
 

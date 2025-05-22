@@ -16,7 +16,6 @@ public record MessageSendParams(String id, Message message, MessageSendConfigura
                                 Map<String, Object> metadata) {
 
     public MessageSendParams {
-        Assert.checkNotNullParam("id", id);
         Assert.checkNotNullParam("message", message);
     }
 

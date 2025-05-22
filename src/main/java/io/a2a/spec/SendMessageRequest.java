@@ -35,6 +35,10 @@ public final class SendMessageRequest extends JSONRPCRequest<MessageSendParams> 
         this.params = params;
     }
 
+    public SendMessageRequest(Object id, MessageSendParams params) {
+        this(null, id, SEND_MESSAGE_METHOD, params);
+    }
+
     public static class Builder {
         private String jsonrpc;
         private Object id;

@@ -35,10 +35,14 @@ public final class CancelTaskRequest extends JSONRPCRequest<TaskIdParams> {
         this.params = params;
     }
 
+    public CancelTaskRequest(Object id, TaskIdParams params) {
+        this(null, id, CANCEL_TASK_METHOD, params);
+    }
+
     public static class Builder {
         private String jsonrpc;
         private Object id;
-        private String method;
+        private String method = CANCEL_TASK_METHOD;
         private TaskIdParams params;
 
         public CancelTaskRequest.Builder jsonrpc(String jsonrpc) {

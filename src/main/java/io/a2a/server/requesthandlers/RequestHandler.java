@@ -2,36 +2,28 @@ package io.a2a.server.requesthandlers;
 
 import java.util.concurrent.Flow;
 
-import io.a2a.server.JSONRPCException;
-import io.a2a.spec.CancelTaskResponse;
-import io.a2a.spec.GetTaskPushNotificationRequest;
-import io.a2a.spec.GetTaskPushNotificationResponse;
-import io.a2a.spec.GetTaskRequest;
-import io.a2a.spec.GetTaskResponse;
+import io.a2a.server.events.Event;
+import io.a2a.spec.EventType;
+import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.MessageSendParams;
-import io.a2a.spec.SendMessageRequest;
-import io.a2a.spec.SendMessageResponse;
-import io.a2a.spec.SendStreamingMessageRequest;
-import io.a2a.spec.SendStreamingMessageResponse;
-import io.a2a.spec.SetTaskPushNotificationRequest;
-import io.a2a.spec.SetTaskPushNotificationResponse;
+import io.a2a.spec.StreamingEventType;
+import io.a2a.spec.Task;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
-import io.a2a.spec.TaskResubscriptionRequest;
 
 public interface RequestHandler {
-    GetTaskResponse onGetTask(TaskQueryParams params) throws JSONRPCException;
+    Task onGetTask(TaskQueryParams params) throws JSONRPCError;
 
-    CancelTaskResponse onCancelTask(TaskIdParams params) throws JSONRPCException;
+    Task onCancelTask(TaskIdParams params) throws JSONRPCError;
 
-     SendMessageResponse onMessageSend(MessageSendParams params) throws JSONRPCException;
+    EventType onMessageSend(MessageSendParams params) throws JSONRPCError;
 
-    SendStreamingMessageResponse onMessageSendStream(MessageSendParams params) throws JSONRPCException;
+    Flow.Publisher<StreamingEventType> onMessageSendStream(MessageSendParams params) throws JSONRPCError;
 
-    SetTaskPushNotificationResponse onSetTaskPushNotificationConfig(TaskPushNotificationConfig params) throws JSONRPCException;
+    TaskPushNotificationConfig onSetTaskPushNotificationConfig(TaskPushNotificationConfig params) throws JSONRPCError;
 
-    GetTaskPushNotificationResponse onGetTaskPushNotificationConfig(TaskIdParams params) throws JSONRPCException;
+    TaskPushNotificationConfig onGetTaskPushNotificationConfig(TaskIdParams params) throws JSONRPCError;
 
-    Flow.Publisher<SendStreamingMessageResponse> onResubscribeToTask(TaskIdParams params) throws JSONRPCException;
+    Flow.Publisher<Event> onResubscribeToTask(TaskIdParams params) throws JSONRPCError;
 }

@@ -135,7 +135,7 @@ public class EventConsumerTest {
 
             @Override
             public void onComplete() {
-
+                subscription.cancel();
             }
         });
 

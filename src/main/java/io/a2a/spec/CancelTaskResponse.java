@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class CancelTaskResponse extends JSONRPCResponse {
+public final class CancelTaskResponse extends JSONRPCResponse<Task> {
 
     @JsonCreator
     public CancelTaskResponse(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
@@ -18,7 +18,7 @@ public final class CancelTaskResponse extends JSONRPCResponse {
         super(jsonrpc, id, result, error);
     }
 
-    public CancelTaskResponse(Object id, TaskNotFoundError error) {
+    public CancelTaskResponse(Object id, JSONRPCError error) {
         this(null, id, null, error);
     }
 

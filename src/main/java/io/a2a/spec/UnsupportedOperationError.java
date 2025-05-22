@@ -20,4 +20,8 @@ public class UnsupportedOperationError extends JSONRPCError {
                 defaultIfNull(message, "This operation is not supported"),
                 data);
     }
+
+    public UnsupportedOperationError() {
+        this(null, null, null);
+    }
 }

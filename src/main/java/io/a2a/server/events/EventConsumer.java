@@ -48,9 +48,13 @@ public class EventConsumer {
                     // Without the timeout, loop might hang indefinitely if no events are
                     // enqueued by the agent and the agent simply threw an exception
 
+                    // TODO the callback mentioned above seems unused in the Python 0.2.1 tag
                     Event event;
                     try {
                         event = queue.dequeueEvent(QUEUE_WAIT_MILLISECONDS);
+                        if (event == null) {
+                            continue;
+                        }
                         tube.send(event);
                     } catch (Exception e) {
                         // Continue polling until there is a final event
@@ -67,6 +71,8 @@ public class EventConsumer {
                             case COMPLETED:
                             case CANCELED:
                             case FAILED:
+                            case REJECTED:
+                            case UNKNOWN:
                                 isFinalEvent = true;
                         }
                     }
