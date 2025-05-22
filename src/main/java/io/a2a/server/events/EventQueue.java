@@ -41,6 +41,5 @@ public class EventQueue {
     public void close() {
         queue.drainTo(new ArrayList<>());
         children.forEach(EventQueue::close);
-
     }
 }

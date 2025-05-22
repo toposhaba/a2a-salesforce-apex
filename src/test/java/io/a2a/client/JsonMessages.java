@@ -205,7 +205,7 @@ public class JsonMessages {
              "method": "tasks/get",
              "params": {
               "id": "de38c76d-d54c-436c-8b9f-4c2703648d64",
-              "historyLength": 10,
+              "historyLength": 10
              }
             }
             """;
