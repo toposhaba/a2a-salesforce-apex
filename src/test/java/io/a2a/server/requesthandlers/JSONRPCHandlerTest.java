@@ -22,6 +22,7 @@ import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
 import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
+import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Message;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskIdParams;
@@ -30,6 +31,8 @@ import io.a2a.spec.TaskQueryParams;
 import io.a2a.spec.TaskState;
 import io.a2a.spec.TaskStatus;
 import io.a2a.spec.TextPart;
+import io.a2a.spec.UnsupportedOperationError;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -62,26 +65,40 @@ public class JSONRPCHandlerTest {
 
     TaskStore taskStore;
     JSONRPCHandler handler;
+    AgentExecutorMethod agentExecutorExecute;
+    AgentExecutorMethod agentExecutorCancel;
+
 
     @BeforeEach
     public void init() {
         AgentExecutor executor = new AgentExecutor() {
             @Override
-            public void execute(RequestContext context, EventQueue eventQueue) {
-
+            public void execute(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
+                if (agentExecutorExecute != null) {
+                    agentExecutorExecute.invoke(context, eventQueue);
+                }
             }
 
             @Override
-            public void cancel(RequestContext context, EventQueue eventQueue) {
-
+            public void cancel(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
+                if (agentExecutorCancel != null) {
+                    agentExecutorCancel.invoke(context, eventQueue);
+                }
             }
         };
+
         taskStore = new InMemoryTaskStore();
         QueueManager queueManager = new InMemoryQueueManager();
         PushNotifier pushNotifier = new InMemoryPushNotifier();
 
         RequestHandler requestHandler = new DefaultRequestHandler(executor, taskStore, queueManager, pushNotifier);
         handler = new JSONRPCHandler(CARD, requestHandler);
+    }
+
+    @AfterEach
+    public void cleanup() {
+        agentExecutorExecute = null;
+        agentExecutorCancel = null;
     }
 
     @Test
@@ -103,26 +120,52 @@ public class JSONRPCHandlerTest {
         assertNull(response.getResult());
     }
 
-    @Disabled("Something not working with the queues")
     @Test
     public void testOnCancelTaskSuccess() throws Exception {
         taskStore.save(MINIMAL_TASK);
+
+        agentExecutorCancel = (context, eventQueue) -> {
+            // We need to cancel the task or the EventConsumer never finds a 'final' event.
+            // Looking at the Python implementation, they typically use AgentExecutors that
+            // don't support cancellation. So my theory is the Agent updates the task to the CANCEL status
+            Task task = context.getTask();
+            Task updated = new Task.Builder(task)
+                    .status(new TaskStatus(TaskState.CANCELED))
+                    .build();
+
+            eventQueue.enqueueEvent(updated);
+        };
+
         CancelTaskRequest request = new CancelTaskRequest("111", new TaskIdParams(MINIMAL_TASK.getId()));
         CancelTaskResponse response = handler.onCancelTask(request);
         assertEquals(request.getId(), response.getId());
-        // TODO more checks
+        Task task = response.getResult();
+        assertEquals(MINIMAL_TASK.getId(), task.getId());
+        assertEquals(MINIMAL_TASK.getContextId(), task.getContextId());
+        assertEquals(TaskState.CANCELED, task.getStatus().state());
     }
 
-    @Disabled
     @Test
     public void testOnCancelTaskNotSupported() {
-        // TODO
+        taskStore.save(MINIMAL_TASK);
+        agentExecutorCancel = (context, eventQueue) -> {
+            throw new UnsupportedOperationError();
+        };
+
+        CancelTaskRequest request = new CancelTaskRequest("1", new TaskIdParams(MINIMAL_TASK.getId()));
+        CancelTaskResponse response = handler.onCancelTask(request);
+        assertEquals(request.getId(), response.getId());
+        assertNull(response.getResult());
+        assertInstanceOf(UnsupportedOperationError.class, response.getError());
     }
 
-    @Disabled
     @Test
     public void testOnCancelTaskNotFound() {
-        // TODO
+        CancelTaskRequest request = new CancelTaskRequest("1", new TaskIdParams(MINIMAL_TASK.getId()));
+        CancelTaskResponse response = handler.onCancelTask(request);
+        assertEquals(request.getId(), response.getId());
+        assertNull(response.getResult());
+        assertInstanceOf(TaskNotFoundError.class, response.getError());
     }
 
     @Disabled
@@ -184,4 +227,9 @@ public class JSONRPCHandlerTest {
     public void testOnResubscribeNoExistingTaskError() {
         
     }
+
+    private interface AgentExecutorMethod {
+        void invoke(RequestContext context, EventQueue eventQueue) throws JSONRPCError;
+    }
+
 }

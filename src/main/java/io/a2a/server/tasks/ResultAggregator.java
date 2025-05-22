@@ -53,8 +53,8 @@ public class ResultAggregator {
                     returnedEvent.set(msg);
                     return false;
                 }
-                callTaskManagerProcess(event);
             }
+            callTaskManagerProcess(event);
             return true;
         });
 

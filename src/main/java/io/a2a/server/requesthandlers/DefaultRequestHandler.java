@@ -85,8 +85,8 @@ public class DefaultRequestHandler implements RequestHandler {
 
         EventConsumer consumer = new EventConsumer(queue);
         EventType type = resultAggregator.consumeAll(consumer);
-        if (type instanceof Task task1) {
-            return task;
+        if (type instanceof Task tempTask) {
+            return tempTask;
         }
 
         throw new InternalError("Agent did not return a valid response");
@@ -284,7 +284,7 @@ public class DefaultRequestHandler implements RequestHandler {
         return pushNotifier != null && params.configuration() != null && params.configuration().pushNotification() != null;
     }
 
-    private void runEventStream(RequestContext requestContext, EventQueue queue) {
+    private void runEventStream(RequestContext requestContext, EventQueue queue)  throws JSONRPCError {
         agentExecutor.execute(requestContext, queue);
     }
 
