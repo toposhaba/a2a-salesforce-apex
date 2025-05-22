@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class GetTaskPushNotificationResponse extends JSONRPCResponse {
+public final class GetTaskPushNotificationResponse extends JSONRPCResponse<TaskPushNotificationConfig> {
 
     @JsonCreator
     public GetTaskPushNotificationResponse(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,

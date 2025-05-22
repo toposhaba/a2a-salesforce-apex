@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class SendStreamingMessageResponse extends JSONRPCResponse {
+public final class SendStreamingMessageResponse extends JSONRPCResponse<StreamingEventType> {
 
     @JsonCreator
     public SendStreamingMessageResponse(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,

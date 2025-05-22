@@ -13,19 +13,19 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public abstract sealed class JSONRPCResponse implements JSONRPCMessage permits SendStreamingMessageResponse,
+public abstract sealed class JSONRPCResponse<T> implements JSONRPCMessage permits SendStreamingMessageResponse,
         GetTaskResponse, CancelTaskResponse, SetTaskPushNotificationResponse, GetTaskPushNotificationResponse,
         SendMessageResponse {
 
     protected String jsonrpc;
     protected Object id;
-    protected Object result;
+    protected T result;
     protected JSONRPCError error;
 
     public JSONRPCResponse() {
     }
 
-    public JSONRPCResponse(String jsonrpc, Object id, Object result, JSONRPCError error) {
+    public JSONRPCResponse(String jsonrpc, Object id, T result, JSONRPCError error) {
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
         this.id = id == null ? UUID.randomUUID().toString() : id;
         this.result = result;
@@ -40,7 +40,7 @@ public abstract sealed class JSONRPCResponse implements JSONRPCMessage permits S
         return this.id;
     }
 
-    public Object getResult() {
+    public T getResult() {
         return this.result;
     }
 
