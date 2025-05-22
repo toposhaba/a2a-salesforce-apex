@@ -35,6 +35,10 @@ public final class SetTaskPushNotificationRequest extends JSONRPCRequest<TaskPus
         this.params = params;
     }
 
+    public SetTaskPushNotificationRequest(String id, TaskPushNotificationConfig taskPushConfig) {
+        this(null, id, SET_TASK_PUSH_NOTIFICATION_REQUEST, taskPushConfig);
+    }
+
     public static class Builder {
         private String jsonrpc;
         private Object id;

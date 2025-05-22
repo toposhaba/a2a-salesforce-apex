@@ -26,20 +26,26 @@ import io.a2a.spec.Artifact;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
 import io.a2a.spec.EventType;
+import io.a2a.spec.GetTaskPushNotificationRequest;
+import io.a2a.spec.GetTaskPushNotificationResponse;
 import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Message;
 import io.a2a.spec.MessageSendParams;
+import io.a2a.spec.PushNotificationConfig;
 import io.a2a.spec.SendMessageRequest;
 import io.a2a.spec.SendMessageResponse;
 import io.a2a.spec.SendStreamingMessageRequest;
 import io.a2a.spec.SendStreamingMessageResponse;
+import io.a2a.spec.SetTaskPushNotificationRequest;
+import io.a2a.spec.SetTaskPushNotificationResponse;
 import io.a2a.spec.StreamingEventType;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskArtifactUpdateEvent;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskNotFoundError;
+import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
 import io.a2a.spec.TaskState;
 import io.a2a.spec.TaskStatus;
@@ -449,16 +455,43 @@ public class JSONRPCHandlerTest {
         // TODO
     }
 
-    @Disabled
     @Test
     public void testSetPushNotificationSuccess() {
-        // TODO
+        JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);
+        taskStore.save(MINIMAL_TASK);
+
+        TaskPushNotificationConfig taskPushConfig =
+                new TaskPushNotificationConfig(
+                        MINIMAL_TASK.getId(), new
+                        PushNotificationConfig("http://example.con", null, null));
+        SetTaskPushNotificationRequest request = new SetTaskPushNotificationRequest("1", taskPushConfig);
+        SetTaskPushNotificationResponse response = handler.setPushNotification(request);
+        assertSame(taskPushConfig, response.getResult());
     }
 
     @Disabled
     @Test
     public void testGetPushNotificationSuccess() {
-        // TODO
+        JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);
+        taskStore.save(MINIMAL_TASK);
+        agentExecutorExecute = (context, eventQueue) -> {
+            eventQueue.enqueueEvent(context.getTask() != null ? context.getTask() : context.getMessage());
+        };
+
+
+        TaskPushNotificationConfig taskPushConfig =
+                new TaskPushNotificationConfig(
+                        MINIMAL_TASK.getId(), new
+                        PushNotificationConfig("http://example.con", null, null));
+
+        SetTaskPushNotificationRequest request = new SetTaskPushNotificationRequest("1", taskPushConfig);
+        handler.setPushNotification(request);
+
+        GetTaskPushNotificationRequest getRequest =
+                new GetTaskPushNotificationRequest("111", new TaskIdParams(MINIMAL_TASK.getId()));
+        GetTaskPushNotificationResponse getResponse = handler.getPushNotification(getRequest);
+
+        assertEquals(taskPushConfig, getResponse.getResult());
     }
 
     @Disabled
