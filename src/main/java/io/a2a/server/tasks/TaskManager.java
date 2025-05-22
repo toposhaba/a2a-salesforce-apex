@@ -142,7 +142,7 @@ public class TaskManager {
             history.add(task.getStatus().message());
         }
         history.add(message);
-        task = new Task.Builder()
+        task = new Task.Builder(task)
                 .history(history)
                 .build();
         currentTask = task;

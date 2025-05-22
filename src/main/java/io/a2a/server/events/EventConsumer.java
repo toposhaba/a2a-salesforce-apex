@@ -52,6 +52,9 @@ public class EventConsumer {
                     Event event;
                     try {
                         event = queue.dequeueEvent(QUEUE_WAIT_MILLISECONDS);
+                        if (event == null) {
+                            continue;
+                        }
                         tube.send(event);
                     } catch (Exception e) {
                         // Continue polling until there is a final event

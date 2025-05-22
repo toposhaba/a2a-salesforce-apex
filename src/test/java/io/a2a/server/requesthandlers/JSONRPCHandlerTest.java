@@ -24,6 +24,9 @@ import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Message;
+import io.a2a.spec.MessageSendParams;
+import io.a2a.spec.SendMessageRequest;
+import io.a2a.spec.SendMessageResponse;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskNotFoundError;
@@ -138,6 +141,8 @@ public class JSONRPCHandlerTest {
 
         CancelTaskRequest request = new CancelTaskRequest("111", new TaskIdParams(MINIMAL_TASK.getId()));
         CancelTaskResponse response = handler.onCancelTask(request);
+
+        assertNull(response.getError());
         assertEquals(request.getId(), response.getId());
         Task task = response.getResult();
         assertEquals(MINIMAL_TASK.getId(), task.getId());
@@ -168,22 +173,64 @@ public class JSONRPCHandlerTest {
         assertInstanceOf(TaskNotFoundError.class, response.getError());
     }
 
-    @Disabled
     @Test
     public void testOnMessageNewMessageSuccess() {
-        // TODO
+        agentExecutorExecute = (context, eventQueue) -> {
+            eventQueue.enqueueEvent(context.getMessage());
+        };
+        Message message = new Message.Builder(MESSAGE)
+                .taskId(MINIMAL_TASK.getId())
+                .contextId(MINIMAL_TASK.getContextId())
+                .build();
+        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams("1", message, null, null));
+        SendMessageResponse response = handler.onMessageSend(request);
+        assertNull(response.getError());
+        // The Python implementation returns a Task here, but then again they are using hardcoded mocks and
+        // bypassing the whole EventQueue.
+        // If we were to send a Task in agentExecutorExecute EventConsumer.consumeAll() would not exit due to
+        // the Task not having a 'final' state
+        assertSame(message, response.getResult());
     }
 
-    @Disabled
     @Test
     public void testOnMessageNewMessageWithExistingTaskSuccess() {
-        // TODO
+        taskStore.save(MINIMAL_TASK);
+        agentExecutorExecute = (context, eventQueue) -> {
+            eventQueue.enqueueEvent(context.getMessage());
+        };
+        Message message = new Message.Builder(MESSAGE)
+                .taskId(MINIMAL_TASK.getId())
+                .contextId(MINIMAL_TASK.getContextId())
+                .build();
+        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams("1", message, null, null));
+        SendMessageResponse response = handler.onMessageSend(request);
+        assertNull(response.getError());
+        // The Python implementation returns a Task here, but then again they are using hardcoded mocks and
+        // bypassing the whole EventQueue.
+        // If we were to send a Task in agentExecutorExecute EventConsumer.consumeAll() would not exit due to
+        // the Task not having a 'final' state
+        assertSame(message, response.getResult());
+
     }
 
     @Disabled
     @Test
     public void testOnMessageError() {
-        // TODO
+        // TODO This test is disabled because sending an Error doesn't end up breaking out of the
+        //  EventConsumer.consumeAll() loop, since Errors are currently not considered a 'final' state.
+        //  The Python implementation uses a mock for EventConsumer.consumeAll() which is why their tests pass
+        agentExecutorExecute = (context, eventQueue) -> {
+            eventQueue.enqueueEvent(new UnsupportedOperationError());
+        };
+        Message message = new Message.Builder(MESSAGE)
+                .taskId(MINIMAL_TASK.getId())
+                .contextId(MINIMAL_TASK.getContextId())
+                .build();
+        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams("1", message, null, null));
+        SendMessageResponse response = handler.onMessageSend(request);
+        assertInstanceOf(UnsupportedOperationError.class, response.getResult());
+        assertNull(response.getResult());
+
     }
 
     @Disabled

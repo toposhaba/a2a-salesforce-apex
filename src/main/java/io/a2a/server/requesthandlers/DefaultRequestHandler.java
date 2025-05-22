@@ -7,6 +7,8 @@ import static io.a2a.util.AsyncUtils.processor;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -42,6 +44,8 @@ public class DefaultRequestHandler implements RequestHandler {
 
     // TODO the value upstream is asyncio.Task. Trying a Runnable
     private final Map<String, Runnable> runningAgents = Collections.synchronizedMap(new HashMap<>());
+
+    private final Executor executor = Executors.newSingleThreadExecutor();
 
     public DefaultRequestHandler(AgentExecutor agentExecutor, TaskStore taskStore, QueueManager queueManager, PushNotifier pushNotifier) {
         this.agentExecutor = agentExecutor;
@@ -290,6 +294,7 @@ public class DefaultRequestHandler implements RequestHandler {
 
     private void registerProducer(String taskId, Runnable providerRunnable) {
         runningAgents.put(taskId, providerRunnable);
+        executor.execute(providerRunnable);
     }
 
     private void cleanupProducer(Runnable producerRunnable, String taskId) {

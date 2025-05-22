@@ -107,7 +107,7 @@ public class RequestContext {
             params.message().setContextId(UUID.randomUUID().toString());
         }
         if (params.message().getContextId() != null) {
-            this.taskId = params.message().getContextId();
+            this.contextId = params.message().getContextId();
         }
     }
 

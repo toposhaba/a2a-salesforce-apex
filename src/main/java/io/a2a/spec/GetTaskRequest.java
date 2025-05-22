@@ -22,19 +22,21 @@ public final class GetTaskRequest extends JSONRPCRequest<TaskQueryParams> {
     @JsonCreator
     public GetTaskRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
                           @JsonProperty("method") String method, @JsonProperty("params") TaskQueryParams params) {
+        Assert.checkNotNullParam("method", method);
         Assert.checkNotNullParam("params", params);
-        this.method = defaultIfNull(method, GET_TASK_REQUEST);
-        if (!this.method.equals(GET_TASK_REQUEST)) {
+
+        if (!method.equals(GET_TASK_REQUEST)) {
             throw new IllegalArgumentException("Invalid GetTaskRequest method");
         }
 
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
         this.id = id == null ? UUID.randomUUID().toString() : id;
+        this.method = method;
         this.params = params;
     }
 
     public GetTaskRequest(Object id, TaskQueryParams params) {
-        this(null, id, null, params);
+        this(null, id, GET_TASK_REQUEST, params);
     }
 
 
