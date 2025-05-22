@@ -77,7 +77,7 @@ public class A2AClientTest {
         this.server.when(
                         request()
                                 .withMethod("POST")
-                                .withPath("/message/send")
+                                .withPath("/")
                                 .withBody(JsonBody.json(SEND_MESSAGE_TEST_REQUEST, MatchType.STRICT))
 
                 )
@@ -130,7 +130,7 @@ public class A2AClientTest {
         this.server.when(
                         request()
                                 .withMethod("POST")
-                                .withPath("/message/send")
+                                .withPath("/")
                                 .withBody(JsonBody.json(SEND_MESSAGE_TEST_REQUEST_WITH_MESSAGE_RESPONSE, MatchType.STRICT))
 
                 )
@@ -177,7 +177,7 @@ public class A2AClientTest {
         this.server.when(
                         request()
                                 .withMethod("POST")
-                                .withPath("/message/send")
+                                .withPath("/")
                                 .withBody(JsonBody.json(SEND_MESSAGE_WITH_ERROR_TEST_REQUEST, MatchType.STRICT))
 
                 )
@@ -217,7 +217,7 @@ public class A2AClientTest {
         this.server.when(
                         request()
                                 .withMethod("POST")
-                                .withPath("/tasks/get")
+                                .withPath("/")
                                 .withBody(JsonBody.json(GET_TASK_TEST_REQUEST, MatchType.STRICT))
 
                 )
@@ -266,7 +266,7 @@ public class A2AClientTest {
         this.server.when(
                         request()
                                 .withMethod("POST")
-                                .withPath("/tasks/cancel")
+                                .withPath("/")
                                 .withBody(JsonBody.json(CANCEL_TASK_TEST_REQUEST, MatchType.STRICT))
 
                 )
@@ -296,7 +296,7 @@ public class A2AClientTest {
         this.server.when(
                         request()
                                 .withMethod("POST")
-                                .withPath("/tasks/pushNotification/get")
+                                .withPath("/")
                                 .withBody(JsonBody.json(GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST, MatchType.STRICT))
 
                 )
@@ -326,7 +326,7 @@ public class A2AClientTest {
         this.server.when(
                         request()
                                 .withMethod("POST")
-                                .withPath("/tasks/pushNotification/set")
+                                .withPath("/")
                                 .withBody(JsonBody.json(SET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST, MatchType.STRICT))
 
                 )

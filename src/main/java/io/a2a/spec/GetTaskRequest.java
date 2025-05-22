@@ -1,6 +1,6 @@
 package io.a2a.spec;
 
-import static io.a2a.spec.A2A.GET_TASK_REQUEST;
+import static io.a2a.spec.A2A.GET_TASK_METHOD;
 import static io.a2a.spec.A2A.JSONRPC_VERSION;
 import static io.a2a.util.Utils.defaultIfNull;
 
@@ -25,7 +25,7 @@ public final class GetTaskRequest extends JSONRPCRequest<TaskQueryParams> {
         Assert.checkNotNullParam("method", method);
         Assert.checkNotNullParam("params", params);
 
-        if (!method.equals(GET_TASK_REQUEST)) {
+        if (! method.equals(GET_TASK_METHOD)) {
             throw new IllegalArgumentException("Invalid GetTaskRequest method");
         }
 
@@ -36,7 +36,7 @@ public final class GetTaskRequest extends JSONRPCRequest<TaskQueryParams> {
     }
 
     public GetTaskRequest(Object id, TaskQueryParams params) {
-        this(null, id, GET_TASK_REQUEST, params);
+        this(null, id, GET_TASK_METHOD, params);
     }
 
 
