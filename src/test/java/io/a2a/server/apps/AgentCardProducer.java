@@ -18,7 +18,7 @@ public class AgentCardProducer {
                 "http://localhost:8081",
                 null,
                 "1.0",
-                "http://example.con/docs",
+                "http://example.com/docs",
                 new AgentCapabilities(true, true, true),
                 null,
                 null,

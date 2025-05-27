@@ -4,11 +4,13 @@ import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.wildfly.common.Assert.assertNotNull;
 import static org.wildfly.common.Assert.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
 import io.a2a.server.tasks.TaskStore;
+import io.a2a.spec.AgentCard;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
 import io.a2a.spec.GetTaskRequest;
@@ -232,5 +234,27 @@ public class A2AServerResourceTest {
         } finally {
             taskStore.delete(MINIMAL_TASK.getId());
         }
+    }
+
+    @Test
+    public void testGetAgentCard() {
+        AgentCard agentCard = given()
+                .contentType(MediaType.APPLICATION_JSON)
+                .when()
+                .get("/.well-known/agent.json")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(AgentCard.class);
+        assertNotNull(agentCard);
+        assertEquals("test-card", agentCard.name());
+        assertEquals("A test agent card", agentCard.description());
+        assertEquals("http://localhost:8081", agentCard.url());
+        assertEquals("1.0", agentCard.version());
+        assertEquals("http://example.com/docs", agentCard.documentationUrl());
+        assertTrue(agentCard.capabilities().pushNotifications());
+        assertTrue(agentCard.capabilities().streaming());
+        assertTrue(agentCard.capabilities().stateTransitionHistory());
+        assertTrue(agentCard.skills().isEmpty());
     }
 }
