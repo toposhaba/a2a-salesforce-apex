@@ -1,6 +1,7 @@
 package io.a2a.spec;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
  * Represents the state of a task.
@@ -22,6 +23,7 @@ public enum TaskState {
         this.state = state;
     }
 
+    @JsonValue
     public String asString() {
         return state;
     }

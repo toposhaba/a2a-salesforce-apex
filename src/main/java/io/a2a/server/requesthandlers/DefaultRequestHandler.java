@@ -34,7 +34,10 @@ import io.a2a.spec.TaskNotFoundError;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
 import io.a2a.spec.UnsupportedOperationError;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
+@ApplicationScoped
 public class DefaultRequestHandler implements RequestHandler {
 
     private final AgentExecutor agentExecutor;
@@ -47,6 +50,7 @@ public class DefaultRequestHandler implements RequestHandler {
 
     private final Executor executor = Executors.newSingleThreadExecutor();
 
+    @Inject
     public DefaultRequestHandler(AgentExecutor agentExecutor, TaskStore taskStore, QueueManager queueManager, PushNotifier pushNotifier) {
         this.agentExecutor = agentExecutor;
         this.taskStore = taskStore;
