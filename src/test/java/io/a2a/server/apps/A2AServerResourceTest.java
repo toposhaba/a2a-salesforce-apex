@@ -7,7 +7,14 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.wildfly.common.Assert.assertNotNull;
 import static org.wildfly.common.Assert.assertTrue;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+
 import org.junit.jupiter.api.Test;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.a2a.server.tasks.TaskStore;
 import io.a2a.spec.AgentCard;
@@ -21,6 +28,8 @@ import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.Part;
 import io.a2a.spec.SendMessageRequest;
 import io.a2a.spec.SendMessageResponse;
+import io.a2a.spec.SendStreamingMessageRequest;
+import io.a2a.spec.SendStreamingMessageResponse;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskNotFoundError;
@@ -31,10 +40,17 @@ import io.a2a.spec.TextPart;
 import io.a2a.spec.UnsupportedOperationError;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 @QuarkusTest
 public class A2AServerResourceTest {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Inject
     TaskStore taskStore;
@@ -206,7 +222,6 @@ public class A2AServerResourceTest {
 
     @Test
     public void testSendMessageExistingTaskSuccess() throws Exception {
-        // Need to figure out how to tweak the AgentExecutorProducer so it works for this test and others
         taskStore.save(MINIMAL_TASK);
         try {
             Message message = new Message.Builder(MESSAGE)
@@ -230,6 +245,70 @@ public class A2AServerResourceTest {
             Part<?> part = messageResponse.getParts().get(0);
             assertEquals(Part.Type.TEXT, part.getType());
             assertEquals("test message", ((TextPart) part).getText());
+        } catch (Exception e) {
+        } finally {
+            taskStore.delete(MINIMAL_TASK.getId());
+        }
+    }
+
+    @Test
+    public void testSendMessageStreamNewMessageSuccess() throws Exception {
+        Message message = new Message.Builder(MESSAGE)
+                .taskId(MINIMAL_TASK.getId())
+                .contextId(MINIMAL_TASK.getContextId())
+                .build();
+        SendStreamingMessageRequest request = new SendStreamingMessageRequest(
+                "1", new MessageSendParams("1", message, null, null));
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target("http://localhost:8081/");
+        Response response = target.request(MediaType.SERVER_SENT_EVENTS).post(Entity.json(request));
+        InputStream inputStream = response.readEntity(InputStream.class);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("data: ")) {
+                    SendStreamingMessageResponse sendStreamingMessageResponse = OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
+                    assertNull(sendStreamingMessageResponse.getError());
+                    Message messageResponse =  (Message) sendStreamingMessageResponse.getResult();
+                    assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());
+                    assertEquals(MESSAGE.getRole(), messageResponse.getRole());
+                    Part<?> part = messageResponse.getParts().get(0);
+                    assertEquals(Part.Type.TEXT, part.getType());
+                    assertEquals("test message", ((TextPart) part).getText());
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testSendMessageStreamExistingTaskSuccess() throws Exception {
+        taskStore.save(MINIMAL_TASK);
+        try {
+            Message message = new Message.Builder(MESSAGE)
+                    .taskId(MINIMAL_TASK.getId())
+                    .contextId(MINIMAL_TASK.getContextId())
+                    .build();
+            SendStreamingMessageRequest request = new SendStreamingMessageRequest(
+                    "1", new MessageSendParams("1", message, null, null));
+            Client client = ClientBuilder.newClient();
+            WebTarget target = client.target("http://localhost:8081/");
+            Response response = target.request(MediaType.SERVER_SENT_EVENTS).post(Entity.json(request));
+            InputStream inputStream = response.readEntity(InputStream.class);
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.startsWith("data: ")) {
+                        SendStreamingMessageResponse sendStreamingMessageResponse = OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
+                        assertNull(sendStreamingMessageResponse.getError());
+                        Message messageResponse = (Message) sendStreamingMessageResponse.getResult();
+                        assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());
+                        assertEquals(MESSAGE.getRole(), messageResponse.getRole());
+                        Part<?> part = messageResponse.getParts().get(0);
+                        assertEquals(Part.Type.TEXT, part.getType());
+                        assertEquals("test message", ((TextPart) part).getText());
+                    }
+                }
+            }
         } catch (Exception e) {
         } finally {
             taskStore.delete(MINIMAL_TASK.getId());
