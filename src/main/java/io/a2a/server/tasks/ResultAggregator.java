@@ -12,10 +12,12 @@ import io.a2a.server.events.Event;
 import io.a2a.server.events.EventConsumer;
 import io.a2a.spec.A2AServerException;
 import io.a2a.spec.EventType;
+import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Message;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskState;
 import io.a2a.spec.TaskStatusUpdateEvent;
+import io.a2a.util.Utils;
 
 public class ResultAggregator {
     private final TaskManager taskManager;
@@ -68,15 +70,19 @@ public class ResultAggregator {
         return taskManager.getTask();
     }
 
-    public EventTypeAndInterrupt consumeAndBreakOnInterrupt(EventConsumer consumer) {
+    public EventTypeAndInterrupt consumeAndBreakOnInterrupt(EventConsumer consumer) throws JSONRPCError {
         Flow.Publisher<Event> all = consumer.consumeAll();
         AtomicReference<Message> message = new AtomicReference<>();
         AtomicBoolean interrupted = new AtomicBoolean(false);
-        AtomicReference<Throwable> error = new AtomicReference<>();
+        AtomicReference<Throwable> errorRef = new AtomicReference<>();
         consumer(
                 createTubeConfig(),
                 all,
                 (event -> {
+                    if (event instanceof Throwable t) {
+                        errorRef.set(t);
+                        return false;
+                    }
                     if (event instanceof Message msg) {
                         this.message = msg;
                         message.set(msg);
@@ -104,7 +110,12 @@ public class ResultAggregator {
                     }
                     return true;
                 }),
-                error::set);
+                errorRef::set);
+
+        Throwable error = errorRef.get();
+        if (error != null) {
+            Utils.rethrow(error);
+        }
 
         return new EventTypeAndInterrupt(
                 message.get() != null ? message.get() : taskManager.getTask(), interrupted.get());

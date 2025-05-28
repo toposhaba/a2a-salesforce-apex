@@ -25,7 +25,6 @@ import io.a2a.spec.AgentCard;
 import io.a2a.spec.Artifact;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
-import io.a2a.spec.EventType;
 import io.a2a.spec.GetTaskPushNotificationRequest;
 import io.a2a.spec.GetTaskPushNotificationResponse;
 import io.a2a.spec.GetTaskRequest;
@@ -54,7 +53,6 @@ import io.a2a.spec.TextPart;
 import io.a2a.spec.UnsupportedOperationError;
 import mutiny.zero.ZeroPublisher;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -298,7 +296,6 @@ public class JSONRPCHandlerTest {
         assertNull(response.getResult());
     }
 
-    @Disabled
     @Test
     public void testOnMessageErrorMocks() {
         JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);

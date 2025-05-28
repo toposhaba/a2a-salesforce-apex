@@ -18,4 +18,8 @@ public class Utils {
         }
         return value;
     }
+
+    public static <T extends Throwable> void rethrow(Throwable t) throws T {
+        throw (T) t;
+    }
 }
