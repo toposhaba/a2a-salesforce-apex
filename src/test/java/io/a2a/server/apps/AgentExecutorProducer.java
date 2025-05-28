@@ -19,6 +19,9 @@ public class AgentExecutorProducer {
         return new AgentExecutor() {
             @Override
             public void execute(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
+                if (context.getTaskId().equals("task-not-supported-123")) {
+                    eventQueue.enqueueEvent(new UnsupportedOperationError());
+                }
                 eventQueue.enqueueEvent(context.getMessage() != null ? context.getMessage() : context.getTask());
             }
 
