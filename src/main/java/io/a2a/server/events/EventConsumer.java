@@ -55,6 +55,10 @@ public class EventConsumer {
                         if (event == null) {
                             continue;
                         }
+                        if (event instanceof Throwable thr) {
+                            tube.fail(thr);
+                            return;
+                        }
                         tube.send(event);
                     } catch (Exception e) {
                         // Continue polling until there is a final event

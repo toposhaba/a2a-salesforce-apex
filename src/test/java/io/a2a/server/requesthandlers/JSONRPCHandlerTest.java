@@ -276,7 +276,6 @@ public class JSONRPCHandlerTest {
 
     }
 
-    @Disabled
     @Test
     public void testOnMessageError() {
         // TODO This test is disabled because sending an Error doesn't end up breaking out of the

@@ -5,6 +5,7 @@ import static io.a2a.util.AsyncUtils.convertingProcessor;
 import static io.a2a.util.AsyncUtils.createTubeConfig;
 import static io.a2a.util.AsyncUtils.processor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 import mutiny.zero.ZeroPublisher;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class AsyncUtilsTest {
@@ -498,5 +500,108 @@ public class AsyncUtilsTest {
         latch.await(2, TimeUnit.SECONDS);
         Thread.sleep(500);
         assertEquals(toSend.subList(0, 2), received);
+    }
+
+    @Test
+    public void testMutinyZeroErrorPropagationSanityTest() {
+        Flow.Publisher<String> source = ZeroPublisher.fromItems("a", "b", "c");
+
+        Flow.Publisher<String> processor = ZeroPublisher.create(createTubeConfig(), tube -> {
+            source.subscribe(new Flow.Subscriber<String>() {
+                private Flow.Subscription subscription;
+
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    this.subscription = subscription;
+                    subscription.request(1);
+                }
+
+                @Override
+                public void onNext(String item) {
+                    if (item.equals("c")) {
+                        onError(new IllegalStateException());
+                    }
+                    tube.send(item);
+                    subscription.request(1);
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    tube.fail(throwable);
+                    subscription.cancel();
+                }
+
+                @Override
+                public void onComplete() {
+                    tube.complete();
+                }
+            });
+        });
+
+      Flow.Publisher<String> processor2 = ZeroPublisher.create(createTubeConfig(), tube -> {
+            processor.subscribe(new Flow.Subscriber<String>() {
+                private Flow.Subscription subscription;
+
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    this.subscription = subscription;
+                    subscription.request(1);
+                }
+
+                @Override
+                public void onNext(String item) {
+                    if (item.equals("c")) {
+                        onError(new IllegalStateException());
+                    }
+                    tube.send(item);
+                    subscription.request(1);
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    tube.fail(throwable);
+                    subscription.cancel();
+                }
+
+                @Override
+                public void onComplete() {
+                    tube.complete();
+                }
+            });
+        });
+
+        List<Object> results = new ArrayList<>();
+
+        processor2.subscribe(new Flow.Subscriber<String>() {
+            private Flow.Subscription subscription;
+
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                this.subscription = subscription;
+                subscription.request(1);
+            }
+
+            @Override
+            public void onNext(String item) {
+                results.add(item);
+                subscription.request(1);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                results.add(throwable);
+                subscription.cancel();
+            }
+
+            @Override
+            public void onComplete() {
+            }
+        });
+
+        assertEquals(3, results.size());
+        assertEquals("a", results.get(0));
+        assertEquals("b", results.get(1));
+        assertInstanceOf(IllegalStateException.class, results.get(2));
+
     }
 }
