@@ -7,6 +7,7 @@ import static io.a2a.util.AsyncUtils.processor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import mutiny.zero.ZeroPublisher;
 import org.junit.jupiter.api.Assertions;
@@ -31,15 +33,20 @@ public class AsyncUtilsTest {
         List<String> received = new ArrayList<>();
         CountDownLatch latch = new CountDownLatch(3);
 
-        consumer(createTubeConfig(), publisher, (errorConsumer, s) -> {
-            received.add(s);
-            latch.countDown();
-            return true;
-        });
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        consumer(createTubeConfig(),
+                publisher,
+                s -> {
+                    received.add(s);
+                    latch.countDown();
+                    return true;
+                },
+                error::set);
 
 
         latch.await(2, TimeUnit.SECONDS);
         assertEquals(toSend, received);
+        assertNull(error.get());
     }
 
     @Test
@@ -50,17 +57,22 @@ public class AsyncUtilsTest {
         List<String> received = new ArrayList<>();
         CountDownLatch latch = new CountDownLatch(3);
 
-        consumer(createTubeConfig(), publisher, (errorConsumer, s) -> {
-            latch.countDown();
-            if (s.equals("C")) {
-                return false;
-            }
-            received.add(s);
-            return true;
-        });
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        consumer(createTubeConfig(),
+                publisher,
+                s -> {
+                    latch.countDown();
+                    if (s.equals("C")) {
+                        return false;
+                    }
+                    received.add(s);
+                    return true;
+                },
+                error::set);
 
         Thread.sleep(500);
         assertEquals(toSend.subList(0, 2), received);
+        assertNull(error.get());
     }
 
     @Test
@@ -71,42 +83,22 @@ public class AsyncUtilsTest {
         List<String> received = new ArrayList<>();
         CountDownLatch latch = new CountDownLatch(3);
 
-        consumer(createTubeConfig(), publisher, (errorConsumer, s) -> {
-            try {
-                latch.countDown();
-                if (s.equals("C")) {
-                    throw new IllegalStateException();
-                }
-                received.add(s);
-            } catch (Exception e) {
-                errorConsumer.accept(e);
-            }
-            return true;
-        });
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        consumer(createTubeConfig(),
+                publisher,
+                s -> {
+                    latch.countDown();
+                    if (s.equals("C")) {
+                        throw new IllegalStateException();
+                    }
+                    received.add(s);
+                    return true;
+                },
+                error::set);
 
         Thread.sleep(500);
         assertEquals(toSend.subList(0, 2), received);
-    }
-
-    @Test
-    public void testUncaughtErrorConsumer() throws Exception {
-        List<String> toSend = List.of("A", "B", "C", "D");
-        Flow.Publisher<String> publisher = ZeroPublisher.fromIterable(toSend);
-
-        List<String> received = new ArrayList<>();
-        CountDownLatch latch = new CountDownLatch(3);
-
-        consumer(createTubeConfig(), publisher, (errorConsumer, s) -> {
-            latch.countDown();
-            if (s.equals("C")) {
-                throw new IllegalStateException();
-            }
-            received.add(s);
-            return true;
-        });
-
-        Thread.sleep(500);
-        assertEquals(toSend.subList(0, 2), received);
+        assertInstanceOf(IllegalStateException.class, error.get());
     }
 
     @Test
@@ -574,18 +566,20 @@ public class AsyncUtilsTest {
         Flow.Publisher<List<String>> processor3 = convertingProcessor(processor2, List::of);
 
         List<Object> results = new ArrayList<>();
+        AtomicReference<Throwable> error = new AtomicReference<>();
 
-        consumer(createTubeConfig(), processor3, new BiFunction<Consumer<Throwable>, List<String>, Boolean>() {
-            @Override
-            public Boolean apply(Consumer<Throwable> throwableConsumer, List<String> s) {
-                results.add(s);
-                return true;
-            }
-        });
+        consumer(createTubeConfig(),
+                processor3,
+                results::add,
+                t -> {
+                    results.add(t);
+                    error.set(t);
+                });
 
         assertEquals(3, results.size());
-        assertEquals("a", results.get(0));
-        assertEquals("b", results.get(1));
+        assertEquals(List.of("a"), results.get(0));
+        assertEquals(List.of("b"), results.get(1));
         assertInstanceOf(IllegalStateException.class, results.get(2));
+        assertInstanceOf(IllegalStateException.class, error.get());
     }
 }

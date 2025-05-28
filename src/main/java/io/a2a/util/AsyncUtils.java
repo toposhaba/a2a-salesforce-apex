@@ -30,26 +30,18 @@ public class AsyncUtils {
     public static <T> void consumer(
             TubeConfiguration config,
             Flow.Publisher<T> source,
-            BiFunction<Consumer<Throwable>, T, Boolean> nextFunction) {
+            Function<T, Boolean> nextFunction,
+            Consumer<Throwable> errorConsumer) {
 
-        AtomicReference<Throwable> setError = new AtomicReference<>();
-
-        BiFunction<Consumer<Throwable>, T, Boolean> wrappedNextFunction = new BiFunction<Consumer<Throwable>, T, Boolean>() {
+        BiFunction<Consumer<Throwable>, T, Boolean> nextBiFunction = new BiFunction<Consumer<Throwable>, T, Boolean>() {
             @Override
             public Boolean apply(Consumer<Throwable> throwableConsumer, T t) {
-                return nextFunction.apply(new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) {
-                        if (throwable != null) {
-                            setError.set(throwable);
-                        }
-                    }
-                }, t);
+                return nextFunction.apply(t);
             }
         };
 
         ZeroPublisher.create(config, tube -> {
-            source.subscribe(new ConsumingSubscriber<>(nextFunction));
+            source.subscribe(new ConsumingSubscriber<>(nextBiFunction, errorConsumer));
         })
                 .subscribe(new Flow.Subscriber<Object>() {
                     private Flow.Subscription subscription;
@@ -92,17 +84,13 @@ public class AsyncUtils {
     }
 
 
-    private static class ConsumingSubscriber<T> implements Flow.Subscriber<T> {
+    private static abstract class AbstractSubscriber<T> implements Flow.Subscriber<T> {
         private Flow.Subscription subscription;
         private final BiFunction<Consumer<Throwable>, T, Boolean> nextFunction;
         private final Consumer<T> publishNextConsumer;
         private final Consumer<Throwable> failureOrCompleteConsumer;
 
-        public ConsumingSubscriber(BiFunction<Consumer<Throwable>, T, Boolean> nextFunction) {
-            this(nextFunction, null, null);
-        }
-
-        protected ConsumingSubscriber(
+        protected AbstractSubscriber(
                 BiFunction<Consumer<Throwable>, T, Boolean> nextFunction,
                 Consumer<T> publishNextConsumer,
                 Consumer<Throwable> failureOrCompleteConsumer) {
@@ -120,19 +108,21 @@ public class AsyncUtils {
 
         @Override
         public void onNext(T item) {
-            AtomicBoolean errorRaised = new AtomicBoolean(false);
+            AtomicReference<Throwable> errorRaised = new AtomicReference<>();
 
             Consumer<Throwable> errorConsumer = t -> {
-                        errorRaised.set(true);
+                        errorRaised.set(t);
                         onError(t);
             };
             boolean continueProcessing = false;
-            try {
-                continueProcessing = nextFunction.apply(errorConsumer, item);
-            } catch (Throwable t) {
-                errorConsumer.accept(t);
+            if (errorRaised.get() == null) {
+                try {
+                    continueProcessing = nextFunction.apply(errorConsumer, item);
+                } catch (Throwable t) {
+                    errorConsumer.accept(t);
+                }
             }
-            if (!continueProcessing || errorRaised.get()) {
+            if (!continueProcessing || errorRaised.get() != null) {
                 subscription.cancel();
             } else {
                 if (publishNextConsumer != null) {
@@ -146,17 +136,28 @@ public class AsyncUtils {
         @Override
         public void onError(Throwable throwable) {
             subscription.cancel();
-            failureOrCompleteConsumer.accept(throwable);
+            if (failureOrCompleteConsumer != null) {
+                failureOrCompleteConsumer.accept(throwable);
+            }
         }
 
         @Override
         public void onComplete() {
             subscription.cancel();
-            failureOrCompleteConsumer.accept(null);
+            if (failureOrCompleteConsumer != null) {
+                failureOrCompleteConsumer.accept(null);
+            }
         }
     }
 
-    private static class ProcessingSubscriber<T> extends ConsumingSubscriber<T> {
+    private static class ConsumingSubscriber<T> extends AbstractSubscriber<T> {
+        public ConsumingSubscriber(BiFunction<Consumer<Throwable>, T, Boolean> nextFunction,
+                                   Consumer<Throwable> failureOrCompleteConsumer) {
+            super(nextFunction, null, failureOrCompleteConsumer);
+        }
+    }
+
+    private static class ProcessingSubscriber<T> extends AbstractSubscriber<T> {
         private Flow.Subscription subscription;
         private final Tube<T> tube;
 
