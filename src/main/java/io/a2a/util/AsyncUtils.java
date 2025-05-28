@@ -2,6 +2,7 @@ package io.a2a.util;
 
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -10,6 +11,7 @@ import mutiny.zero.BackpressureStrategy;
 import mutiny.zero.Tube;
 import mutiny.zero.TubeConfiguration;
 import mutiny.zero.ZeroPublisher;
+import mutiny.zero.operators.Transform;
 
 public class AsyncUtils {
 
@@ -29,6 +31,23 @@ public class AsyncUtils {
             TubeConfiguration config,
             Flow.Publisher<T> source,
             BiFunction<Consumer<Throwable>, T, Boolean> nextFunction) {
+
+        AtomicReference<Throwable> setError = new AtomicReference<>();
+
+        BiFunction<Consumer<Throwable>, T, Boolean> wrappedNextFunction = new BiFunction<Consumer<Throwable>, T, Boolean>() {
+            @Override
+            public Boolean apply(Consumer<Throwable> throwableConsumer, T t) {
+                return nextFunction.apply(new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) {
+                        if (throwable != null) {
+                            setError.set(throwable);
+                        }
+                    }
+                }, t);
+            }
+        };
+
         ZeroPublisher.create(config, tube -> {
             source.subscribe(new ConsumingSubscriber<>(nextFunction));
         })
@@ -68,22 +87,8 @@ public class AsyncUtils {
         });
     }
 
-    public static <T, N> Flow.Publisher<N> convertingProcessor(
-            TubeConfiguration config,
-            Flow.Publisher<T> source,
-            Function<T, N> converterFunction) {
-        return ZeroPublisher.create(config, tube -> {
-            source.subscribe(new ConvertingProcessingSubscriber<>(tube, converterFunction));
-        });
-    }
-
-    public static <T, N> Flow.Publisher<N> convertingProcessor(
-            TubeConfiguration config,
-            Flow.Publisher<T> source,
-            BiFunction<Consumer<Throwable>, T, N> converterFunction) {
-        return ZeroPublisher.create(config, tube -> {
-            source.subscribe(new ConvertingProcessingSubscriber<>(tube, converterFunction));
-        });
+    public static <T, N> Flow.Publisher<N> convertingProcessor(Flow.Publisher<T> source, Function<T, N> converterFunction) {
+        return new Transform<>(source, converterFunction);
     }
 
 

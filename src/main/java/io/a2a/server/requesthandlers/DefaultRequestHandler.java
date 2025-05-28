@@ -229,7 +229,7 @@ public class DefaultRequestHandler implements RequestHandler {
                 return true;
             }));
 
-            return convertingProcessor(createTubeConfig(), eventPublisher, event -> (StreamingEventType) event);
+            return convertingProcessor(eventPublisher, event -> (StreamingEventType) event);
         } finally {
             cleanupProducer(producerRunnable, taskId.get());
         }

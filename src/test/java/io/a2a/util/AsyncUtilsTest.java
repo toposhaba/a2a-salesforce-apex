@@ -272,7 +272,7 @@ public class AsyncUtilsTest {
         CountDownLatch latch = new CountDownLatch(3);
 
         Flow.Publisher<String> convertingPublisher =
-                convertingProcessor(createTubeConfig(), publisher, String::valueOf);
+                convertingProcessor(publisher, String::valueOf);
 
         convertingPublisher.subscribe(new Flow.Subscriber<String>() {
             private Flow.Subscription subscription;
@@ -314,59 +314,7 @@ public class AsyncUtilsTest {
         CountDownLatch latch = new CountDownLatch(2);
 
         Flow.Publisher<String> convertingPublisher =
-                convertingProcessor(createTubeConfig(), publisher, (errorConsumer, i) -> {
-                    try {
-                        if (i == 3) {
-                            throw new IllegalStateException();
-                        }
-                        return String.valueOf(i);
-                    } catch (Throwable t) {
-                        errorConsumer.accept(t);
-                        return "";
-                    }
-                });
-
-        convertingPublisher.subscribe(new Flow.Subscriber<String>() {
-            private Flow.Subscription subscription;
-
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                this.subscription = subscription;
-                subscription.request(1);
-            }
-
-            @Override
-            public void onNext(String item) {
-                subscription.request(1);
-                received.add(item);
-                latch.countDown();
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                subscription.cancel();
-            }
-
-            @Override
-            public void onComplete() {
-                subscription.cancel();
-            }
-        });
-
-        latch.await(2, TimeUnit.SECONDS);
-        assertEquals(toSend.stream().map(String::valueOf).toList().subList(0, 2), received);
-    }
-
-    @Test
-    public void testUncaughtErrorConvertingProcessor() throws Exception {
-        List<Integer> toSend = List.of(1, 2, 3, 4);
-        Flow.Publisher<Integer> publisher = ZeroPublisher.fromIterable(toSend);
-
-        List<String> received = new ArrayList<>();
-        CountDownLatch latch = new CountDownLatch(2);
-
-        Flow.Publisher<String> convertingPublisher =
-                convertingProcessor(createTubeConfig(), publisher, i -> {
+                convertingProcessor(publisher, i -> {
                     if (i == 3) {
                         throw new IllegalStateException();
                     }
@@ -420,7 +368,7 @@ public class AsyncUtilsTest {
         });
 
         Flow.Publisher<String> convertingPublisher =
-                convertingProcessor(createTubeConfig(), processedPublisher, String::valueOf);
+                convertingProcessor(processedPublisher, String::valueOf);
 
                 convertingPublisher.subscribe(new Flow.Subscriber<String>() {
             private Flow.Subscription subscription;
@@ -550,9 +498,6 @@ public class AsyncUtilsTest {
 
                 @Override
                 public void onNext(String item) {
-                    if (item.equals("c")) {
-                        onError(new IllegalStateException());
-                    }
                     tube.send(item);
                     subscription.request(1);
                 }
@@ -602,6 +547,45 @@ public class AsyncUtilsTest {
         assertEquals("a", results.get(0));
         assertEquals("b", results.get(1));
         assertInstanceOf(IllegalStateException.class, results.get(2));
+    }
 
+    @Test
+    public void testAsyncUtilsErrorPropagation() {
+        Flow.Publisher<String> source = ZeroPublisher.fromItems("a", "b", "c");
+
+        Flow.Publisher<String> processor = processor(createTubeConfig(), source, new BiFunction<Consumer<Throwable>, String, Boolean>() {
+            @Override
+            public Boolean apply(Consumer<Throwable> throwableConsumer, String item) {
+                System.out.println("-> (1) " + item);
+                if (item.equals("c")) {
+                    throw new IllegalStateException();
+                }
+                return true;
+            }
+        });
+
+        Flow.Publisher<String> processor2 = processor(createTubeConfig(), processor, new BiFunction<Consumer<Throwable>, String, Boolean>() {
+            @Override
+            public Boolean apply(Consumer<Throwable> throwableConsumer, String s) {
+                return true;
+            }
+        });
+
+        Flow.Publisher<List<String>> processor3 = convertingProcessor(processor2, List::of);
+
+        List<Object> results = new ArrayList<>();
+
+        consumer(createTubeConfig(), processor3, new BiFunction<Consumer<Throwable>, List<String>, Boolean>() {
+            @Override
+            public Boolean apply(Consumer<Throwable> throwableConsumer, List<String> s) {
+                results.add(s);
+                return true;
+            }
+        });
+
+        assertEquals(3, results.size());
+        assertEquals("a", results.get(0));
+        assertEquals("b", results.get(1));
+        assertInstanceOf(IllegalStateException.class, results.get(2));
     }
 }
