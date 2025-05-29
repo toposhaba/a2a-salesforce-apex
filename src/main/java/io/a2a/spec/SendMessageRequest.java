@@ -28,7 +28,9 @@ public final class SendMessageRequest extends JSONRPCRequest<MessageSendParams> 
         if (! method.equals(SEND_MESSAGE_METHOD)) {
             throw new IllegalArgumentException("Invalid SendMessageRequest method");
         }
-
+        if (jsonrpc != null && ! jsonrpc.equals(JSONRPC_VERSION)) {
+            throw new IllegalArgumentException("Invalid JSON-RPC protocol version");
+        }
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
         this.id = id == null ? UUID.randomUUID().toString() : id;
         this.method = method;

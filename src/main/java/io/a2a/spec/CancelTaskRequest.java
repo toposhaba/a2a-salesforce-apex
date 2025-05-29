@@ -28,8 +28,10 @@ public final class CancelTaskRequest extends JSONRPCRequest<TaskIdParams> {
         if (! method.equals(CANCEL_TASK_METHOD)) {
             throw new IllegalArgumentException("Invalid CancelTaskRequest method");
         }
-
-        this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);;
+        if (jsonrpc != null && ! jsonrpc.equals(JSONRPC_VERSION)) {
+            throw new IllegalArgumentException("Invalid JSON-RPC protocol version");
+        }
+        this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
         this.id = id == null ? UUID.randomUUID().toString() : id;
         this.method = method;
         this.params = params;
