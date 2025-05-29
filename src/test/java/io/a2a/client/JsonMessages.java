@@ -242,6 +242,20 @@ public class JsonMessages {
                  {
                   "kind": "text",
                   "text": "tell me a joke"
+                 },
+                 {
+                  "kind": "file",
+                  "file": {
+                     "uri": "file:///path/to/file.txt",
+                     "mimeType": "text/plain"
+                  }
+                 },
+                 {
+                  "kind": "file",
+                  "file": {
+                     "bytes": "aGVsbG8=",
+                     "name": "hello.txt"
+                  }
                  }
                 ],
                 "type": "message"

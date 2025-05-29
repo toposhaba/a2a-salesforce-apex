@@ -34,6 +34,10 @@ import io.a2a.spec.AgentCard;
 import io.a2a.spec.AgentSkill;
 import io.a2a.spec.AuthenticationInfo;
 import io.a2a.spec.CancelTaskResponse;
+import io.a2a.spec.FileContent;
+import io.a2a.spec.FilePart;
+import io.a2a.spec.FileWithBytes;
+import io.a2a.spec.FileWithUri;
 import io.a2a.spec.GetTaskPushNotificationResponse;
 import io.a2a.spec.GetTaskResponse;
 
@@ -257,10 +261,20 @@ public class A2AClientTest {
         assertEquals(Message.Role.USER, message.getRole());
         List<Part<?>> parts = message.getParts();
         assertNotNull(parts);
-        assertEquals(1, parts.size());
+        assertEquals(3, parts.size());
         part = parts.get(0);
         assertEquals(Part.Kind.TEXT, part.getKind());
         assertEquals("tell me a joke", ((TextPart)part).getText());
+        part = parts.get(1);
+        assertEquals(Part.Kind.FILE, part.getKind());
+        FileContent filePart = ((FilePart) part).getFile();
+        assertEquals("file:///path/to/file.txt", ((FileWithUri) filePart).uri());
+        assertEquals("text/plain", filePart.mimeType());
+        part = parts.get(2);
+        assertEquals(Part.Kind.FILE, part.getKind());
+        filePart = ((FilePart) part).getFile();
+        assertEquals("aGVsbG8=", ((FileWithBytes) filePart).bytes());
+        assertEquals("hello.txt", filePart.name());
         assertTrue(task.getMetadata().isEmpty());
     }
 
