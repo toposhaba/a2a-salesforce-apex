@@ -1,7 +1,6 @@
 package io.a2a.server.apps;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -23,6 +22,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.a2a.server.tasks.TaskStore;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.CancelTaskRequest;
@@ -47,11 +47,13 @@ import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskNotFoundError;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
+import io.a2a.spec.TaskResubscriptionRequest;
 import io.a2a.spec.TaskState;
 import io.a2a.spec.TaskStatus;
 import io.a2a.spec.TextPart;
 import io.a2a.spec.UnsupportedOperationError;
 import io.quarkus.test.junit.QuarkusTest;
+
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
@@ -400,6 +402,28 @@ public class A2AServerResourceTest {
         }
     }
 
+    @Test
+    public void testResubscribeNoExistingTaskError() throws Exception {
+        TaskResubscriptionRequest request = new TaskResubscriptionRequest("1", new TaskIdParams("non-existent-task"));
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target("http://localhost:8081/");
+        Response response = target.request(MediaType.SERVER_SENT_EVENTS).post(Entity.json(request));
+        InputStream inputStream = response.readEntity(InputStream.class);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("data: ")) {
+                    SendStreamingMessageResponse sendStreamingMessageResponse = OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
+                    assertEquals(request.getId(), sendStreamingMessageResponse.getId());
+                    assertNull(sendStreamingMessageResponse.getResult());
+                    // this should be an instance of TaskNotFoundError, see https://github.com/fjuma/a2a-java-sdk/issues/23
+                    assertInstanceOf(JSONRPCError.class, sendStreamingMessageResponse.getError());
+                    assertEquals(new TaskNotFoundError().getCode(), sendStreamingMessageResponse.getError().getCode());
+                }
+            }
+        }
+    }
+    
     @Test
     public void testError() {
         Message message = new Message.Builder(MESSAGE)
