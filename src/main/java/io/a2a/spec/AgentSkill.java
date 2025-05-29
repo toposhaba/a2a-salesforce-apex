@@ -16,8 +16,10 @@ public record AgentSkill(String id, String name, String description, List<String
                          List<String> examples, List<String> inputModes, List<String> outputModes) {
 
     public AgentSkill {
+        Assert.checkNotNullParam("description", description);
         Assert.checkNotNullParam("id", id);
         Assert.checkNotNullParam("name", name);
+        Assert.checkNotNullParam("tags", tags);
     }
 
     public static class Builder {
