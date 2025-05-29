@@ -12,19 +12,17 @@ public class AgentCardProducer {
 
     @Produces
     public AgentCard agentCard() {
-        return new AgentCard(
-                "test-card",
-                "A test agent card",
-                "http://localhost:8081",
-                null,
-                "1.0",
-                "http://example.com/docs",
-                new AgentCapabilities(true, true, true),
-                null,
-                null,
-                null,
-                new ArrayList<>()
-        );
+        return new AgentCard.Builder()
+                .name("test-card")
+                .description("A test agent card")
+                .url("http://localhost:8081")
+                .version("1.0")
+                .documentationUrl("http://example.com/docs")
+                .capabilities(new AgentCapabilities(true, true, true))
+                .defaultInputModes(new ArrayList<>())
+                .defaultOutputModes(new ArrayList<>())
+                .skills(new ArrayList<>())
+                .build();
     }
 }
 

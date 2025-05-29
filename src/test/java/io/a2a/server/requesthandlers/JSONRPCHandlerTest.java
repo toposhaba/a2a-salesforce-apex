@@ -604,7 +604,7 @@ public class JSONRPCHandlerTest {
         TaskPushNotificationConfig taskPushConfig =
                 new TaskPushNotificationConfig(
                         MINIMAL_TASK.getId(), new
-                        PushNotificationConfig("http://example.con", null, null));
+                        PushNotificationConfig("http://example.com", null, null));
         SetTaskPushNotificationRequest request = new SetTaskPushNotificationRequest("1", taskPushConfig);
         SetTaskPushNotificationResponse response = handler.setPushNotification(request);
         assertSame(taskPushConfig, response.getResult());
@@ -622,7 +622,7 @@ public class JSONRPCHandlerTest {
         TaskPushNotificationConfig taskPushConfig =
                 new TaskPushNotificationConfig(
                         MINIMAL_TASK.getId(), new
-                        PushNotificationConfig("http://example.con", null, null));
+                        PushNotificationConfig("http://example.com", null, null));
 
         SetTaskPushNotificationRequest request = new SetTaskPushNotificationRequest("1", taskPushConfig);
         handler.setPushNotification(request);
@@ -922,18 +922,17 @@ public class JSONRPCHandlerTest {
     }
 
     private static AgentCard createAgentCard(boolean streaming, boolean pushNotifications, boolean stateTransitionHistory) {
-        return new AgentCard(
-                "test-card",
-                "A test agent card",
-                "http://example.con",
-                null,
-                "1.0",
-                "http://example.con/docs",
-                new AgentCapabilities(true, true, true),
-                null,
-                null,
-                null,
-                new ArrayList<>());
+        return new AgentCard.Builder()
+                .name("test-card")
+                .description("A test agent card")
+                .url("http://example.com")
+                .version("1.0")
+                .documentationUrl("http://example.com/docs")
+                .capabilities(new AgentCapabilities(streaming, pushNotifications, stateTransitionHistory))
+                .defaultInputModes(new ArrayList<>())
+                .defaultOutputModes(new ArrayList<>())
+                .skills(new ArrayList<>())
+                .build();
     }
 
     private interface AgentExecutorMethod {

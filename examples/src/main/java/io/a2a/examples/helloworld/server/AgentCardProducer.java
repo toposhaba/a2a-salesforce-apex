@@ -16,24 +16,23 @@ public class AgentCardProducer {
 
     @Produces
     public AgentCard agentCard() {
-        return new AgentCard(
-                "MyAgent",
-                "My agent card",
-                "http://localhost:9999",
-                null,
-                "1.0",
-                "http://example.com/docs",
-                new AgentCapabilities(true, true, true),
-                new AgentAuthentication(new ArrayList<String>(), null),
-                null,
-                null,
-                Collections.singletonList(new AgentSkill.Builder()
-                        .id("skill-123")
-                        .name("Greeter")
-                        .description("Greets the user")
-                        .tags(Collections.singletonList("greeting"))
-                        .build())
-        );
+        return new AgentCard.Builder()
+                .name("MyAgent")
+                .description("My agent card")
+                .url("http://localhost:9999")
+                .version("1.0")
+                .documentationUrl("http://example.com/docs")
+                .capabilities(new AgentCapabilities(true, true, true))
+                .authentication(new AgentAuthentication(new ArrayList<>(), null))
+                .defaultInputModes(Collections.singletonList("text"))
+                .defaultOutputModes(Collections.singletonList("text"))
+                .skills(Collections.singletonList(new AgentSkill.Builder()
+                                .id("skill-123")
+                                .name("Greeter")
+                                .description("Greets the user")
+                                .tags(Collections.singletonList("greeting"))
+                                .build()))
+                .build();
     }
 }
 

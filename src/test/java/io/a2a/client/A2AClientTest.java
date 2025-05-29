@@ -27,6 +27,7 @@ import static org.mockserver.model.HttpResponse.response;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.a2a.spec.A2AServerException;
 import io.a2a.spec.AgentCard;
@@ -47,8 +48,10 @@ import io.a2a.spec.Artifact;
 import io.a2a.spec.Message;
 import io.a2a.spec.MessageSendConfiguration;
 import io.a2a.spec.MessageSendParams;
+import io.a2a.spec.OpenIdConnectSecurityScheme;
 import io.a2a.spec.Part;
 import io.a2a.spec.PushNotificationConfig;
+import io.a2a.spec.SecurityScheme;
 import io.a2a.spec.SendMessageResponse;
 import io.a2a.spec.SetTaskPushNotificationResponse;
 import io.a2a.spec.Task;
@@ -381,9 +384,17 @@ public class A2AClientTest {
         assertTrue(agentCard.capabilities().streaming());
         assertTrue(agentCard.capabilities().pushNotifications());
         assertFalse(agentCard.capabilities().stateTransitionHistory());
-        assertEquals(1, agentCard.authentication().schemes().size());
-        assertEquals("OAuth2", agentCard.authentication().schemes().get(0));
-        assertEquals("{\"authorizationUrl\": \"https://auth.examplegeoservices.com/authorize\", \"tokenUrl\": \"https://auth.examplegeoservices.com/token\", \"scopes\": {\"route:plan\": \"Allows planning new routes.\", \"map:custom\": \"Allows creating and managing custom maps.\"}}", agentCard.authentication().credentials());
+        Map<String, SecurityScheme> securitySchemes = agentCard.securitySchemes();
+        assertNotNull(securitySchemes);
+        OpenIdConnectSecurityScheme google = (OpenIdConnectSecurityScheme) securitySchemes.get("google");
+        assertEquals("openIdConnect", google.getType());
+        assertEquals("https://accounts.google.com/.well-known/openid-configuration", google.getOpenIdConnectUrl());
+        List<Map<String, List<String>>> security = agentCard.security();
+        assertEquals(1, security.size());
+        Map<String, List<String>> securityMap = security.get(0);
+        List<String> scopes = securityMap.get("google");
+        List<String> expectedScopes = List.of("openid", "profile", "email");
+        assertEquals(expectedScopes, scopes);
         List<String> defaultInputModes = List.of("application/json", "text/plain");
         assertEquals(defaultInputModes, agentCard.defaultInputModes());
         List<String> defaultOutputModes = List.of("application/json", "image/png");
@@ -412,5 +423,6 @@ public class A2AClientTest {
         assertEquals(inputModes, skills.get(1).inputModes());
         outputModes = List.of("image/png", "image/jpeg", "application/json", "text/html");
         assertEquals(outputModes, skills.get(1).outputModes());
+        assertTrue(agentCard.supportsAuthenticatedExtendedCard());
     }
 }
