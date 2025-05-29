@@ -276,11 +276,8 @@ public class JSONRPCHandlerTest {
 
     @Test
     public void testOnMessageError() {
-        // TODO This test is disabled because sending an Error doesn't end up breaking out of the
-        //  EventConsumer.consumeAll() loop, since Errors are currently not considered a 'final' state.
-        //  The Python implementation uses a mock for EventConsumer.consumeAll() which is why their tests pass.
-        //
-        // See testMessageOnErrorMocks() for a test more similar to the Python implementation
+        // See testMessageOnErrorMocks() for a test more similar to the Python implementation, using mocks for
+        // EventConsumer.consumeAll()
         JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);
         agentExecutorExecute = (context, eventQueue) -> {
             eventQueue.enqueueEvent(new UnsupportedOperationError());
@@ -313,11 +310,8 @@ public class JSONRPCHandlerTest {
             response = handler.onMessageSend(request);
         }
 
-        // TODO something seems to be going wrong when errors happen in the publishers, so we need to look at that
-        //  or maybe I am setting up the Mock wrong here
         assertInstanceOf(UnsupportedOperationError.class, response.getError());
         assertNull(response.getResult());
-
     }
 
     @Test
@@ -465,7 +459,6 @@ public class JSONRPCHandlerTest {
         assertSame(taskPushConfig, response.getResult());
     }
 
-    @Disabled
     @Test
     public void testGetPushNotificationSuccess() {
         JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);
