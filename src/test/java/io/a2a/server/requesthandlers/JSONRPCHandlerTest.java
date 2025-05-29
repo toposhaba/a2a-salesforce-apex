@@ -367,13 +367,8 @@ public class JSONRPCHandlerTest {
         assertSame(message, results.get(0));
     }
 
-    @Disabled
     @Test
     public void testOnMessageStreamNewMessageSuccessMocks() {
-
-        // TODO something seems to be happening to the chains of Publishers here
-        //  so the results are not as expected
-
         JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);
 
         // This is used to send events from a mock
@@ -404,7 +399,7 @@ public class JSONRPCHandlerTest {
         try (MockedConstruction<EventConsumer> mocked = Mockito.mockConstruction(
                 EventConsumer.class,
                 (mock, context) -> {
-                    Mockito.doReturn(ZeroPublisher.fromItems(events)).when(mock).consumeAll();})){
+                    Mockito.doReturn(ZeroPublisher.fromIterable(events)).when(mock).consumeAll();})){
             response = handler.onMessageSendStream(request);
         }
 
@@ -439,7 +434,6 @@ public class JSONRPCHandlerTest {
         assertEquals(events, results);
     }
 
-    @Disabled
     @Test
     public void testOnMessageStreamNewMessageExistingTaskSuccess() {
         // TODO

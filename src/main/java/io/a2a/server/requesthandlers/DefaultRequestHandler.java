@@ -111,10 +111,12 @@ public class DefaultRequestHandler implements RequestHandler {
         Task task = taskManager.getTask();
         if (task != null) {
             task = taskManager.updateWithMessage(params.message(), task);
+
             if (shouldAddPushInfo(params)) {
                 pushNotifier.setInfo(task.getId(), params.configuration().pushNotification());
             }
         }
+
         RequestContext requestContext = new RequestContext(
                 params,
                 task == null ? null : task.getId(),
@@ -135,10 +137,8 @@ public class DefaultRequestHandler implements RequestHandler {
         registerProducer(taskId, providerRunnable);
 
         EventConsumer consumer = new EventConsumer(queue);
-
         // TODO https://github.com/fjuma/a2a-java-sdk/issues/62 Add this callback
 
-        EventType type = null;
         boolean interrupted = false;
         ResultAggregator.EventTypeAndInterrupt etai = resultAggregator.consumeAndBreakOnInterrupt(consumer);
 
@@ -166,8 +166,8 @@ public class DefaultRequestHandler implements RequestHandler {
                 params.message().getContextId(),
                 taskStore,
                 params.message());
-        Task task = taskManager.getTask();
 
+        Task task = taskManager.getTask();
         if (task != null) {
             task = taskManager.updateWithMessage(params.message(), task);
 
@@ -176,7 +176,6 @@ public class DefaultRequestHandler implements RequestHandler {
             }
         }
 
-        ResultAggregator resultAggregator = new ResultAggregator(taskManager, null);
         RequestContext requestContext = new RequestContext(
                 params,
                 task == null ? null : task.getId(),
@@ -186,6 +185,8 @@ public class DefaultRequestHandler implements RequestHandler {
 
         AtomicReference<String> taskId = new AtomicReference<>(requestContext.getTaskId());
         EventQueue queue = queueManager.createOrTap(taskId.get());
+        ResultAggregator resultAggregator = new ResultAggregator(taskManager, null);
+
         Runnable producerRunnable = new Runnable() {
             @Override
             public void run() {
@@ -193,15 +194,15 @@ public class DefaultRequestHandler implements RequestHandler {
             }
         };
         registerProducer(taskId.get(), producerRunnable);
+
+        EventConsumer consumer = new EventConsumer(queue);
         // TODO https://github.com/fjuma/a2a-java-sdk/issues/62 Add this callback
 
         try {
-            EventConsumer consumer = new EventConsumer(queue);
-
-            Flow.Publisher<Event> all = consumer.consumeAll();
+            Flow.Publisher<Event> results = resultAggregator.consumeAndEmit(consumer);
 
             Flow.Publisher<Event> eventPublisher =
-                    processor(createTubeConfig(), all, ((errorConsumer, event) -> {
+                    processor(createTubeConfig(), results, ((errorConsumer, event) -> {
                 if (event instanceof Task createdTask && !taskId.get().equals(createdTask.getId())) {
                     try {
                         queueManager.add(createdTask.getId(), queue);
