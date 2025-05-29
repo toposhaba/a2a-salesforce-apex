@@ -1,9 +1,11 @@
 package io.a2a.server.requesthandlers;
 
 import static io.a2a.util.AsyncUtils.convertingProcessor;
-import static io.a2a.util.AsyncUtils.createTubeConfig;
 
 import java.util.concurrent.Flow;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 import io.a2a.server.events.Event;
 import io.a2a.spec.AgentCard;
@@ -26,8 +28,7 @@ import io.a2a.spec.Task;
 import io.a2a.spec.TaskNotFoundError;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskResubscriptionRequest;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
+import mutiny.zero.ZeroPublisher;
 
 @ApplicationScoped
 public class JSONRPCHandler {
@@ -75,7 +76,12 @@ public class JSONRPCHandler {
     }
 
     public Flow.Publisher<SendStreamingMessageResponse> onResubscribeToTask(TaskResubscriptionRequest request) {
-        Flow.Publisher<Event> publisher = requestHandler.onResubscribeToTask(request.getParams());
+        Flow.Publisher<Event> publisher = null;
+        try {
+            publisher = requestHandler.onResubscribeToTask(request.getParams());
+        } catch (JSONRPCError e) {
+            return ZeroPublisher.fromItems(new SendStreamingMessageResponse(request.getId(), e));
+        }
         Flow.Publisher<StreamingEventType> eventStreamingConverter =
                 convertingProcessor(publisher, event -> (StreamingEventType) event);
         return convertingProcessor(eventStreamingConverter, streamingEventType -> {

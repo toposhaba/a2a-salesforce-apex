@@ -34,4 +34,8 @@ public final class TaskResubscriptionRequest extends JSONRPCRequest<TaskIdParams
         this.method = method;
         this.params = params;
     }
+
+    public TaskResubscriptionRequest(Object id, TaskIdParams params) {
+        this(null, id, SEND_TASK_RESUBSCRIPTION_METHOD, params);
+    }
 }

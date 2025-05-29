@@ -126,6 +126,11 @@ public class Task implements EventType, StreamingEventType, Event {
             return this;
         }
 
+        public Builder history(Message... history) {
+            this.history = List.of(history);
+            return this;
+        }
+
         public Builder metadata(Map<String, Object> metadata) {
             this.metadata = metadata;
             return this;
