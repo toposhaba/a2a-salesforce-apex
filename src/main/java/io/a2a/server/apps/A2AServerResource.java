@@ -1,5 +1,7 @@
 package io.a2a.server.apps;
 
+import java.util.concurrent.Flow;
+
 import io.a2a.server.requesthandlers.JSONRPCHandler;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.CancelTaskRequest;
@@ -20,7 +22,11 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.sse.Sse;
+import jakarta.ws.rs.sse.SseEventSink;
 
 @Path("/")
 public class A2AServerResource {
@@ -38,15 +44,35 @@ public class A2AServerResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public JSONRPCResponse<?> handleRequests(JSONRPCRequest<?> request) {
+    public Response handleNonStreamingRequests(JSONRPCRequest<?> request) {
         if (request instanceof SendStreamingMessageRequest || request instanceof TaskResubscriptionRequest) {
-            // TODO process streaming request
-            return null;
-        } else {
-            return processNonStreamingRequest(request);
+            JSONRPCResponse<?> response = generateErrorResponse(request, new UnsupportedOperationError());
+            return Response.ok(response).type(MediaType.APPLICATION_JSON).build();
         }
+        return processNonStreamingRequest(request);
     }
 
+    /**
+     * Handles incoming POST requests to the main A2A endpoint that involve Server-Sent Events (SSE).
+     * Dispatches the request to the appropriate JSON-RPC handler method and returns the response.
+     */
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.SERVER_SENT_EVENTS)
+    public Response handleStreamingRequests(JSONRPCRequest<?> request, @Context SseEventSink sseEventSink, @Context Sse sse) {
+        if (!(request instanceof SendStreamingMessageRequest) && !(request instanceof TaskResubscriptionRequest)) {
+            JSONRPCResponse<?> response = generateErrorResponse(request, new UnsupportedOperationError());
+            return Response.ok(response).type(MediaType.APPLICATION_JSON).build();
+        }
+        return processStreamingRequest(request, sseEventSink, sse);
+    }
+
+    /**
+     * Handles incoming GET requests to the agent card endpoint.
+     * Returns the agent card in JSON format.
+     *
+     * @return the agent card
+     */
     @GET
     @Path("/.well-known/agent.json")
     @Produces(MediaType.APPLICATION_JSON)
@@ -54,20 +80,69 @@ public class A2AServerResource {
         return jsonRpcHandler.getAgentCard();
     }
 
-    private JSONRPCResponse<?> processNonStreamingRequest(JSONRPCRequest<?> request) {
+    private Response processNonStreamingRequest(JSONRPCRequest<?> request) {
+        JSONRPCResponse<?> response;
         if (request instanceof GetTaskRequest) {
-            return jsonRpcHandler.onGetTask((GetTaskRequest) request);
+            response = jsonRpcHandler.onGetTask((GetTaskRequest) request);
         } else if (request instanceof CancelTaskRequest) {
-            return jsonRpcHandler.onCancelTask((CancelTaskRequest) request);
+            response = jsonRpcHandler.onCancelTask((CancelTaskRequest) request);
         } else if (request instanceof SetTaskPushNotificationRequest) {
-            return jsonRpcHandler.setPushNotification((SetTaskPushNotificationRequest) request);
+            response = jsonRpcHandler.setPushNotification((SetTaskPushNotificationRequest) request);
         } else if (request instanceof GetTaskPushNotificationRequest) {
-            return jsonRpcHandler.getPushNotification((GetTaskPushNotificationRequest) request);
+            response = jsonRpcHandler.getPushNotification((GetTaskPushNotificationRequest) request);
         } else if (request instanceof SendMessageRequest) {
-            return jsonRpcHandler.onMessageSend((SendMessageRequest) request);
+            response = jsonRpcHandler.onMessageSend((SendMessageRequest) request);
         } else {
-            return generateErrorResponse(request, new UnsupportedOperationError());
+            response = generateErrorResponse(request, new UnsupportedOperationError());
         }
+        return Response.ok(response).type(MediaType.APPLICATION_JSON).build();
+    }
+
+    private Response processStreamingRequest(JSONRPCRequest<?> request, SseEventSink sseEventSink, Sse sse) {
+        Flow.Publisher<? extends JSONRPCResponse<?>> publisher;
+        if (request instanceof SendStreamingMessageRequest) {
+            publisher = jsonRpcHandler.onMessageSendStream((SendStreamingMessageRequest) request);
+            return handleStreamingResponse(publisher, sseEventSink, sse);
+        } else if (request instanceof TaskResubscriptionRequest) {
+            publisher = jsonRpcHandler.onResubscribeToTask((TaskResubscriptionRequest) request);
+            return handleStreamingResponse(publisher, sseEventSink, sse);
+        } else {
+            JSONRPCResponse<?> response = generateErrorResponse(request, new UnsupportedOperationError());
+            return Response.ok(response).type(MediaType.APPLICATION_JSON).build();
+        }
+    }
+
+    private Response handleStreamingResponse(Flow.Publisher<? extends JSONRPCResponse<?>> publisher, SseEventSink sseEventSink, Sse sse) {
+        publisher.subscribe(new Flow.Subscriber<JSONRPCResponse<?>>() {
+            private Flow.Subscription subscription;
+
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                this.subscription = subscription;
+                subscription.request(Long.MAX_VALUE);
+            }
+
+            @Override
+            public void onNext(JSONRPCResponse<?> item) {
+                sseEventSink.send(sse.newEventBuilder()
+                        .mediaType(MediaType.APPLICATION_JSON_TYPE)
+                        .data(item)
+                        .build());
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                // TODO
+                sseEventSink.close();
+            }
+
+            @Override
+            public void onComplete() {
+                sseEventSink.close();
+            }
+        });
+
+        return Response.ok().type(MediaType.SERVER_SENT_EVENTS).build();
     }
 
     private JSONRPCResponse<?> generateErrorResponse(JSONRPCRequest<?> request, JSONRPCError error) {

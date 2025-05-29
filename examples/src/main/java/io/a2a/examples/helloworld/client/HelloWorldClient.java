@@ -1,4 +1,4 @@
-package io.a2a.examples.helloworld;
+package io.a2a.examples.helloworld.client;
 
 import io.a2a.client.A2AClient;
 import io.a2a.spec.A2A;

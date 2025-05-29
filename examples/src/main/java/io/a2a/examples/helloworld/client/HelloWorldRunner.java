@@ -18,6 +18,6 @@
  */
 public class HelloWorldRunner {
     public static void main(String[] args) {
-        io.a2a.examples.helloworld.HelloWorldClient.main(args);
+        io.a2a.examples.helloworld.client.HelloWorldClient.main(args);
     }
 } 
