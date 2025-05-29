@@ -15,9 +15,9 @@ import io.a2a.util.Assert;
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TextPart extends Part<String> {
-    private String text;
-    private Map<String, Object> metadata;
-    private Type type;
+    private final String text;
+    private final Map<String, Object> metadata;
+    private final Kind kind;
 
     public TextPart(String text) {
         this(text, null);
@@ -28,12 +28,12 @@ public class TextPart extends Part<String> {
         Assert.checkNotNullParam("text", text);
         this.text = text;
         this.metadata = metadata;
-        this.type = Type.TEXT;
+        this.kind = Kind.TEXT;
     }
 
     @Override
-    public Type getType() {
-        return type;
+    public Kind getKind() {
+        return kind;
     }
 
     public String getText() {

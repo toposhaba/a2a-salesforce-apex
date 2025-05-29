@@ -16,9 +16,9 @@ import io.a2a.util.Assert;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DataPart extends Part<Map<String, Object>> {
 
-    private Map<String, Object> data;
-    private Map<String, Object> metadata;
-    private Type type;
+    private final Map<String, Object> data;
+    private final Map<String, Object> metadata;
+    private final Kind kind;
 
     public DataPart(Map<String, Object> data) {
         this(data, null);
@@ -30,12 +30,12 @@ public class DataPart extends Part<Map<String, Object>> {
         Assert.checkNotNullParam("data", data);
         this.data = data;
         this.metadata = metadata;
-        this.type = Type.DATA;
+        this.kind = Kind.DATA;
     }
 
     @Override
-    public Type getType() {
-        return type;
+    public Kind getKind() {
+        return kind;
     }
 
     public Map<String, Object> getData() {

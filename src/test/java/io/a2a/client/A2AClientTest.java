@@ -123,7 +123,7 @@ public class A2AClientTest {
         assertEquals("joke", artifact.name());
         assertEquals(1, artifact.parts().size());
         Part<?> part = artifact.parts().get(0);
-        assertEquals(Part.Type.TEXT, part.getType());
+        assertEquals(Part.Kind.TEXT, part.getKind());
         assertEquals("Why did the chicken cross the road? To get to the other side!", ((TextPart) part).getText());
         assertTrue(task.getMetadata().isEmpty());
     }
@@ -169,7 +169,7 @@ public class A2AClientTest {
         Message agentMessage = (Message) result;
         assertEquals(Message.Role.AGENT, agentMessage.getRole());
         Part<?> part = agentMessage.getParts().get(0);
-        assertEquals(Part.Type.TEXT, part.getType());
+        assertEquals(Part.Kind.TEXT, part.getKind());
         assertEquals("Why did the chicken cross the road? To get to the other side!", ((TextPart) part).getText());
         assertEquals("msg-456", agentMessage.getMessageId());
     }
@@ -247,7 +247,7 @@ public class A2AClientTest {
         assertEquals(1, artifact.parts().size());
         assertEquals("artifact-1", artifact.artifactId());
         Part<?> part = artifact.parts().get(0);
-        assertEquals(Part.Type.TEXT, part.getType());
+        assertEquals(Part.Kind.TEXT, part.getKind());
         assertEquals("Why did the chicken cross the road? To get to the other side!", ((TextPart) part).getText());
         assertTrue(task.getMetadata().isEmpty());
         List<Message> history = task.getHistory();
@@ -259,7 +259,7 @@ public class A2AClientTest {
         assertNotNull(parts);
         assertEquals(1, parts.size());
         part = parts.get(0);
-        assertEquals(Part.Type.TEXT, part.getType());
+        assertEquals(Part.Kind.TEXT, part.getKind());
         assertEquals("tell me a joke", ((TextPart)part).getText());
         assertTrue(task.getMetadata().isEmpty());
     }

@@ -1,11 +1,8 @@
 package io.a2a.client;
 
-import static io.a2a.client.JsonMessages.SEND_MESSAGE_TEST_REQUEST;
-import static io.a2a.client.JsonMessages.SEND_MESSAGE_TEST_RESPONSE;
 import static io.a2a.client.JsonStreamingMessages.SEND_MESSAGE_STREAMING_TEST_REQUEST;
 import static io.a2a.client.JsonStreamingMessages.SEND_MESSAGE_STREAMING_TEST_RESPONSE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
@@ -15,7 +12,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -24,21 +20,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.matchers.MatchType;
-import org.mockserver.model.ConnectionOptions;
 import org.mockserver.model.JsonBody;
 
-import io.a2a.client.sse.SSEEventListener;
-import io.a2a.spec.Artifact;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Message;
 import io.a2a.spec.MessageSendConfiguration;
 import io.a2a.spec.MessageSendParams;
-import io.a2a.spec.Part;
 import io.a2a.spec.StreamingEventType;
-import io.a2a.spec.Task;
-import io.a2a.spec.TaskArtifactUpdateEvent;
-import io.a2a.spec.TaskState;
-import io.a2a.spec.TaskStatusUpdateEvent;
 import io.a2a.spec.TextPart;
 
 public class A2AClientStreamingTest {

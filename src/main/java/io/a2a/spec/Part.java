@@ -13,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.PROPERTY,
-        property = "type",
+        property = "kind",
         visible = true
 )
 @JsonSubTypes({
@@ -22,24 +22,24 @@ import com.fasterxml.jackson.annotation.JsonValue;
         @JsonSubTypes.Type(value = DataPart.class, name = "data")
 })
 public abstract class Part<T> {
-    public enum Type {
+    public enum Kind {
         TEXT("text"),
         FILE("file"),
         DATA("data");
 
-        private String type;
+        private String kind;
 
-        Type(String type) {
-            this.type = type;
+        Kind(String kind) {
+            this.kind = kind;
         }
 
         @JsonValue
         public String asString() {
-            return this.type;
+            return this.kind;
         }
     }
 
-    public abstract Type getType();
+    public abstract Kind getKind();
 
     public abstract Map<String, Object> getMetadata();
 

@@ -229,7 +229,7 @@ public class A2AServerResourceTest {
         assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());
         assertEquals(MESSAGE.getRole(), messageResponse.getRole());
         Part<?> part = messageResponse.getParts().get(0);
-        assertEquals(Part.Type.TEXT, part.getType());
+        assertEquals(Part.Kind.TEXT, part.getKind());
         assertEquals("test message", ((TextPart) part).getText());
     }
 
@@ -256,7 +256,7 @@ public class A2AServerResourceTest {
             assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());
             assertEquals(MESSAGE.getRole(), messageResponse.getRole());
             Part<?> part = messageResponse.getParts().get(0);
-            assertEquals(Part.Type.TEXT, part.getType());
+            assertEquals(Part.Kind.TEXT, part.getKind());
             assertEquals("test message", ((TextPart) part).getText());
         } catch (Exception e) {
         } finally {
@@ -286,7 +286,7 @@ public class A2AServerResourceTest {
                     assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());
                     assertEquals(MESSAGE.getRole(), messageResponse.getRole());
                     Part<?> part = messageResponse.getParts().get(0);
-                    assertEquals(Part.Type.TEXT, part.getType());
+                    assertEquals(Part.Kind.TEXT, part.getKind());
                     assertEquals("test message", ((TextPart) part).getText());
                 }
             }
@@ -317,7 +317,7 @@ public class A2AServerResourceTest {
                         assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());
                         assertEquals(MESSAGE.getRole(), messageResponse.getRole());
                         Part<?> part = messageResponse.getParts().get(0);
-                        assertEquals(Part.Type.TEXT, part.getType());
+                        assertEquals(Part.Kind.TEXT, part.getKind());
                         assertEquals("test message", ((TextPart) part).getText());
                     }
                 }

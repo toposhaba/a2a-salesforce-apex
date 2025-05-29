@@ -80,7 +80,7 @@ public class JsonMessages {
                "role": "user",
                "parts": [
                 {
-                 "type": "text",
+                 "kind": "text",
                  "text": "tell me a joke"
                 }
                ],
@@ -111,7 +111,7 @@ public class JsonMessages {
                 "name": "joke",
                 "parts": [
                  {
-                  "type": "text",
+                  "kind": "text",
                   "text": "Why did the chicken cross the road? To get to the other side!"
                  }
                 ]
@@ -133,7 +133,7 @@ public class JsonMessages {
                "role": "user",
                "parts": [
                 {
-                 "type": "text",
+                 "kind": "text",
                  "text": "tell me a joke"
                 }
                ],
@@ -157,7 +157,7 @@ public class JsonMessages {
               "role": "agent",
                 "parts": [
                  {
-                  "type": "text",
+                  "kind": "text",
                   "text": "Why did the chicken cross the road? To get to the other side!"
                  }
                 ],
@@ -177,7 +177,7 @@ public class JsonMessages {
                "role": "user",
                "parts": [
                 {
-                 "type": "text",
+                 "kind": "text",
                  "text": "tell me a joke"
                 }
                ],
@@ -229,7 +229,7 @@ public class JsonMessages {
                 "artifactId": "artifact-1",
                 "parts": [
                  {
-                  "type": "text",
+                  "kind": "text",
                   "text": "Why did the chicken cross the road? To get to the other side!"
                  }
                 ]
@@ -240,7 +240,7 @@ public class JsonMessages {
                 "role": "user",
                 "parts": [
                  {
-                  "type": "text",
+                  "kind": "text",
                   "text": "tell me a joke"
                  }
                 ],
