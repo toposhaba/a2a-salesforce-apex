@@ -19,7 +19,6 @@ import io.a2a.server.events.Event;
 import io.a2a.server.events.EventConsumer;
 import io.a2a.server.events.EventQueue;
 import io.a2a.server.events.InMemoryQueueManager;
-import io.a2a.server.events.QueueManager;
 import io.a2a.server.tasks.InMemoryPushNotifier;
 import io.a2a.server.tasks.InMemoryTaskStore;
 import io.a2a.server.tasks.PushNotifier;
@@ -50,6 +49,7 @@ import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskNotFoundError;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
+import io.a2a.spec.TaskResubscriptionRequest;
 import io.a2a.spec.TaskState;
 import io.a2a.spec.TaskStatus;
 import io.a2a.spec.TaskStatusUpdateEvent;
@@ -83,6 +83,7 @@ public class JSONRPCHandlerTest {
     RequestHandler requestHandler;
     AgentExecutorMethod agentExecutorExecute;
     AgentExecutorMethod agentExecutorCancel;
+    private InMemoryQueueManager queueManager;
 
 
     @BeforeEach
@@ -104,7 +105,7 @@ public class JSONRPCHandlerTest {
         };
 
         taskStore = new InMemoryTaskStore();
-        QueueManager queueManager = new InMemoryQueueManager();
+        queueManager = new InMemoryQueueManager();
         PushNotifier pushNotifier = new InMemoryPushNotifier();
 
         requestHandler = new DefaultRequestHandler(executor, taskStore, queueManager, pushNotifier);
@@ -629,13 +630,140 @@ public class JSONRPCHandlerTest {
     @Disabled
     @Test
     public void testOnMessageStreamNewMessageSendPushNotificationSuccess() {
-        // TODO
+        // TODO - this needs a Http client
     }
 
-    @Disabled
     @Test
+    @Disabled
     public void testOnResubscribeExistingTaskSuccess() {
+        JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);
+        taskStore.save(MINIMAL_TASK);
+        queueManager.createOrTap(MINIMAL_TASK.getId());
 
+        agentExecutorExecute = (context, eventQueue) -> {
+            // The only thing hitting the agent is the onMessageSend() and we should use the message
+            eventQueue.enqueueEvent(context.getMessage());
+            //eventQueue.enqueueEvent(context.getTask() != null ? context.getTask() : context.getMessage());
+        };
+
+        TaskResubscriptionRequest request = new TaskResubscriptionRequest("1", new TaskIdParams(MINIMAL_TASK.getId()));
+        Flow.Publisher<SendStreamingMessageResponse> response = handler.onResubscribeToTask(request);
+
+        // We need to send some events in order for those to end up in the queue
+        Message message = new Message.Builder()
+                .taskId(MINIMAL_TASK.getId())
+                .contextId(MINIMAL_TASK.getContextId())
+                .parts(new TextPart("text"))
+                .build();
+        SendMessageResponse smr =
+                handler.onMessageSend(new SendMessageRequest("1", new MessageSendParams("1", message, null, null)));
+        assertNull(smr.getError());
+
+
+        List<StreamingEventType> results = new ArrayList<>();
+
+        // TODO - this does not trigger an event. I think because there are now several Publishers taking items
+        //  from the same queue
+
+        response.subscribe(new Flow.Subscriber<>() {
+            private Flow.Subscription subscription;
+
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                this.subscription = subscription;
+                subscription.request(1);
+            }
+
+            @Override
+            public void onNext(SendStreamingMessageResponse item) {
+                results.add(item.getResult());
+                System.out.println("----> " + item);
+                subscription.request(1);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                subscription.cancel();
+            }
+
+            @Override
+            public void onComplete() {
+                subscription.cancel();
+            }
+        });
+
+        // The Python implementation has several events emitted since it uses mocks.
+        //
+        // See testOnMessageStreamNewMessageExistingTaskSuccessMocks() for a test more similar to the Python implementation
+        assertEquals(1, results.size());
+    }
+
+
+    @Test
+    public void testOnResubscribeExistingTaskSuccessMocks() throws Exception {
+        JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);
+        taskStore.save(MINIMAL_TASK);
+        queueManager.createOrTap(MINIMAL_TASK.getId());
+
+        List<Event> events = List.of(
+                new TaskArtifactUpdateEvent.Builder()
+                        .taskId(MINIMAL_TASK.getId())
+                        .contextId(MINIMAL_TASK.getContextId())
+                        .artifact(new Artifact.Builder()
+                                .artifactId("11")
+                                .parts(new TextPart("text"))
+                                .build())
+                        .build(),
+                new TaskStatusUpdateEvent.Builder()
+                        .taskId(MINIMAL_TASK.getId())
+                        .contextId(MINIMAL_TASK.getContextId())
+                        .status(new TaskStatus(TaskState.WORKING))
+                        .build());
+
+        TaskResubscriptionRequest request = new TaskResubscriptionRequest("1", new TaskIdParams(MINIMAL_TASK.getId()));
+        Flow.Publisher<SendStreamingMessageResponse> response;
+        try (MockedConstruction<EventConsumer> mocked = Mockito.mockConstruction(
+                EventConsumer.class,
+                (mock, context) -> {
+                    Mockito.doReturn(ZeroPublisher.fromIterable(events)).when(mock).consumeAll();})){
+            response = handler.onResubscribeToTask(request);
+        }
+
+        List<StreamingEventType> results = new ArrayList<>();
+
+        // Unlike testOnResubscribeExistingTaskSuccess() the ZeroPublisher.fromIterable()
+        // used to mock the events completes once it has sent all the items. So no special thread
+        // handling is needed.
+        response.subscribe(new Flow.Subscriber<>() {
+            private Flow.Subscription subscription;
+
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                this.subscription = subscription;
+                subscription.request(1);
+            }
+
+            @Override
+            public void onNext(SendStreamingMessageResponse item) {
+                results.add(item.getResult());
+                subscription.request(1);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                subscription.cancel();
+            }
+
+            @Override
+            public void onComplete() {
+                subscription.cancel();
+            }
+        });
+
+        // The Python implementation has several events emitted since it uses mocks.
+        //
+        // See testOnMessageStreamNewMessageExistingTaskSuccessMocks() for a test more similar to the Python implementation
+        assertEquals(events, results);
     }
 
     @Disabled

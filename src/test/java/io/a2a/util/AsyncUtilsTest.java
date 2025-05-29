@@ -298,6 +298,50 @@ public class AsyncUtilsTest {
     }
 
     @Test
+    public void testChainedConvertingProcessors() throws Exception {
+        List<Integer> toSend = List.of(1, 2, 3);
+        Flow.Publisher<Integer> publisher = ZeroPublisher.fromIterable(toSend);
+
+        List<Long> received = new ArrayList<>();
+        CountDownLatch latch = new CountDownLatch(3);
+
+        Flow.Publisher<String> convertingPublisher =
+                convertingProcessor(publisher, String::valueOf);
+        Flow.Publisher<Long> convertingPublisher2 =
+                convertingProcessor(convertingPublisher, Long::valueOf);
+
+        convertingPublisher2.subscribe(new Flow.Subscriber<Long>() {
+            private Flow.Subscription subscription;
+
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                this.subscription = subscription;
+                subscription.request(1);
+            }
+
+            @Override
+            public void onNext(Long item) {
+                subscription.request(1);
+                received.add(item);
+                latch.countDown();
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                subscription.cancel();
+            }
+
+            @Override
+            public void onComplete() {
+                subscription.cancel();
+            }
+        });
+
+        latch.await(2, TimeUnit.SECONDS);
+        assertEquals(toSend.stream().map(Long::valueOf).toList(), received);
+    }
+
+    @Test
     public void testErrorConvertingProcessor() throws Exception {
         List<Integer> toSend = List.of(1, 2, 3, 4);
         Flow.Publisher<Integer> publisher = ZeroPublisher.fromIterable(toSend);

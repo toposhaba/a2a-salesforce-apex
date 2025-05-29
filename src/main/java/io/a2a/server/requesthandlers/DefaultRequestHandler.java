@@ -48,7 +48,7 @@ public class DefaultRequestHandler implements RequestHandler {
     // TODO the value upstream is asyncio.Task. Trying a Runnable
     private final Map<String, Runnable> runningAgents = Collections.synchronizedMap(new HashMap<>());
 
-    private final Executor executor = Executors.newSingleThreadExecutor();
+    private final Executor executor = Executors.newCachedThreadPool();
 
     @Inject
     public DefaultRequestHandler(AgentExecutor agentExecutor, TaskStore taskStore, QueueManager queueManager, PushNotifier pushNotifier) {

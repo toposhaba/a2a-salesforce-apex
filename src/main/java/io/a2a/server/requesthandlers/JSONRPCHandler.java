@@ -1,9 +1,11 @@
 package io.a2a.server.requesthandlers;
 
 import static io.a2a.util.AsyncUtils.convertingProcessor;
-import static io.a2a.util.AsyncUtils.createTubeConfig;
 
 import java.util.concurrent.Flow;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 import io.a2a.server.events.Event;
 import io.a2a.spec.AgentCard;
@@ -26,8 +28,6 @@ import io.a2a.spec.Task;
 import io.a2a.spec.TaskNotFoundError;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskResubscriptionRequest;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class JSONRPCHandler {
