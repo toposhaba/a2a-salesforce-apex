@@ -8,6 +8,7 @@ import io.a2a.spec.AgentAuthentication;
 import io.a2a.spec.AgentCapabilities;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.AgentSkill;
+import io.a2a.spec.PublicAgentCard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 
@@ -15,6 +16,7 @@ import jakarta.enterprise.inject.Produces;
 public class AgentCardProducer {
 
     @Produces
+    @PublicAgentCard
     public AgentCard agentCard() {
         return new AgentCard.Builder()
                 .name("MyAgent")
@@ -23,7 +25,6 @@ public class AgentCardProducer {
                 .version("1.0")
                 .documentationUrl("http://example.com/docs")
                 .capabilities(new AgentCapabilities(true, true, true))
-                .authentication(new AgentAuthentication(new ArrayList<>(), null))
                 .defaultInputModes(Collections.singletonList("text"))
                 .defaultOutputModes(Collections.singletonList("text"))
                 .skills(Collections.singletonList(new AgentSkill.Builder()

@@ -1,6 +1,8 @@
 package io.a2a.server.apps;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -445,5 +447,16 @@ public class A2AServerResourceTest {
         assertTrue(agentCard.capabilities().streaming());
         assertTrue(agentCard.capabilities().stateTransitionHistory());
         assertTrue(agentCard.skills().isEmpty());
+    }
+
+    @Test
+    public void testGetExtendAgentCardNotSupported() {
+        given()
+                .contentType(MediaType.APPLICATION_JSON)
+                .when()
+                .get("/agent/authenticatedExtendedCard")
+                .then()
+                .statusCode(404)
+                .body("error", equalTo("Extended agent card not supported or not enabled."));
     }
 }

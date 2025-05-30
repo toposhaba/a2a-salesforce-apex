@@ -4,6 +4,7 @@ import static io.a2a.util.AsyncUtils.convertingProcessor;
 
 import java.util.concurrent.Flow;
 
+import io.a2a.spec.PublicAgentCard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -36,7 +37,7 @@ public class JSONRPCHandler {
     private RequestHandler requestHandler;
 
     @Inject
-    public JSONRPCHandler(AgentCard agentCard, RequestHandler requestHandler) {
+    public JSONRPCHandler(@PublicAgentCard AgentCard agentCard, RequestHandler requestHandler) {
         this.agentCard = agentCard;
         this.requestHandler = requestHandler;
     }

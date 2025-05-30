@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import io.a2a.spec.AgentCapabilities;
 import io.a2a.spec.AgentCard;
+import io.a2a.spec.PublicAgentCard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 
@@ -11,6 +12,7 @@ import jakarta.enterprise.inject.Produces;
 public class AgentCardProducer {
 
     @Produces
+    @PublicAgentCard
     public AgentCard agentCard() {
         return new AgentCard.Builder()
                 .name("test-card")
