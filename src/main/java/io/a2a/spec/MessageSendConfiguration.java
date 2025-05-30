@@ -5,6 +5,8 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import io.a2a.util.Assert;
+
 /**
  * Represents the configuration of the message to be sent.
  *
@@ -15,6 +17,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record MessageSendConfiguration(List<String> acceptedOutputModes, Integer historyLength,
                                        PushNotificationConfig pushNotification, boolean blocking) {
+
+    public MessageSendConfiguration {
+        Assert.checkNotNullParam("acceptedOutputModes", acceptedOutputModes);
+    }
 
     public static class Builder {
         List<String> acceptedOutputModes;
