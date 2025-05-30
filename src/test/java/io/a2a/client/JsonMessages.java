@@ -15,6 +15,7 @@ public class JsonMessages {
                   "organization": "Example Geo Services Inc.",
                   "url": "https://www.examplegeoservices.com"
                 },
+                "iconUrl": "https://georoute-agent.example.com/icon.png",
                 "version": "1.2.0",
                 "documentationUrl": "https://docs.examplegeoservices.com/georoute-agent/api",
                 "capabilities": {

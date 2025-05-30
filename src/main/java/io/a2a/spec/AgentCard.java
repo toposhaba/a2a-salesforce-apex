@@ -18,7 +18,7 @@ public record AgentCard(String name, String description, String url, AgentProvid
                         String version, String documentationUrl, AgentCapabilities capabilities,
                         List<String> defaultInputModes, List<String> defaultOutputModes, List<AgentSkill> skills,
                         boolean supportsAuthenticatedExtendedCard, Map<String, SecurityScheme> securitySchemes,
-                        List<Map<String, List<String>>> security) {
+                        List<Map<String, List<String>>> security, String iconUrl) {
 
     private static final String TEXT_MODE = "text";
 
@@ -47,6 +47,7 @@ public record AgentCard(String name, String description, String url, AgentProvid
         private boolean supportsAuthenticatedExtendedCard = false;
         private Map<String, SecurityScheme> securitySchemes;
         private List<Map<String, List<String>>> security;
+        private String iconUrl;
 
         public Builder name(String name) {
             this.name = name;
@@ -113,10 +114,15 @@ public record AgentCard(String name, String description, String url, AgentProvid
             return this;
         }
 
+        public Builder iconUrl(String iconUrl) {
+            this.iconUrl = iconUrl;
+            return this;
+        }
+
         public AgentCard build() {
             return new AgentCard(name, description, url, provider, version, documentationUrl,
                     capabilities, defaultInputModes, defaultOutputModes, skills,
-                    supportsAuthenticatedExtendedCard, securitySchemes, security);
+                    supportsAuthenticatedExtendedCard, securitySchemes, security, iconUrl);
         }
     }
 }

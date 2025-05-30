@@ -438,5 +438,6 @@ public class A2AClientTest {
         outputModes = List.of("image/png", "image/jpeg", "application/json", "text/html");
         assertEquals(outputModes, skills.get(1).outputModes());
         assertTrue(agentCard.supportsAuthenticatedExtendedCard());
+        assertEquals("https://georoute-agent.example.com/icon.png", agentCard.iconUrl());
     }
 }
