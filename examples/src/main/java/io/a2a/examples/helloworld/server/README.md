@@ -20,15 +20,12 @@ mvn quarkus:dev
 
 ## Setup and Run the Python A2A Client
 
-The Python A2A client is part of the [a2a-python](https://github.com/google/a2a-python) project. To set it up and run it:
+The Python A2A client is part of the [a2a-samples](https://github.com/google-a2a/a2a-samples) project. To set it up and run it:
 
-1. Clone the a2a-python repository:
+1. Clone the a2a-samples repository:
    ```bash
-   git clone https://github.com/google/a2a-python.git
-   cd a2a-python
-   
-   # Temporarily check out the v0.2.1a1 tag until https://github.com/fjuma/a2a-java-sdk/issues/61 is resolved
-   git checkout v0.2.1a1
+   git clone https://github.com/google-a2a/a2a-samples.git
+   cd a2a-samples/samples/python/agents/helloworld
    ```
 
 2. **Recommended method**: Install dependencies using uv (much faster Python package installer):
@@ -45,12 +42,7 @@ The Python A2A client is part of the [a2a-python](https://github.com/google/a2a-
    uv pip install -e .
    ```
 
-4. Navigate to the helloworld example directory:
-   ```bash
-   cd examples/helloworld
-   ```
-
-5. Run the client with uv (recommended):
+4. Run the client with uv (recommended):
    ```bash
    uv run test_client.py
    ```
@@ -61,11 +53,13 @@ The client will connect to the Java server running on `http://localhost:9999`.
 
 The Python A2A client (`test_client.py`) performs the following actions:
 
-1. Connects to the Java server at `http://localhost:9999`.
-2. Sends a regular message asking "how much is 10 USD in INR?".
-3. Prints the server's response.
-4. Sends the same message as a streaming request.
-5. Prints each chunk of the server's streaming response as it arrives.
+1. Fetches the server's public agent card
+2. Fetches the server's extended agent card if supported by the server (see https://github.com/fjuma/a2a-java-sdk/issues/81)
+3. Creates an A2A client using the extended agent card that connects to the Python server at `http://localhost:9999`.
+4. Sends a regular message asking "how much is 10 USD in INR?".
+5. Prints the server's response.
+6. Sends the same message as a streaming request.
+7. Prints each chunk of the server's streaming response as it arrives.
 
 ## Notes
 

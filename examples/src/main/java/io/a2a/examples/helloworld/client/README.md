@@ -16,7 +16,7 @@ The Python A2A server is part of the [a2a-samples](https://github.com/google-a2a
 
 1. Clone the a2a-samples repository:
    ```bash
-   git clone git@github.com:google-a2a/a2a-samples.git
+   git clone https://github.com/google-a2a/a2a-samples.git
    cd a2a-samples/samples/python/agents/helloworld
    ```
 
