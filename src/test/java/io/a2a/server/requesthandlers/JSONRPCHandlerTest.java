@@ -13,6 +13,9 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jakarta.enterprise.context.Dependent;
+
+import io.a2a.http.A2AHttpClient;
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.events.Event;
@@ -84,6 +87,7 @@ public class JSONRPCHandlerTest {
     AgentExecutorMethod agentExecutorExecute;
     AgentExecutorMethod agentExecutorCancel;
     private InMemoryQueueManager queueManager;
+    private TestHttpClient httpClient;
 
 
     @BeforeEach
@@ -106,7 +110,8 @@ public class JSONRPCHandlerTest {
 
         taskStore = new InMemoryTaskStore();
         queueManager = new InMemoryQueueManager();
-        PushNotifier pushNotifier = new InMemoryPushNotifier();
+        httpClient = new TestHttpClient();
+        PushNotifier pushNotifier = new InMemoryPushNotifier(httpClient);
 
         requestHandler = new DefaultRequestHandler(executor, taskStore, queueManager, pushNotifier);
     }
@@ -827,4 +832,13 @@ public class JSONRPCHandlerTest {
         void invoke(RequestContext context, EventQueue eventQueue) throws JSONRPCError;
     }
 
+    @Dependent
+    private static class TestHttpClient implements A2AHttpClient {
+        Task task;
+        @Override
+        public int post(String url, Task task) {
+            this.task = task;
+            return 200;
+        }
+    }
 }
