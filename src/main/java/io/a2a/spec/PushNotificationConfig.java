@@ -10,7 +10,7 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record PushNotificationConfig(String url, String token, AuthenticationInfo authentication) {
+public record PushNotificationConfig(String url, String token, PushNotificationAuthenticationInfo authentication) {
 
     public PushNotificationConfig {
         Assert.checkNotNullParam("url", url);
@@ -19,7 +19,7 @@ public record PushNotificationConfig(String url, String token, AuthenticationInf
     public static class Builder {
         private String url;
         private String token;
-        private AuthenticationInfo authenticationInfo;
+        private PushNotificationAuthenticationInfo authentication;
 
         public Builder url(String url) {
             this.url = url;
@@ -31,13 +31,13 @@ public record PushNotificationConfig(String url, String token, AuthenticationInf
             return this;
         }
 
-        public Builder authenticationInfo(AuthenticationInfo authenticationInfo) {
-            this.authenticationInfo = authenticationInfo;
+        public Builder authenticationInfo(PushNotificationAuthenticationInfo authenticationInfo) {
+            this.authentication = authenticationInfo;
             return this;
         }
 
         public PushNotificationConfig build() {
-            return new PushNotificationConfig(url, token, authenticationInfo);
+            return new PushNotificationConfig(url, token, authentication);
         }
     }
 }

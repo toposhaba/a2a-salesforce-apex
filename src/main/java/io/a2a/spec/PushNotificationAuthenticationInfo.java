@@ -8,13 +8,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.a2a.util.Assert;
 
 /**
- * The authentication info for an agent.
+ * Defines authentication details for push notifications.
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record AuthenticationInfo(List<String> schemes, String credentials) {
+public record PushNotificationAuthenticationInfo(List<String> schemes, String credentials) {
 
-    public AuthenticationInfo {
+    public PushNotificationAuthenticationInfo {
         Assert.checkNotNullParam("schemes", schemes);
     }
 }

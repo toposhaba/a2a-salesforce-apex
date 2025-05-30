@@ -32,7 +32,6 @@ import java.util.Map;
 import io.a2a.spec.A2AServerException;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.AgentSkill;
-import io.a2a.spec.AuthenticationInfo;
 import io.a2a.spec.CancelTaskResponse;
 import io.a2a.spec.FileContent;
 import io.a2a.spec.FilePart;
@@ -54,6 +53,7 @@ import io.a2a.spec.MessageSendConfiguration;
 import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.OpenIdConnectSecurityScheme;
 import io.a2a.spec.Part;
+import io.a2a.spec.PushNotificationAuthenticationInfo;
 import io.a2a.spec.PushNotificationConfig;
 import io.a2a.spec.SecurityScheme;
 import io.a2a.spec.SendMessageResponse;
@@ -330,7 +330,7 @@ public class A2AClientTest {
         PushNotificationConfig pushNotificationConfig = taskPushNotificationConfig.pushNotificationConfig();
         assertNotNull(pushNotificationConfig);
         assertEquals("https://example.com/callback", pushNotificationConfig.url());
-        AuthenticationInfo authenticationInfo = pushNotificationConfig.authentication();
+        PushNotificationAuthenticationInfo authenticationInfo = pushNotificationConfig.authentication();
         assertTrue(authenticationInfo.schemes().size() == 1);
         assertEquals("jwt", authenticationInfo.schemes().get(0));
     }
@@ -355,7 +355,7 @@ public class A2AClientTest {
                 "de38c76d-d54c-436c-8b9f-4c2703648d64",
                 new PushNotificationConfig.Builder()
                         .url("https://example.com/callback")
-                        .authenticationInfo(new AuthenticationInfo(Collections.singletonList("jwt"), null))
+                        .authenticationInfo(new PushNotificationAuthenticationInfo(Collections.singletonList("jwt"), null))
                         .build());
         assertEquals("2.0", response.getJsonrpc());
         assertEquals(1, response.getId());
@@ -364,7 +364,7 @@ public class A2AClientTest {
         PushNotificationConfig pushNotificationConfig = taskPushNotificationConfig.pushNotificationConfig();
         assertNotNull(pushNotificationConfig);
         assertEquals("https://example.com/callback", pushNotificationConfig.url());
-        AuthenticationInfo authenticationInfo = pushNotificationConfig.authentication();
+        PushNotificationAuthenticationInfo authenticationInfo = pushNotificationConfig.authentication();
         assertTrue(authenticationInfo.schemes().size() == 1);
         assertEquals("jwt", authenticationInfo.schemes().get(0));
     }
