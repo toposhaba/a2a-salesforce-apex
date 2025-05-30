@@ -41,7 +41,7 @@ public final class TaskArtifactUpdateEvent implements EventKind, StreamingEventK
         Assert.checkNotNullParam("contextId", contextId);
         Assert.checkNotNullParam("kind", kind);
         if (! kind.equals(ARTIFACT_UPDATE)) {
-            throw new IllegalArgumentException("Invalid TaskArtificatUpdateEvent");
+            throw new IllegalArgumentException("Invalid TaskArtifactUpdateEvent");
         }
         this.taskId = taskId;
         this.artifact = artifact;
