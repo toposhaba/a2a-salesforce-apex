@@ -106,7 +106,6 @@ public class A2AClientTest {
                 .blocking(true)
                 .build();
         MessageSendParams params = new MessageSendParams.Builder()
-                .id("1234")
                 .message(message)
                 .configuration(configuration)
                 .build();
@@ -159,7 +158,6 @@ public class A2AClientTest {
                 .blocking(true)
                 .build();
         MessageSendParams params = new MessageSendParams.Builder()
-                .id("1234")
                 .message(message)
                 .configuration(configuration)
                 .build();
@@ -206,7 +204,6 @@ public class A2AClientTest {
                 .blocking(true)
                 .build();
         MessageSendParams params = new MessageSendParams.Builder()
-                .id("1234")
                 .message(message)
                 .configuration(configuration)
                 .build();

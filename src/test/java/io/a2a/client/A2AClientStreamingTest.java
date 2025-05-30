@@ -60,13 +60,11 @@ public class A2AClientStreamingTest {
                 .build();
         
         MessageSendParams params = new MessageSendParams.Builder()
-                .id("test-id")
                 .message(message)
                 .configuration(configuration)
                 .build();
         
         assertNotNull(params);
-        assertEquals("test-id", params.id());
         assertEquals(message, params.message());
         assertEquals(configuration, params.configuration());
         assertEquals(Message.Role.USER, params.message().getRole());
@@ -101,7 +99,6 @@ public class A2AClientStreamingTest {
                 .blocking(false)
                 .build();
         MessageSendParams params = new MessageSendParams.Builder()
-                .id("1234")
                 .message(message)
                 .configuration(configuration)
                 .build();

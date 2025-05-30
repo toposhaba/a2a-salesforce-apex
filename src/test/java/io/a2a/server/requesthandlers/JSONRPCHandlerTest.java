@@ -208,7 +208,7 @@ public class JSONRPCHandlerTest {
                 .taskId(MINIMAL_TASK.getId())
                 .contextId(MINIMAL_TASK.getContextId())
                 .build();
-        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams("1", message, null, null));
+        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams(message, null, null));
         SendMessageResponse response = handler.onMessageSend(request);
         assertNull(response.getError());
         // The Python implementation returns a Task here, but then again they are using hardcoded mocks and
@@ -229,7 +229,7 @@ public class JSONRPCHandlerTest {
                 .contextId(MINIMAL_TASK.getContextId())
                 .build();
 
-        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams("1", message, null, null));
+        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams(message, null, null));
         SendMessageResponse response;
         try (MockedConstruction<EventConsumer> mocked = Mockito.mockConstruction(
                 EventConsumer.class,
@@ -251,7 +251,7 @@ public class JSONRPCHandlerTest {
                 .taskId(MINIMAL_TASK.getId())
                 .contextId(MINIMAL_TASK.getContextId())
                 .build();
-        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams("1", message, null, null));
+        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams(message, null, null));
         SendMessageResponse response = handler.onMessageSend(request);
         assertNull(response.getError());
         // The Python implementation returns a Task here, but then again they are using hardcoded mocks and
@@ -272,7 +272,7 @@ public class JSONRPCHandlerTest {
                 .taskId(MINIMAL_TASK.getId())
                 .contextId(MINIMAL_TASK.getContextId())
                 .build();
-        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams("1", message, null, null));
+        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams(message, null, null));
         SendMessageResponse response;
         try (MockedConstruction<EventConsumer> mocked = Mockito.mockConstruction(
                 EventConsumer.class,
@@ -298,7 +298,7 @@ public class JSONRPCHandlerTest {
                 .contextId(MINIMAL_TASK.getContextId())
                 .build();
         SendMessageRequest request = new SendMessageRequest(
-                "1", new MessageSendParams("1", message, null, null));
+                "1", new MessageSendParams(message, null, null));
         SendMessageResponse response = handler.onMessageSend(request);
         assertInstanceOf(UnsupportedOperationError.class, response.getError());
         assertNull(response.getResult());
@@ -312,7 +312,7 @@ public class JSONRPCHandlerTest {
                 .contextId(MINIMAL_TASK.getContextId())
                 .build();
         SendMessageRequest request = new SendMessageRequest(
-                "1", new MessageSendParams("1", message, null, null));
+                "1", new MessageSendParams(message, null, null));
         SendMessageResponse response;
         try (MockedConstruction<EventConsumer> mocked = Mockito.mockConstruction(
                 EventConsumer.class,
@@ -338,7 +338,7 @@ public class JSONRPCHandlerTest {
             .build();
 
         SendStreamingMessageRequest request = new SendStreamingMessageRequest(
-                "1", new MessageSendParams("1", message, null, null));
+                "1", new MessageSendParams(message, null, null));
         Flow.Publisher<SendStreamingMessageResponse> response = handler.onMessageSendStream(request);
 
         List<StreamingEventKind> results = new ArrayList<>();
@@ -407,7 +407,7 @@ public class JSONRPCHandlerTest {
             .build();
 
         SendStreamingMessageRequest request = new SendStreamingMessageRequest(
-                "1", new MessageSendParams("1", message, null, null));
+                "1", new MessageSendParams(message, null, null));
         Flow.Publisher<SendStreamingMessageResponse> response;
         try (MockedConstruction<EventConsumer> mocked = Mockito.mockConstruction(
                 EventConsumer.class,
@@ -466,7 +466,7 @@ public class JSONRPCHandlerTest {
 
 
         SendStreamingMessageRequest request = new SendStreamingMessageRequest(
-                "1", new MessageSendParams("1", message, null, null));
+                "1", new MessageSendParams(message, null, null));
         Flow.Publisher<SendStreamingMessageResponse> response = handler.onMessageSendStream(request);
 
         // This Publisher never completes so we subscribe in a new thread.
@@ -552,7 +552,7 @@ public class JSONRPCHandlerTest {
             .build();
 
         SendStreamingMessageRequest request = new SendStreamingMessageRequest(
-                "1", new MessageSendParams("1", message, null, null));
+                "1", new MessageSendParams(message, null, null));
         Flow.Publisher<SendStreamingMessageResponse> response;
         try (MockedConstruction<EventConsumer> mocked = Mockito.mockConstruction(
                 EventConsumer.class,
@@ -671,7 +671,7 @@ public class JSONRPCHandlerTest {
         SetTaskPushNotificationConfigResponse stpnResponse = handler.setPushNotification(stpnRequest);
         assertNull(stpnResponse.getError());
 
-        SendStreamingMessageRequest request = new SendStreamingMessageRequest("1", new MessageSendParams("1", MESSAGE, null, null));
+        SendStreamingMessageRequest request = new SendStreamingMessageRequest("1", new MessageSendParams(MESSAGE, null, null));
         Flow.Publisher<SendStreamingMessageResponse> response = handler.onMessageSendStream(request);
 
         final List<StreamingEventKind> results = Collections.synchronizedList(new ArrayList<>());
@@ -769,7 +769,7 @@ public class JSONRPCHandlerTest {
                 .parts(new TextPart("text"))
                 .build();
         SendMessageResponse smr =
-                handler.onMessageSend(new SendMessageRequest("1", new MessageSendParams("1", message, null, null)));
+                handler.onMessageSend(new SendMessageRequest("1", new MessageSendParams(message, null, null)));
         assertNull(smr.getError());
 
 

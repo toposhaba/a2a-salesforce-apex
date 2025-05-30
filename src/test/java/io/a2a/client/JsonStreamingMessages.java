@@ -94,7 +94,6 @@ public class JsonStreamingMessages {
              "id": "request-1234",
              "method": "message/stream",
              "params": {
-              "id": "1234",
               "message": {
                "role": "user",
                "parts": [

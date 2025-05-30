@@ -76,7 +76,6 @@ public class JsonMessages {
              "id": "request-1234",
              "method": "message/send",
              "params": {
-              "id": "1234",
               "message": {
                "role": "user",
                "parts": [
@@ -129,7 +128,6 @@ public class JsonMessages {
              "id": "request-1234-with-message-response",
              "method": "message/send",
              "params": {
-              "id": "1234",
               "message": {
                "role": "user",
                "parts": [
@@ -173,7 +171,6 @@ public class JsonMessages {
              "id": "request-1234-with-error",
              "method": "message/send",
              "params": {
-              "id": "1234",
               "message": {
                "role": "user",
                "parts": [

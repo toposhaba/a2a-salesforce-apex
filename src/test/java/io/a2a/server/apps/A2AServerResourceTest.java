@@ -214,7 +214,7 @@ public class A2AServerResourceTest {
                 .taskId(MINIMAL_TASK.getId())
                 .contextId(MINIMAL_TASK.getContextId())
                 .build();
-        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams("1", message, null, null));
+        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams(message, null, null));
         SendMessageResponse response = given()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
@@ -241,7 +241,7 @@ public class A2AServerResourceTest {
                     .taskId(MINIMAL_TASK.getId())
                     .contextId(MINIMAL_TASK.getContextId())
                     .build();
-            SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams("1", message, null, null));
+            SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams(message, null, null));
             SendMessageResponse response = given()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(request)
@@ -271,7 +271,7 @@ public class A2AServerResourceTest {
                 .contextId(MINIMAL_TASK.getContextId())
                 .build();
         SendStreamingMessageRequest request = new SendStreamingMessageRequest(
-                "1", new MessageSendParams("1", message, null, null));
+                "1", new MessageSendParams(message, null, null));
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target("http://localhost:8081/");
         Response response = target.request(MediaType.SERVER_SENT_EVENTS).post(Entity.json(request));
@@ -302,7 +302,7 @@ public class A2AServerResourceTest {
                     .contextId(MINIMAL_TASK.getContextId())
                     .build();
             SendStreamingMessageRequest request = new SendStreamingMessageRequest(
-                    "1", new MessageSendParams("1", message, null, null));
+                    "1", new MessageSendParams(message, null, null));
             Client client = ClientBuilder.newClient();
             WebTarget target = client.target("http://localhost:8081/");
             Response response = target.request(MediaType.SERVER_SENT_EVENTS).post(Entity.json(request));
@@ -407,7 +407,7 @@ public class A2AServerResourceTest {
                 .contextId(SEND_MESSAGE_NOT_SUPPORTED.getContextId())
                 .build();
         SendMessageRequest request = new SendMessageRequest(
-                "1", new MessageSendParams("1", message, null, null));
+                "1", new MessageSendParams(message, null, null));
         SendMessageResponse response = given()
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)

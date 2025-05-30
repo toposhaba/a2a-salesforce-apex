@@ -23,7 +23,6 @@ public class HelloWorldClient {
 
             Message message = A2A.toUserMessage(MESSAGE_TEXT); // the message ID will be automatically generated for you
             MessageSendParams params = new MessageSendParams.Builder()
-                .id("task-1234") // id is optional
                 .message(message)
                 .build();
             SendMessageResponse response = client.sendMessage(params);
