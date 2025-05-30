@@ -15,7 +15,7 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TaskStatusUpdateEvent implements EventType, StreamingEventType, Event {
+public class TaskStatusUpdateEvent implements EventType, StreamingEventType {
 
     public static final String STATUS_UPDATE = "status-update";
     private final String taskId;

@@ -25,5 +25,5 @@ public interface RequestHandler {
 
     TaskPushNotificationConfig onGetTaskPushNotificationConfig(TaskIdParams params) throws JSONRPCError;
 
-    Flow.Publisher<Event> onResubscribeToTask(TaskIdParams params) throws JSONRPCError;
+    Flow.Publisher<StreamingEventType> onResubscribeToTask(TaskIdParams params) throws JSONRPCError;
 }

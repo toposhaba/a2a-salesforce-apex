@@ -270,7 +270,7 @@ public class DefaultRequestHandler implements RequestHandler {
     }
 
     @Override
-    public Flow.Publisher<Event> onResubscribeToTask(TaskIdParams params) throws JSONRPCError {
+    public Flow.Publisher<StreamingEventType> onResubscribeToTask(TaskIdParams params) throws JSONRPCError {
         Task task = taskStore.get(params.id());
         if (task == null) {
             throw new TaskNotFoundError();
@@ -285,8 +285,8 @@ public class DefaultRequestHandler implements RequestHandler {
         }
 
         EventConsumer consumer = new EventConsumer(queue);
-
-        return resultAggregator.consumeAndEmit(consumer);
+        Flow.Publisher<Event> results = resultAggregator.consumeAndEmit(consumer);
+        return convertingProcessor(results, e -> (StreamingEventType) e);
     }
 
     private boolean shouldAddPushInfo(MessageSendParams params) {

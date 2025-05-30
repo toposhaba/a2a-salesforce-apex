@@ -76,15 +76,13 @@ public class JSONRPCHandler {
     }
 
     public Flow.Publisher<SendStreamingMessageResponse> onResubscribeToTask(TaskResubscriptionRequest request) {
-        Flow.Publisher<Event> publisher = null;
+        Flow.Publisher<StreamingEventType> publisher;
         try {
             publisher = requestHandler.onResubscribeToTask(request.getParams());
         } catch (JSONRPCError e) {
             return ZeroPublisher.fromItems(new SendStreamingMessageResponse(request.getId(), e));
         }
-        Flow.Publisher<StreamingEventType> eventStreamingConverter =
-                convertingProcessor(publisher, event -> (StreamingEventType) event);
-        return convertingProcessor(eventStreamingConverter, streamingEventType -> {
+        return convertingProcessor(publisher, streamingEventType -> {
             try {
                 return new SendStreamingMessageResponse(request.getId(), streamingEventType);
             } catch (JSONRPCError error) {

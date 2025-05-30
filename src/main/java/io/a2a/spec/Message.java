@@ -19,7 +19,7 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Message implements EventType, StreamingEventType, Event {
+public class Message implements EventType, StreamingEventType {
 
     public static final TypeReference<Message> TYPE_REFERENCE = new TypeReference<>() {};
 
