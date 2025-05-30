@@ -108,8 +108,29 @@ public class A2A {
      * @throws A2AServerException if the agent card cannot be retrieved for any reason
      */
     public static AgentCard getAgentCard(OkHttpClient httpClient, String agentUrl) throws A2AServerException {
+        return getAgentCard(httpClient, agentUrl, null);
+    }
+
+    /**
+     * Get the agent card for an A2A agent.
+     *
+     * @param httpClient the http client to use
+     * @param agentUrl the base URL for the agent whose agent card we want to retrieve
+     * @param relativeCardPath optional path to the agent card endpoint relative to the base
+     *                         agent URL, defaults to ".well-known/agent.json"
+     * @return the agent card
+     * @throws A2AServerException if the agent card cannot be retrieved for any reason
+     */
+    public static AgentCard getAgentCard(OkHttpClient httpClient, String agentUrl, String relativeCardPath) throws A2AServerException {
+        if (relativeCardPath == null || relativeCardPath.isEmpty()) {
+            relativeCardPath = AGENT_CARD_REQUEST;
+        } else {
+            if (relativeCardPath.startsWith("/")) {
+                relativeCardPath = relativeCardPath.substring(1);
+            }
+        }
         Request request = new Request.Builder()
-                .url(getRequestEndpoint(agentUrl, AGENT_CARD_REQUEST))
+                .url(getRequestEndpoint(agentUrl, relativeCardPath))
                 .addHeader("Content-Type", "application/json")
                 .get()
                 .build();

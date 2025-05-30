@@ -88,7 +88,8 @@ public class A2AClient {
     }
 
     /**
-     * Get the agent card for the A2A server this client will be communicating with.
+     * Get the agent card for the A2A server this client will be communicating with from
+     * the default public agent card endpoint.
      *
      * @return the agent card for the A2A server
      * @throws {@code A2AServerException} if the agent card for the A2A server cannot be obtained
@@ -96,6 +97,20 @@ public class A2AClient {
     public AgentCard getAgentCard() throws A2AServerException {
         if (this.agentCard == null) {
             this.agentCard = A2A.getAgentCard(this.httpClient, this.agentUrl);
+        }
+        return this.agentCard;
+    }
+
+    /**
+     * Get the agent card for the A2A server this client will be communicating with.
+     *
+     * @param relativeCardPath the path to the agent card endpoint relative to the base URL of the A2A server
+     * @return the agent card for the A2A server
+     * @throws {@code A2AServerException} if the agent card for the A2A server cannot be obtained
+     */
+    public AgentCard getAgentCard(String relativeCardPath) throws A2AServerException {
+        if (this.agentCard == null) {
+            this.agentCard = A2A.getAgentCard(this.httpClient, this.agentUrl, relativeCardPath);
         }
         return this.agentCard;
     }

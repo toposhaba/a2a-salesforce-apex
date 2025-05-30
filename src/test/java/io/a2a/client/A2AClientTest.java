@@ -1,6 +1,7 @@
 package io.a2a.client;
 
 import static io.a2a.client.JsonMessages.AGENT_CARD;
+import static io.a2a.client.JsonMessages.AUTHENTICATION_EXTENDED_AGENT_CARD;
 import static io.a2a.client.JsonMessages.CANCEL_TASK_TEST_REQUEST;
 import static io.a2a.client.JsonMessages.CANCEL_TASK_TEST_RESPONSE;
 import static io.a2a.client.JsonMessages.GET_TASK_PUSH_NOTIFICATION_CONFIG_TEST_REQUEST;
@@ -434,6 +435,78 @@ public class A2AClientTest {
         assertEquals(inputModes, skills.get(1).inputModes());
         outputModes = List.of("image/png", "image/jpeg", "application/json", "text/html");
         assertEquals(outputModes, skills.get(1).outputModes());
+        assertTrue(agentCard.supportsAuthenticatedExtendedCard());
+        assertEquals("https://georoute-agent.example.com/icon.png", agentCard.iconUrl());
+    }
+
+    @Test
+    public void testA2AClientGetAuthenticatedExtendedAgentCard() throws Exception {
+        this.server.when(
+                        request()
+                                .withMethod("GET")
+                                .withPath("/agent/authenticatedExtendedCard")
+                )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withBody(AUTHENTICATION_EXTENDED_AGENT_CARD)
+                );
+
+        A2AClient client = new A2AClient("http://localhost:4001");
+        AgentCard agentCard = client.getAgentCard("/agent/authenticatedExtendedCard");
+        assertEquals("GeoSpatial Route Planner Agent Extended", agentCard.name());
+        assertEquals("Extended description", agentCard.description());
+        assertEquals("https://georoute-agent.example.com/a2a/v1", agentCard.url());
+        assertEquals("Example Geo Services Inc.", agentCard.provider().organization());
+        assertEquals("https://www.examplegeoservices.com", agentCard.provider().url());
+        assertEquals("1.2.0", agentCard.version());
+        assertEquals("https://docs.examplegeoservices.com/georoute-agent/api", agentCard.documentationUrl());
+        assertTrue(agentCard.capabilities().streaming());
+        assertTrue(agentCard.capabilities().pushNotifications());
+        assertFalse(agentCard.capabilities().stateTransitionHistory());
+        Map<String, SecurityScheme> securitySchemes = agentCard.securitySchemes();
+        assertNotNull(securitySchemes);
+        OpenIdConnectSecurityScheme google = (OpenIdConnectSecurityScheme) securitySchemes.get("google");
+        assertEquals("openIdConnect", google.getType());
+        assertEquals("https://accounts.google.com/.well-known/openid-configuration", google.getOpenIdConnectUrl());
+        List<Map<String, List<String>>> security = agentCard.security();
+        assertEquals(1, security.size());
+        Map<String, List<String>> securityMap = security.get(0);
+        List<String> scopes = securityMap.get("google");
+        List<String> expectedScopes = List.of("openid", "profile", "email");
+        assertEquals(expectedScopes, scopes);
+        List<String> defaultInputModes = List.of("application/json", "text/plain");
+        assertEquals(defaultInputModes, agentCard.defaultInputModes());
+        List<String> defaultOutputModes = List.of("application/json", "image/png");
+        assertEquals(defaultOutputModes, agentCard.defaultOutputModes());
+        List<AgentSkill> skills = agentCard.skills();
+        assertEquals("route-optimizer-traffic", skills.get(0).id());
+        assertEquals("Traffic-Aware Route Optimizer", skills.get(0).name());
+        assertEquals("Calculates the optimal driving route between two or more locations, taking into account real-time traffic conditions, road closures, and user preferences (e.g., avoid tolls, prefer highways).", skills.get(0).description());
+        List<String> tags = List.of("maps", "routing", "navigation", "directions", "traffic");
+        assertEquals(tags, skills.get(0).tags());
+        List<String> examples = List.of("Plan a route from '1600 Amphitheatre Parkway, Mountain View, CA' to 'San Francisco International Airport' avoiding tolls.",
+                "{\"origin\": {\"lat\": 37.422, \"lng\": -122.084}, \"destination\": {\"lat\": 37.7749, \"lng\": -122.4194}, \"preferences\": [\"avoid_ferries\"]}");
+        assertEquals(examples, skills.get(0).examples());
+        assertEquals(defaultInputModes, skills.get(0).inputModes());
+        List<String> outputModes = List.of("application/json", "application/vnd.geo+json", "text/html");
+        assertEquals(outputModes, skills.get(0).outputModes());
+        assertEquals("custom-map-generator", skills.get(1).id());
+        assertEquals("Personalized Map Generator", skills.get(1).name());
+        assertEquals("Creates custom map images or interactive map views based on user-defined points of interest, routes, and style preferences. Can overlay data layers.", skills.get(1).description());
+        tags = List.of("maps", "customization", "visualization", "cartography");
+        assertEquals(tags, skills.get(1).tags());
+        examples = List.of("Generate a map of my upcoming road trip with all planned stops highlighted.",
+                "Show me a map visualizing all coffee shops within a 1-mile radius of my current location.");
+        assertEquals(examples, skills.get(1).examples());
+        List<String> inputModes = List.of("application/json");
+        assertEquals(inputModes, skills.get(1).inputModes());
+        outputModes = List.of("image/png", "image/jpeg", "application/json", "text/html");
+        assertEquals(outputModes, skills.get(1).outputModes());
+        assertEquals("skill-extended", skills.get(2).id());
+        assertEquals("Extended Skill", skills.get(2).name());
+        assertEquals("This is an extended skill.", skills.get(2).description());
+        assertEquals(List.of("extended"), skills.get(2).tags());
         assertTrue(agentCard.supportsAuthenticatedExtendedCard());
         assertEquals("https://georoute-agent.example.com/icon.png", agentCard.iconUrl());
     }
