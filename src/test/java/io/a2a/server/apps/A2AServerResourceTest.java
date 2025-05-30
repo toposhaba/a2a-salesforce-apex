@@ -349,7 +349,7 @@ public class A2AServerResourceTest {
             assertNull(response.getError());
             assertEquals(request.getId(), response.getId());
             TaskPushNotificationConfig config = response.getResult();
-            assertEquals(MINIMAL_TASK.getId(), config.id());
+            assertEquals(MINIMAL_TASK.getId(), config.taskId());
             assertEquals("http://example.com", config.pushNotificationConfig().url());
         } catch (Exception e) {
         } finally {
@@ -392,7 +392,7 @@ public class A2AServerResourceTest {
             assertNull(response.getError());
             assertEquals(request.getId(), response.getId());
             TaskPushNotificationConfig config = response.getResult();
-            assertEquals(MINIMAL_TASK.getId(), config.id());
+            assertEquals(MINIMAL_TASK.getId(), config.taskId());
             assertEquals("http://example.com", config.pushNotificationConfig().url());
         } catch (Exception e) {
         } finally {

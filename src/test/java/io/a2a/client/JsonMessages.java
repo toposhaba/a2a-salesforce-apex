@@ -311,7 +311,7 @@ public class JsonMessages {
              "jsonrpc": "2.0",
              "id": 1,
              "result": {
-              "id": "de38c76d-d54c-436c-8b9f-4c2703648d64",
+              "taskId": "de38c76d-d54c-436c-8b9f-4c2703648d64",
               "pushNotificationConfig": {
                "url": "https://example.com/callback",
                "authentication": {
@@ -328,7 +328,7 @@ public class JsonMessages {
              "id": "1",
              "method": "tasks/pushNotificationConfig/set",
              "params": {
-              "id": "de38c76d-d54c-436c-8b9f-4c2703648d64",
+              "taskId": "de38c76d-d54c-436c-8b9f-4c2703648d64",
               "pushNotificationConfig": {
                "url": "https://example.com/callback",
                "authentication": {
@@ -343,7 +343,7 @@ public class JsonMessages {
              "jsonrpc": "2.0",
              "id": 1,
              "result": {
-              "id": "de38c76d-d54c-436c-8b9f-4c2703648d64",
+              "taskId": "de38c76d-d54c-436c-8b9f-4c2703648d64",
               "pushNotificationConfig": {
                "url": "https://example.com/callback",
                "authentication": {

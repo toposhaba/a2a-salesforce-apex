@@ -241,12 +241,12 @@ public class DefaultRequestHandler implements RequestHandler {
         if (pushNotifier == null) {
             throw new UnsupportedOperationError();
         }
-        Task task = taskStore.get(params.id());
+        Task task = taskStore.get(params.taskId());
         if (task == null) {
             throw new TaskNotFoundError();
         }
 
-        pushNotifier.setInfo(params.id(), params.pushNotificationConfig());
+        pushNotifier.setInfo(params.taskId(), params.pushNotificationConfig());
 
         return params;
     }
