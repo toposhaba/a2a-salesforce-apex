@@ -21,8 +21,8 @@ import io.a2a.server.tasks.TaskStore;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
-import io.a2a.spec.GetTaskPushNotificationRequest;
-import io.a2a.spec.GetTaskPushNotificationResponse;
+import io.a2a.spec.GetTaskPushNotificationConfigRequest;
+import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
 import io.a2a.spec.JSONRPCError;
@@ -34,8 +34,8 @@ import io.a2a.spec.SendMessageRequest;
 import io.a2a.spec.SendMessageResponse;
 import io.a2a.spec.SendStreamingMessageRequest;
 import io.a2a.spec.SendStreamingMessageResponse;
-import io.a2a.spec.SetTaskPushNotificationRequest;
-import io.a2a.spec.SetTaskPushNotificationResponse;
+import io.a2a.spec.SetTaskPushNotificationConfigRequest;
+import io.a2a.spec.SetTaskPushNotificationConfigResponse;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskNotFoundError;
@@ -336,8 +336,8 @@ public class A2AServerResourceTest {
                     new TaskPushNotificationConfig(
                             MINIMAL_TASK.getId(), new
                             PushNotificationConfig("http://example.com", null, null));
-            SetTaskPushNotificationRequest request = new SetTaskPushNotificationRequest("1", taskPushConfig);
-            SetTaskPushNotificationResponse response = given()
+            SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
+            SetTaskPushNotificationConfigResponse response = given()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(request)
                     .when()
@@ -345,7 +345,7 @@ public class A2AServerResourceTest {
                     .then()
                     .statusCode(200)
                     .extract()
-                    .as(SetTaskPushNotificationResponse.class);
+                    .as(SetTaskPushNotificationConfigResponse.class);
             assertNull(response.getError());
             assertEquals(request.getId(), response.getId());
             TaskPushNotificationConfig config = response.getResult();
@@ -366,8 +366,8 @@ public class A2AServerResourceTest {
                             MINIMAL_TASK.getId(), new
                             PushNotificationConfig("http://example.com", null, null));
 
-            SetTaskPushNotificationRequest setTaskPushNotificationRequest = new SetTaskPushNotificationRequest("1", taskPushConfig);
-            SetTaskPushNotificationResponse setTaskPushNotificationResponse = given()
+            SetTaskPushNotificationConfigRequest setTaskPushNotificationRequest = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
+            SetTaskPushNotificationConfigResponse setTaskPushNotificationResponse = given()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(setTaskPushNotificationRequest)
                     .when()
@@ -375,12 +375,12 @@ public class A2AServerResourceTest {
                     .then()
                     .statusCode(200)
                     .extract()
-                    .as(SetTaskPushNotificationResponse.class);
+                    .as(SetTaskPushNotificationConfigResponse.class);
             assertNotNull(setTaskPushNotificationResponse);
 
-            GetTaskPushNotificationRequest request =
-                    new GetTaskPushNotificationRequest("111", new TaskIdParams(MINIMAL_TASK.getId()));
-            GetTaskPushNotificationResponse response = given()
+            GetTaskPushNotificationConfigRequest request =
+                    new GetTaskPushNotificationConfigRequest("111", new TaskIdParams(MINIMAL_TASK.getId()));
+            GetTaskPushNotificationConfigResponse response = given()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(request)
                     .when()
@@ -388,7 +388,7 @@ public class A2AServerResourceTest {
                     .then()
                     .statusCode(200)
                     .extract()
-                    .as(GetTaskPushNotificationResponse.class);
+                    .as(GetTaskPushNotificationConfigResponse.class);
             assertNull(response.getError());
             assertEquals(request.getId(), response.getId());
             TaskPushNotificationConfig config = response.getResult();

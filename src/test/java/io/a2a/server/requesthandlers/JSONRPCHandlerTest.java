@@ -32,8 +32,8 @@ import io.a2a.spec.AgentCard;
 import io.a2a.spec.Artifact;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
-import io.a2a.spec.GetTaskPushNotificationRequest;
-import io.a2a.spec.GetTaskPushNotificationResponse;
+import io.a2a.spec.GetTaskPushNotificationConfigRequest;
+import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
 import io.a2a.spec.JSONRPCError;
@@ -44,8 +44,8 @@ import io.a2a.spec.SendMessageRequest;
 import io.a2a.spec.SendMessageResponse;
 import io.a2a.spec.SendStreamingMessageRequest;
 import io.a2a.spec.SendStreamingMessageResponse;
-import io.a2a.spec.SetTaskPushNotificationRequest;
-import io.a2a.spec.SetTaskPushNotificationResponse;
+import io.a2a.spec.SetTaskPushNotificationConfigRequest;
+import io.a2a.spec.SetTaskPushNotificationConfigResponse;
 import io.a2a.spec.StreamingEventType;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskArtifactUpdateEvent;
@@ -605,8 +605,8 @@ public class JSONRPCHandlerTest {
                 new TaskPushNotificationConfig(
                         MINIMAL_TASK.getId(), new
                         PushNotificationConfig("http://example.com", null, null));
-        SetTaskPushNotificationRequest request = new SetTaskPushNotificationRequest("1", taskPushConfig);
-        SetTaskPushNotificationResponse response = handler.setPushNotification(request);
+        SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
+        SetTaskPushNotificationConfigResponse response = handler.setPushNotification(request);
         assertSame(taskPushConfig, response.getResult());
     }
 
@@ -624,12 +624,12 @@ public class JSONRPCHandlerTest {
                         MINIMAL_TASK.getId(), new
                         PushNotificationConfig("http://example.com", null, null));
 
-        SetTaskPushNotificationRequest request = new SetTaskPushNotificationRequest("1", taskPushConfig);
+        SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
         handler.setPushNotification(request);
 
-        GetTaskPushNotificationRequest getRequest =
-                new GetTaskPushNotificationRequest("111", new TaskIdParams(MINIMAL_TASK.getId()));
-        GetTaskPushNotificationResponse getResponse = handler.getPushNotification(getRequest);
+        GetTaskPushNotificationConfigRequest getRequest =
+                new GetTaskPushNotificationConfigRequest("111", new TaskIdParams(MINIMAL_TASK.getId()));
+        GetTaskPushNotificationConfigResponse getResponse = handler.getPushNotification(getRequest);
 
         assertEquals(taskPushConfig, getResponse.getResult());
     }
@@ -667,8 +667,8 @@ public class JSONRPCHandlerTest {
         TaskPushNotificationConfig config = new TaskPushNotificationConfig(
                 MINIMAL_TASK.getId(),
                 new PushNotificationConfig("http://example.com/push", null, null));
-        SetTaskPushNotificationRequest stpnRequest = new SetTaskPushNotificationRequest("1", config);
-        SetTaskPushNotificationResponse stpnResponse = handler.setPushNotification(stpnRequest);
+        SetTaskPushNotificationConfigRequest stpnRequest = new SetTaskPushNotificationConfigRequest("1", config);
+        SetTaskPushNotificationConfigResponse stpnResponse = handler.setPushNotification(stpnRequest);
         assertNull(stpnResponse.getError());
 
         SendStreamingMessageRequest request = new SendStreamingMessageRequest("1", new MessageSendParams("1", MESSAGE, null, null));

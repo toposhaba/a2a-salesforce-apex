@@ -7,13 +7,12 @@ import java.util.concurrent.Flow;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import io.a2a.server.events.Event;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
 import io.a2a.spec.EventType;
-import io.a2a.spec.GetTaskPushNotificationRequest;
-import io.a2a.spec.GetTaskPushNotificationResponse;
+import io.a2a.spec.GetTaskPushNotificationConfigRequest;
+import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
 import io.a2a.spec.JSONRPCError;
@@ -21,8 +20,8 @@ import io.a2a.spec.SendMessageRequest;
 import io.a2a.spec.SendMessageResponse;
 import io.a2a.spec.SendStreamingMessageRequest;
 import io.a2a.spec.SendStreamingMessageResponse;
-import io.a2a.spec.SetTaskPushNotificationRequest;
-import io.a2a.spec.SetTaskPushNotificationResponse;
+import io.a2a.spec.SetTaskPushNotificationConfigRequest;
+import io.a2a.spec.SetTaskPushNotificationConfigResponse;
 import io.a2a.spec.StreamingEventType;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskNotFoundError;
@@ -91,21 +90,21 @@ public class JSONRPCHandler {
         });
     }
 
-    public GetTaskPushNotificationResponse getPushNotification(GetTaskPushNotificationRequest request) {
+    public GetTaskPushNotificationConfigResponse getPushNotification(GetTaskPushNotificationConfigRequest request) {
         try {
             TaskPushNotificationConfig config = requestHandler.onGetTaskPushNotificationConfig(request.getParams());
-            return new GetTaskPushNotificationResponse(request.getId().toString(), config);
+            return new GetTaskPushNotificationConfigResponse(request.getId().toString(), config);
         } catch (JSONRPCError e) {
-            return new GetTaskPushNotificationResponse(request.getId().toString(), e);
+            return new GetTaskPushNotificationConfigResponse(request.getId().toString(), e);
         }
     }
 
-    public SetTaskPushNotificationResponse setPushNotification(SetTaskPushNotificationRequest request) {
+    public SetTaskPushNotificationConfigResponse setPushNotification(SetTaskPushNotificationConfigRequest request) {
         try {
             TaskPushNotificationConfig config = requestHandler.onSetTaskPushNotificationConfig(request.getParams());
-            return new SetTaskPushNotificationResponse(request.getId().toString(), config);
+            return new SetTaskPushNotificationConfigResponse(request.getId().toString(), config);
         } catch (JSONRPCError e) {
-            return new SetTaskPushNotificationResponse(request.getId(), e);
+            return new SetTaskPushNotificationConfigResponse(request.getId(), e);
         }
     }
 

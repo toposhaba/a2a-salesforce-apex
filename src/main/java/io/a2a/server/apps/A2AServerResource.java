@@ -5,7 +5,7 @@ import java.util.concurrent.Flow;
 import io.a2a.server.requesthandlers.JSONRPCHandler;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.CancelTaskRequest;
-import io.a2a.spec.GetTaskPushNotificationRequest;
+import io.a2a.spec.GetTaskPushNotificationConfigRequest;
 import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.JSONRPCErrorResponse;
@@ -13,7 +13,7 @@ import io.a2a.spec.JSONRPCRequest;
 import io.a2a.spec.JSONRPCResponse;
 import io.a2a.spec.SendMessageRequest;
 import io.a2a.spec.SendStreamingMessageRequest;
-import io.a2a.spec.SetTaskPushNotificationRequest;
+import io.a2a.spec.SetTaskPushNotificationConfigRequest;
 import io.a2a.spec.TaskResubscriptionRequest;
 import io.a2a.spec.UnsupportedOperationError;
 import jakarta.inject.Inject;
@@ -86,10 +86,10 @@ public class A2AServerResource {
             response = jsonRpcHandler.onGetTask((GetTaskRequest) request);
         } else if (request instanceof CancelTaskRequest) {
             response = jsonRpcHandler.onCancelTask((CancelTaskRequest) request);
-        } else if (request instanceof SetTaskPushNotificationRequest) {
-            response = jsonRpcHandler.setPushNotification((SetTaskPushNotificationRequest) request);
-        } else if (request instanceof GetTaskPushNotificationRequest) {
-            response = jsonRpcHandler.getPushNotification((GetTaskPushNotificationRequest) request);
+        } else if (request instanceof SetTaskPushNotificationConfigRequest) {
+            response = jsonRpcHandler.setPushNotification((SetTaskPushNotificationConfigRequest) request);
+        } else if (request instanceof GetTaskPushNotificationConfigRequest) {
+            response = jsonRpcHandler.getPushNotification((GetTaskPushNotificationConfigRequest) request);
         } else if (request instanceof SendMessageRequest) {
             response = jsonRpcHandler.onMessageSend((SendMessageRequest) request);
         } else {

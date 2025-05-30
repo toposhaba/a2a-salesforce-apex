@@ -18,9 +18,9 @@ import okhttp3.Response;
 public class A2A {
 
     public static final String CANCEL_TASK_METHOD = "tasks/cancel";
-    public static final String GET_TASK_PUSH_NOTIFICATION_METHOD = "tasks/pushNotification/get";
+    public static final String GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD = "tasks/pushNotificationConfig/get";
     public static final String GET_TASK_METHOD = "tasks/get";
-    public static final String SET_TASK_PUSH_NOTIFICATION_METHOD = "tasks/pushNotification/set";
+    public static final String SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD = "tasks/pushNotificationConfig/set";
     public static final String SEND_TASK_RESUBSCRIPTION_METHOD = "tasks/resubscribe";
     public static final String SEND_STREAMING_MESSAGE_METHOD = "message/stream";
     public static final String SEND_MESSAGE_METHOD = "message/send";

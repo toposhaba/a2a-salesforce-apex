@@ -38,7 +38,7 @@ import io.a2a.spec.FileContent;
 import io.a2a.spec.FilePart;
 import io.a2a.spec.FileWithBytes;
 import io.a2a.spec.FileWithUri;
-import io.a2a.spec.GetTaskPushNotificationResponse;
+import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskResponse;
 
 import org.junit.jupiter.api.AfterEach;
@@ -57,7 +57,7 @@ import io.a2a.spec.Part;
 import io.a2a.spec.PushNotificationConfig;
 import io.a2a.spec.SecurityScheme;
 import io.a2a.spec.SendMessageResponse;
-import io.a2a.spec.SetTaskPushNotificationResponse;
+import io.a2a.spec.SetTaskPushNotificationConfigResponse;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskPushNotificationConfig;
@@ -324,7 +324,7 @@ public class A2AClientTest {
                 );
 
         A2AClient client = new A2AClient("http://localhost:4001");
-        GetTaskPushNotificationResponse response = client.getTaskPushNotificationConfig("1",
+        GetTaskPushNotificationConfigResponse response = client.getTaskPushNotificationConfig("1",
                 new TaskIdParams("de38c76d-d54c-436c-8b9f-4c2703648d64", new HashMap<>()));
         assertEquals("2.0", response.getJsonrpc());
         assertEquals(1, response.getId());
@@ -354,7 +354,7 @@ public class A2AClientTest {
                 );
 
         A2AClient client = new A2AClient("http://localhost:4001");
-        SetTaskPushNotificationResponse response = client.setTaskPushNotificationConfig("1",
+        SetTaskPushNotificationConfigResponse response = client.setTaskPushNotificationConfig("1",
                 "de38c76d-d54c-436c-8b9f-4c2703648d64",
                 new PushNotificationConfig.Builder()
                         .url("https://example.com/callback")
