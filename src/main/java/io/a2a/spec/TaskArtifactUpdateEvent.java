@@ -23,7 +23,7 @@ public final class TaskArtifactUpdateEvent implements EventKind, StreamingEventK
     private final Artifact artifact;
     private final String contextId;
     private final Map<String, Object> metadata;
-    private final String type;
+    private final String kind;
 
     public TaskArtifactUpdateEvent(String taskId, Artifact artifact, String contextId, Boolean append, Boolean lastChunk, Map<String, Object> metadata) {
         this(taskId, artifact, contextId, append, lastChunk, metadata, ARTIFACT_UPDATE);
@@ -35,17 +35,21 @@ public final class TaskArtifactUpdateEvent implements EventKind, StreamingEventK
                                    @JsonProperty("append") Boolean append,
                                    @JsonProperty("lastChunk") Boolean lastChunk,
                                    @JsonProperty("metadata") Map<String, Object> metadata,
-                                   @JsonProperty("type") String type) {
+                                   @JsonProperty("kind") String kind) {
         Assert.checkNotNullParam("taskId", taskId);
         Assert.checkNotNullParam("artifact", artifact);
         Assert.checkNotNullParam("contextId", contextId);
+        Assert.checkNotNullParam("kind", kind);
+        if (! kind.equals(ARTIFACT_UPDATE)) {
+            throw new IllegalArgumentException("Invalid TaskArtificatUpdateEvent");
+        }
         this.taskId = taskId;
         this.artifact = artifact;
         this.contextId = contextId;
         this.append = append;
         this.lastChunk = lastChunk;
         this.metadata = metadata;
-        this.type = type;
+        this.kind = kind;
     }
 
     public String getTaskId() {
@@ -74,7 +78,7 @@ public final class TaskArtifactUpdateEvent implements EventKind, StreamingEventK
 
     @Override
     public String getKind() {
-        return type;
+        return kind;
     }
 
     public static class Builder {
@@ -85,7 +89,6 @@ public final class TaskArtifactUpdateEvent implements EventKind, StreamingEventK
         private Boolean append;
         private Boolean lastChunk;
         private Map<String, Object> metadata;
-        private String type;
 
         public Builder taskId(String taskId) {
             this.taskId = taskId;
@@ -115,11 +118,6 @@ public final class TaskArtifactUpdateEvent implements EventKind, StreamingEventK
 
         public Builder metadata(Map<String, Object> metadata) {
             this.metadata = metadata;
-            return this;
-        }
-
-        public Builder type(String type) {
-            this.type = type;
             return this;
         }
 

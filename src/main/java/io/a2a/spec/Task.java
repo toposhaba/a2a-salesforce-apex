@@ -42,6 +42,10 @@ public final class Task implements EventKind, StreamingEventKind {
         Assert.checkNotNullParam("id", id);
         Assert.checkNotNullParam("contextId", contextId);
         Assert.checkNotNullParam("status", status);
+        Assert.checkNotNullParam("kind", kind);
+        if (! kind.equals(TASK)) {
+            throw new IllegalArgumentException("Invalid Task");
+        }
         this.id = id;
         this.contextId = contextId;
         this.status = status;
