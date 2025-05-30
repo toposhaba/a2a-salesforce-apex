@@ -10,7 +10,7 @@ import jakarta.inject.Inject;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
-import io.a2a.spec.EventType;
+import io.a2a.spec.EventKind;
 import io.a2a.spec.GetTaskPushNotificationConfigRequest;
 import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskRequest;
@@ -22,7 +22,7 @@ import io.a2a.spec.SendStreamingMessageRequest;
 import io.a2a.spec.SendStreamingMessageResponse;
 import io.a2a.spec.SetTaskPushNotificationConfigRequest;
 import io.a2a.spec.SetTaskPushNotificationConfigResponse;
-import io.a2a.spec.StreamingEventType;
+import io.a2a.spec.StreamingEventKind;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskNotFoundError;
 import io.a2a.spec.TaskPushNotificationConfig;
@@ -43,7 +43,7 @@ public class JSONRPCHandler {
 
     public SendMessageResponse onMessageSend(SendMessageRequest request) {
         try {
-            EventType taskOrMessage = requestHandler.onMessageSend(request.getParams());
+            EventKind taskOrMessage = requestHandler.onMessageSend(request.getParams());
             return new SendMessageResponse(request.getId(), taskOrMessage);
         } catch (JSONRPCError e) {
             return new SendMessageResponse(request.getId(), e);
@@ -52,7 +52,7 @@ public class JSONRPCHandler {
 
 
     public Flow.Publisher<SendStreamingMessageResponse> onMessageSendStream(SendStreamingMessageRequest request) {
-        Flow.Publisher<StreamingEventType> publisher = requestHandler.onMessageSendStream(request.getParams());
+        Flow.Publisher<StreamingEventKind> publisher = requestHandler.onMessageSendStream(request.getParams());
         return convertingProcessor(publisher, event -> {
             try {
                 return new SendStreamingMessageResponse(request.getId(), event);
@@ -75,7 +75,7 @@ public class JSONRPCHandler {
     }
 
     public Flow.Publisher<SendStreamingMessageResponse> onResubscribeToTask(TaskResubscriptionRequest request) {
-        Flow.Publisher<StreamingEventType> publisher;
+        Flow.Publisher<StreamingEventKind> publisher;
         try {
             publisher = requestHandler.onResubscribeToTask(request.getParams());
         } catch (JSONRPCError e) {

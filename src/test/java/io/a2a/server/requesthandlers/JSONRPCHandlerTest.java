@@ -46,7 +46,7 @@ import io.a2a.spec.SendStreamingMessageRequest;
 import io.a2a.spec.SendStreamingMessageResponse;
 import io.a2a.spec.SetTaskPushNotificationConfigRequest;
 import io.a2a.spec.SetTaskPushNotificationConfigResponse;
-import io.a2a.spec.StreamingEventType;
+import io.a2a.spec.StreamingEventKind;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskArtifactUpdateEvent;
 import io.a2a.spec.TaskIdParams;
@@ -341,7 +341,7 @@ public class JSONRPCHandlerTest {
                 "1", new MessageSendParams("1", message, null, null));
         Flow.Publisher<SendStreamingMessageResponse> response = handler.onMessageSendStream(request);
 
-        List<StreamingEventType> results = new ArrayList<>();
+        List<StreamingEventKind> results = new ArrayList<>();
         CountDownLatch latch = new CountDownLatch(1);
 
         response.subscribe(new Flow.Subscriber<>() {
@@ -472,7 +472,7 @@ public class JSONRPCHandlerTest {
         // This Publisher never completes so we subscribe in a new thread.
         // I _think_ that is as expected, and testOnMessageStreamNewMessageSendPushNotificationSuccess seems
         // to confirm this
-        final List<StreamingEventType> results = new ArrayList<>();
+        final List<StreamingEventKind> results = new ArrayList<>();
         final AtomicReference<Flow.Subscription> subscriptionRef = new AtomicReference<>();
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -512,7 +512,7 @@ public class JSONRPCHandlerTest {
                 .history(message)
                 .build();
         assertEquals(1, results.size());
-        StreamingEventType receivedType = results.get(0);
+        StreamingEventKind receivedType = results.get(0);
         assertInstanceOf(Task.class, receivedType);
         Task received = (Task) receivedType;
         assertEquals(expected.getId(), received.getId());
@@ -674,7 +674,7 @@ public class JSONRPCHandlerTest {
         SendStreamingMessageRequest request = new SendStreamingMessageRequest("1", new MessageSendParams("1", MESSAGE, null, null));
         Flow.Publisher<SendStreamingMessageResponse> response = handler.onMessageSendStream(request);
 
-        final List<StreamingEventType> results = Collections.synchronizedList(new ArrayList<>());
+        final List<StreamingEventKind> results = Collections.synchronizedList(new ArrayList<>());
         final AtomicReference<Flow.Subscription> subscriptionRef = new AtomicReference<>();
         final CountDownLatch latch = new CountDownLatch(6);
         httpClient.latch = latch;
@@ -773,7 +773,7 @@ public class JSONRPCHandlerTest {
         assertNull(smr.getError());
 
 
-        List<StreamingEventType> results = new ArrayList<>();
+        List<StreamingEventKind> results = new ArrayList<>();
 
         // TODO - this does not trigger an event. I think because there are now several Publishers taking items
         //  from the same queue
@@ -842,7 +842,7 @@ public class JSONRPCHandlerTest {
             response = handler.onResubscribeToTask(request);
         }
 
-        List<StreamingEventType> results = new ArrayList<>();
+        List<StreamingEventKind> results = new ArrayList<>();
 
         // Unlike testOnResubscribeExistingTaskSuccess() the ZeroPublisher.fromIterable()
         // used to mock the events completes once it has sent all the items. So no special thread

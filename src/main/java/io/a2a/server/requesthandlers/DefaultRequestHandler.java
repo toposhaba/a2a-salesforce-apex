@@ -23,11 +23,11 @@ import io.a2a.server.tasks.PushNotifier;
 import io.a2a.server.tasks.ResultAggregator;
 import io.a2a.server.tasks.TaskManager;
 import io.a2a.server.tasks.TaskStore;
-import io.a2a.spec.EventType;
+import io.a2a.spec.EventKind;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.PushNotificationConfig;
-import io.a2a.spec.StreamingEventType;
+import io.a2a.spec.StreamingEventKind;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskNotFoundError;
@@ -92,7 +92,7 @@ public class DefaultRequestHandler implements RequestHandler {
         // TODO need to cancel the asyncio.Task looked up from runningAgents
 
         EventConsumer consumer = new EventConsumer(queue);
-        EventType type = resultAggregator.consumeAll(consumer);
+        EventKind type = resultAggregator.consumeAll(consumer);
         if (type instanceof Task tempTask) {
             return tempTask;
         }
@@ -101,7 +101,7 @@ public class DefaultRequestHandler implements RequestHandler {
     }
 
     @Override
-    public EventType onMessageSend(MessageSendParams params) throws JSONRPCError {
+    public EventKind onMessageSend(MessageSendParams params) throws JSONRPCError {
         TaskManager taskManager = new TaskManager(
                 params.message().getTaskId(),
                 params.message().getContextId(),
@@ -160,7 +160,7 @@ public class DefaultRequestHandler implements RequestHandler {
     }
 
     @Override
-    public Flow.Publisher<StreamingEventType> onMessageSendStream(MessageSendParams params) throws JSONRPCError {
+    public Flow.Publisher<StreamingEventKind> onMessageSendStream(MessageSendParams params) throws JSONRPCError {
         TaskManager taskManager = new TaskManager(
                 params.message().getTaskId(),
                 params.message().getContextId(),
@@ -221,7 +221,7 @@ public class DefaultRequestHandler implements RequestHandler {
 
                 }
                 if (pushNotifier != null && taskId.get() != null) {
-                    EventType latest = resultAggregator.getCurrentResult();
+                    EventKind latest = resultAggregator.getCurrentResult();
                     if (latest instanceof Task latestTask) {
                         pushNotifier.sendNotification(latestTask);
                     }
@@ -230,7 +230,7 @@ public class DefaultRequestHandler implements RequestHandler {
                 return true;
             }));
 
-            return convertingProcessor(eventPublisher, event -> (StreamingEventType) event);
+            return convertingProcessor(eventPublisher, event -> (StreamingEventKind) event);
         } finally {
             cleanupProducer(producerRunnable, taskId.get());
         }
@@ -270,7 +270,7 @@ public class DefaultRequestHandler implements RequestHandler {
     }
 
     @Override
-    public Flow.Publisher<StreamingEventType> onResubscribeToTask(TaskIdParams params) throws JSONRPCError {
+    public Flow.Publisher<StreamingEventKind> onResubscribeToTask(TaskIdParams params) throws JSONRPCError {
         Task task = taskStore.get(params.id());
         if (task == null) {
             throw new TaskNotFoundError();
@@ -286,7 +286,7 @@ public class DefaultRequestHandler implements RequestHandler {
 
         EventConsumer consumer = new EventConsumer(queue);
         Flow.Publisher<Event> results = resultAggregator.consumeAndEmit(consumer);
-        return convertingProcessor(results, e -> (StreamingEventType) e);
+        return convertingProcessor(results, e -> (StreamingEventKind) e);
     }
 
     private boolean shouldAddPushInfo(MessageSendParams params) {

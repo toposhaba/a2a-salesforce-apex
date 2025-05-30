@@ -26,7 +26,7 @@ import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Message;
 import io.a2a.spec.MessageSendConfiguration;
 import io.a2a.spec.MessageSendParams;
-import io.a2a.spec.StreamingEventType;
+import io.a2a.spec.StreamingEventKind;
 import io.a2a.spec.TextPart;
 
 public class A2AClientStreamingTest {
@@ -106,9 +106,9 @@ public class A2AClientStreamingTest {
                 .configuration(configuration)
                 .build();
 
-        AtomicReference<StreamingEventType> receivedEvent = new AtomicReference<>();
+        AtomicReference<StreamingEventKind> receivedEvent = new AtomicReference<>();
         CountDownLatch latch = new CountDownLatch(1);
-        Consumer<StreamingEventType> eventHandler = event -> {
+        Consumer<StreamingEventKind> eventHandler = event -> {
             receivedEvent.set(event);
             latch.countDown();
         };

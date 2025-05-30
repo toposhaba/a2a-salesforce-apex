@@ -36,7 +36,7 @@ import io.a2a.spec.SendMessageResponse;
 import io.a2a.spec.SendStreamingMessageRequest;
 import io.a2a.spec.SetTaskPushNotificationConfigRequest;
 import io.a2a.spec.SetTaskPushNotificationConfigResponse;
-import io.a2a.spec.StreamingEventType;
+import io.a2a.spec.StreamingEventKind;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
@@ -343,7 +343,7 @@ public class A2AClient {
      * @param failureHandler a consumer that will be invoked if a failure occurs when processing events
      * @throws A2AServerException if sending the streaming message fails for any reason
      */
-    public void sendStreamingMessage(MessageSendParams messageSendParams, Consumer<StreamingEventType> eventHandler,
+    public void sendStreamingMessage(MessageSendParams messageSendParams, Consumer<StreamingEventKind> eventHandler,
                                      Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
         sendStreamingMessage(null, messageSendParams, eventHandler, errorHandler, failureHandler);
     }
@@ -358,7 +358,7 @@ public class A2AClient {
      * @param failureHandler a consumer that will be invoked if a failure occurs when processing events
      * @throws A2AServerException if sending the streaming message fails for any reason
      */
-    public void sendStreamingMessage(String requestId, MessageSendParams messageSendParams, Consumer<StreamingEventType> eventHandler,
+    public void sendStreamingMessage(String requestId, MessageSendParams messageSendParams, Consumer<StreamingEventKind> eventHandler,
                                      Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
         checkNotNullParam("messageSendParams", messageSendParams);
         checkNotNullParam("eventHandler", eventHandler);

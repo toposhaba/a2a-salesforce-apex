@@ -15,18 +15,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class SendMessageResponse extends JSONRPCResponse<EventType> {
+public final class SendMessageResponse extends JSONRPCResponse<EventKind> {
 
     @JsonCreator
     public SendMessageResponse(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
-                               @JsonProperty("result") EventType result, @JsonProperty("error") JSONRPCError error) {
+                               @JsonProperty("result") EventKind result, @JsonProperty("error") JSONRPCError error) {
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
         this.id = id == null ? UUID.randomUUID().toString() : id;
         this.result = result;
         this.error = error;
     }
 
-    public SendMessageResponse(Object id, EventType result) {
+    public SendMessageResponse(Object id, EventKind result) {
         this(null, id, result, null);
     }
 

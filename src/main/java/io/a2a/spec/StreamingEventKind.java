@@ -12,7 +12,7 @@ import io.a2a.server.events.Event;
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.PROPERTY,
-        property = "type",
+        property = "kind",
         visible = true
 )
 @JsonSubTypes({
@@ -21,7 +21,7 @@ import io.a2a.server.events.Event;
         @JsonSubTypes.Type(value = TaskStatusUpdateEvent.class, name = STATUS_UPDATE),
         @JsonSubTypes.Type(value = TaskArtifactUpdateEvent.class, name = ARTIFACT_UPDATE)
 })
-public interface StreamingEventType extends Event {
+public sealed interface StreamingEventKind extends Event permits Task, Message, TaskStatusUpdateEvent, TaskArtifactUpdateEvent {
 
-    String getType();
+    String getKind();
 }

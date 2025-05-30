@@ -3,14 +3,9 @@ package io.a2a.examples.helloworld.client;
 import io.a2a.client.A2AClient;
 import io.a2a.spec.A2A;
 import io.a2a.spec.A2AServerException;
-import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Message;
 import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.SendMessageResponse;
-import io.a2a.spec.StreamingEventType;
-
-import java.util.UUID;
-import java.util.function.Consumer;
 
 /**
  * A simple example of using the A2A Java SDK to communicate with an A2A server.

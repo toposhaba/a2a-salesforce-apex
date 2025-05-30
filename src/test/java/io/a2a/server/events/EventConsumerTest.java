@@ -36,7 +36,7 @@ public class EventConsumerTest {
                 "id": "123",
                 "contextId": "session-xyz",
                 "status": {"state": "submitted"},
-                "type": "task"
+                "kind": "task"
             }
             """;
 
@@ -45,7 +45,7 @@ public class EventConsumerTest {
                 "role": "agent",
                 "parts": [{"kind": "text", "text": "test message"}],
                 "messageId": "111",
-                "type": "message"
+                "kind": "message"
             }
             """;
 

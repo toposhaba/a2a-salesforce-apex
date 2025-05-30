@@ -5,7 +5,7 @@ import io.a2a.spec.Artifact;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Message;
 import io.a2a.spec.Part;
-import io.a2a.spec.StreamingEventType;
+import io.a2a.spec.StreamingEventKind;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskArtifactUpdateEvent;
 import io.a2a.spec.TaskState;
@@ -28,7 +28,7 @@ public class SSEEventListenerTest {
     @Test
     public void testOnEventWithTaskResult() throws Exception {
         // Set up event handler
-        AtomicReference<StreamingEventType> receivedEvent = new AtomicReference<>();
+        AtomicReference<StreamingEventKind> receivedEvent = new AtomicReference<>();
         SSEEventListener listener = new SSEEventListener(
                 event -> receivedEvent.set(event),
                 error -> {},
@@ -53,7 +53,7 @@ public class SSEEventListenerTest {
     @Test
     public void testOnEventWithMessageResult() throws Exception {
         // Set up event handler
-        AtomicReference<StreamingEventType> receivedEvent = new AtomicReference<>();
+        AtomicReference<StreamingEventKind> receivedEvent = new AtomicReference<>();
         SSEEventListener listener = new SSEEventListener(
                 event -> receivedEvent.set(event),
                 error -> {},
@@ -81,7 +81,7 @@ public class SSEEventListenerTest {
     @Test
     public void testOnEventWithTaskStatusUpdateEventEvent() throws Exception {
         // Set up event handler
-        AtomicReference<StreamingEventType> receivedEvent = new AtomicReference<>();
+        AtomicReference<StreamingEventKind> receivedEvent = new AtomicReference<>();
         SSEEventListener listener = new SSEEventListener(
                 event -> receivedEvent.set(event),
                 error -> {},
@@ -107,7 +107,7 @@ public class SSEEventListenerTest {
     @Test
     public void testOnEventWithTaskArtifactUpdateEventEvent() throws Exception {
         // Set up event handler
-        AtomicReference<StreamingEventType> receivedEvent = new AtomicReference<>();
+        AtomicReference<StreamingEventKind> receivedEvent = new AtomicReference<>();
         SSEEventListener listener = new SSEEventListener(
                 event -> receivedEvent.set(event),
                 error -> {},
@@ -176,7 +176,7 @@ public class SSEEventListenerTest {
 
     @Test
     public void testBuilderPattern() {
-        List<StreamingEventType> receivedEvents = new ArrayList<>();
+        List<StreamingEventKind> receivedEvents = new ArrayList<>();
         List<JSONRPCError> receivedErrors = new ArrayList<>();
         AtomicBoolean failureHandlerCalled = new AtomicBoolean(false);
 

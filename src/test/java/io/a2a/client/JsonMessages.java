@@ -87,7 +87,7 @@ public class JsonMessages {
                ],
                "messageId": "message-1234",
                "contextId": "context-1234",
-               "type": "message"
+               "kind": "message"
               },
               "configuration": {
                 "acceptedOutputModes": ["text"],
@@ -119,7 +119,7 @@ public class JsonMessages {
                }
               ],
               "metadata": {},
-              "type": "task"
+              "kind": "task"
              }
             }""";
 
@@ -140,7 +140,7 @@ public class JsonMessages {
                ],
                "messageId": "message-1234",
                "contextId": "context-1234",
-               "type": "message"
+               "kind": "message"
               },
               "configuration": {
                 "acceptedOutputModes": ["text"],
@@ -163,7 +163,7 @@ public class JsonMessages {
                  }
                 ],
                 "messageId": "msg-456",
-                "type": "message"
+                "kind": "message"
              }
             }""";
 
@@ -184,7 +184,7 @@ public class JsonMessages {
                ],
                "messageId": "message-1234",
                "contextId": "context-1234",
-               "type": "message"
+               "kind": "message"
               },
               "configuration": {
                 "acceptedOutputModes": ["text"],
@@ -259,11 +259,12 @@ public class JsonMessages {
                   }
                  }
                 ],
-                "type": "message"
+                "messageId": "message-123",
+                "kind": "message"
                }
               ],
               "metadata": {},
-              "type": "task"
+              "kind": "task"
              }
             }
             """;
@@ -291,7 +292,7 @@ public class JsonMessages {
                "state": "canceled"
               },
               "metadata": {},
-              "type" : "task"
+              "kind" : "task"
              }
             }
             """;
