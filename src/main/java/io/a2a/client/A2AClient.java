@@ -12,6 +12,7 @@ import static io.a2a.util.Utils.OBJECT_MAPPER;
 import static io.a2a.util.Utils.unmarshalFrom;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -105,12 +106,13 @@ public class A2AClient {
      * Get the agent card for the A2A server this client will be communicating with.
      *
      * @param relativeCardPath the path to the agent card endpoint relative to the base URL of the A2A server
+     * @param authHeaders the HTTP authentication headers to use
      * @return the agent card for the A2A server
      * @throws {@code A2AServerException} if the agent card for the A2A server cannot be obtained
      */
-    public AgentCard getAgentCard(String relativeCardPath) throws A2AServerException {
+    public AgentCard getAgentCard(String relativeCardPath, Map<String, String> authHeaders) throws A2AServerException {
         if (this.agentCard == null) {
-            this.agentCard = A2A.getAgentCard(this.httpClient, this.agentUrl, relativeCardPath);
+            this.agentCard = A2A.getAgentCard(this.httpClient, this.agentUrl, relativeCardPath, authHeaders);
         }
         return this.agentCard;
     }

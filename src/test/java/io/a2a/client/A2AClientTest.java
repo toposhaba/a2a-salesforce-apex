@@ -453,7 +453,7 @@ public class A2AClientTest {
                 );
 
         A2AClient client = new A2AClient("http://localhost:4001");
-        AgentCard agentCard = client.getAgentCard("/agent/authenticatedExtendedCard");
+        AgentCard agentCard = client.getAgentCard("/agent/authenticatedExtendedCard", null);
         assertEquals("GeoSpatial Route Planner Agent Extended", agentCard.name());
         assertEquals("Extended description", agentCard.description());
         assertEquals("https://georoute-agent.example.com/a2a/v1", agentCard.url());

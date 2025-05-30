@@ -47,7 +47,6 @@ public final class Message implements EventKind, StreamingEventKind {
                    @JsonProperty("metadata") Map<String, Object> metadata,
                    @JsonProperty("kind") String kind) {
         Assert.checkNotNullParam("kind", kind);
-        Assert.checkNotNullParam("messageId", messageId);
         Assert.checkNotNullParam("parts", parts);
         Assert.checkNotNullParam("role", role);
         if (! kind.equals(MESSAGE)) {

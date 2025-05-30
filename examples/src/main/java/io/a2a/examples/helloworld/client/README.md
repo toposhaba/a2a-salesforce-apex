@@ -12,15 +12,12 @@ This example demonstrates how to use the A2A Java SDK to communicate with an A2A
 
 ## Setup and Run the Python A2A Server
 
-The Python A2A server is part of the [a2a-python](https://github.com/google/a2a-python) project. To set it up and run it:
+The Python A2A server is part of the [a2a-samples](https://github.com/google-a2a/a2a-samples) project. To set it up and run it:
 
-1. Clone the a2a-python repository:
+1. Clone the a2a-samples repository:
    ```bash
-   git clone https://github.com/google/a2a-python.git
-   cd a2a-python
-   
-   # Temporarily check out the v0.2.1a1 tag until https://github.com/fjuma/a2a-java-sdk/issues/61 is resolved
-   git checkout v0.2.1a1
+   git clone git@github.com:google-a2a/a2a-samples.git
+   cd a2a-samples/samples/python/agents/helloworld
    ```
 
 2. **Recommended method**: Install dependencies using uv (much faster Python package installer):
@@ -37,12 +34,7 @@ The Python A2A server is part of the [a2a-python](https://github.com/google/a2a-
    uv pip install -e .
    ```
 
-4. Navigate to the helloworld example directory:
-   ```bash
-   cd examples/helloworld
-   ```
-
-5. Run the server with uv (recommended):
+4. Run the server with uv (recommended):
    ```bash
    uv run .
    ```
@@ -52,6 +44,15 @@ The server will start running on `http://localhost:9999`.
 ## Run the Java A2A Client with JBang
 
 The Java client can be run using JBang, which allows you to run Java source files directly without any manual compilation.
+
+### Build the A2A Java SDK
+
+First, ensure you have built the `a2a-java-sdk` project:
+
+```bash
+cd /path/to/a2a-java-sdk
+mvn clean install
+```
 
 ### Option 1: Using the JBang script (Recommended)
 
@@ -89,11 +90,13 @@ Alternatively, you can run the Java client with JBang by specifying the classpat
 
 The Java client (`HelloWorldClient.java`) performs the following actions:
 
-1. Creates an A2A client that connects to the Python server at `http://localhost:9999`.
-2. Sends a regular message asking "how much is 10 USD in INR?".
-3. Prints the server's response.
-4. Sends the same message as a streaming request.
-5. Prints each chunk of the server's streaming response as it arrives.
+1. Fetches the server's public agent card
+2. Fetches the server's extended agent card 
+3. Creates an A2A client using the extended agent card that connects to the Python server at `http://localhost:9999`.
+4. Sends a regular message asking "how much is 10 USD in INR?".
+5. Prints the server's response.
+6. Sends the same message as a streaming request.
+7. Prints each chunk of the server's streaming response as it arrives.
 
 ## Notes
 
