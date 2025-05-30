@@ -29,6 +29,12 @@ public abstract sealed class JSONRPCResponse<T> implements JSONRPCMessage permit
         if (jsonrpc != null && ! jsonrpc.equals(JSONRPC_VERSION)) {
             throw new IllegalArgumentException("Invalid JSON-RPC protocol version");
         }
+        if (error != null && result != null) {
+            throw new IllegalArgumentException("Invalid JSON-RPC error response");
+        }
+        if (error == null && result == null) {
+            throw new IllegalArgumentException("Invalid JSON-RPC success response");
+        }
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
         this.id = id == null ? UUID.randomUUID().toString() : id;
         this.result = result;

@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import io.a2a.util.Assert;
+
 /**
  * A JSON RPC error response.
  */
@@ -16,6 +18,7 @@ public final class JSONRPCErrorResponse extends JSONRPCResponse<Void> {
     public JSONRPCErrorResponse(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
                                 @JsonProperty("result") Void result, @JsonProperty("error") JSONRPCError error) {
         super(jsonrpc, id, result, error);
+        Assert.checkNotNullParam("error", error);
     }
 
     public JSONRPCErrorResponse(Object id, JSONRPCError error) {
