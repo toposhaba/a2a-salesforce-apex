@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -13,6 +14,9 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jakarta.enterprise.context.Dependent;
+
+import io.a2a.http.A2AHttpClient;
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.events.Event;
@@ -84,6 +88,7 @@ public class JSONRPCHandlerTest {
     AgentExecutorMethod agentExecutorExecute;
     AgentExecutorMethod agentExecutorCancel;
     private InMemoryQueueManager queueManager;
+    private TestHttpClient httpClient;
 
 
     @BeforeEach
@@ -106,7 +111,8 @@ public class JSONRPCHandlerTest {
 
         taskStore = new InMemoryTaskStore();
         queueManager = new InMemoryQueueManager();
-        PushNotifier pushNotifier = new InMemoryPushNotifier();
+        httpClient = new TestHttpClient();
+        PushNotifier pushNotifier = new InMemoryPushNotifier(httpClient);
 
         requestHandler = new DefaultRequestHandler(executor, taskStore, queueManager, pushNotifier);
     }
@@ -463,11 +469,12 @@ public class JSONRPCHandlerTest {
                 "1", new MessageSendParams("1", message, null, null));
         Flow.Publisher<SendStreamingMessageResponse> response = handler.onMessageSendStream(request);
 
-        // TODO - this Publisher never completes so we subscribe in a new thread.
-        //  I _think_ that is as expected but we need to be sure
-        List<StreamingEventType> results = new ArrayList<>();
-        AtomicReference<Flow.Subscription> subscriptionRef = new AtomicReference<>();
-        CountDownLatch latch = new CountDownLatch(1);
+        // This Publisher never completes so we subscribe in a new thread.
+        // I _think_ that is as expected, and testOnMessageStreamNewMessageSendPushNotificationSuccess seems
+        // to confirm this
+        final List<StreamingEventType> results = new ArrayList<>();
+        final AtomicReference<Flow.Subscription> subscriptionRef = new AtomicReference<>();
+        final CountDownLatch latch = new CountDownLatch(1);
 
         Executors.newSingleThreadExecutor().execute(() -> {
             response.subscribe(new Flow.Subscriber<>() {
@@ -627,10 +634,116 @@ public class JSONRPCHandlerTest {
         assertEquals(taskPushConfig, getResponse.getResult());
     }
 
-    @Disabled
     @Test
-    public void testOnMessageStreamNewMessageSendPushNotificationSuccess() {
-        // TODO - this needs a Http client
+    public void testOnMessageStreamNewMessageSendPushNotificationSuccess() throws Exception {
+        JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);
+        taskStore.save(MINIMAL_TASK);
+
+        List<Event> events = List.of(
+                MINIMAL_TASK,
+                new TaskArtifactUpdateEvent.Builder()
+                        .taskId(MINIMAL_TASK.getId())
+                        .contextId(MINIMAL_TASK.getContextId())
+                        .artifact(new Artifact.Builder()
+                                .artifactId("11")
+                                .parts(new TextPart("text"))
+                                .build())
+                        .build(),
+                new TaskStatusUpdateEvent.Builder()
+                        .taskId(MINIMAL_TASK.getId())
+                        .contextId(MINIMAL_TASK.getContextId())
+                        .status(new TaskStatus(TaskState.COMPLETED))
+                        .build());
+
+
+        agentExecutorExecute = (context, eventQueue) -> {
+            // Hardcode the events to send here
+            for (Event event : events) {
+                eventQueue.enqueueEvent(event);
+            }
+        };
+
+
+        TaskPushNotificationConfig config = new TaskPushNotificationConfig(
+                MINIMAL_TASK.getId(),
+                new PushNotificationConfig("http://example.com/push", null, null));
+        SetTaskPushNotificationRequest stpnRequest = new SetTaskPushNotificationRequest("1", config);
+        SetTaskPushNotificationResponse stpnResponse = handler.setPushNotification(stpnRequest);
+        assertNull(stpnResponse.getError());
+
+        SendStreamingMessageRequest request = new SendStreamingMessageRequest("1", new MessageSendParams("1", MESSAGE, null, null));
+        Flow.Publisher<SendStreamingMessageResponse> response = handler.onMessageSendStream(request);
+
+        final List<StreamingEventType> results = Collections.synchronizedList(new ArrayList<>());
+        final AtomicReference<Flow.Subscription> subscriptionRef = new AtomicReference<>();
+        final CountDownLatch latch = new CountDownLatch(6);
+        httpClient.latch = latch;
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            response.subscribe(new Flow.Subscriber<>() {
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    subscriptionRef.set(subscription);
+                    subscription.request(1);
+                    latch.countDown();
+                }
+
+                @Override
+                public void onNext(SendStreamingMessageResponse item) {
+                    // System.out.println("-> " + item.getResult());
+                    results.add(item.getResult());
+                    // System.out.println(results);
+                    subscriptionRef.get().request(1);
+                    latch.countDown();
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    subscriptionRef.get().cancel();
+                }
+
+                @Override
+                public void onComplete() {
+                    subscriptionRef.get().cancel();
+                }
+            });
+        });
+
+        latch.await(2, TimeUnit.SECONDS);
+        subscriptionRef.get().cancel();
+        if (results.size() != 3) {
+            // TODO - this is very strange. The results array is synchronized, and the latch is counted down
+            //  AFTER adding items to the list. Still, I am seeing intermittently, but frequently that
+            //  the results list only has two items.
+            long end = System.currentTimeMillis() + 5000;
+            while (results.size() != 3 && System.currentTimeMillis() < end) {
+                Thread.sleep(1000);
+            }
+        }
+        assertEquals(3, results.size());
+        assertEquals(3, httpClient.tasks.size());
+
+        Task curr = httpClient.tasks.get(0);
+        assertEquals(MINIMAL_TASK.getId(), curr.getId());
+        assertEquals(MINIMAL_TASK.getContextId(), curr.getContextId());
+        assertEquals(MINIMAL_TASK.getStatus().state(), curr.getStatus().state());
+        assertEquals(0, curr.getArtifacts() == null ? 0 : curr.getArtifacts().size());
+
+        curr = httpClient.tasks.get(1);
+        assertEquals(MINIMAL_TASK.getId(), curr.getId());
+        assertEquals(MINIMAL_TASK.getContextId(), curr.getContextId());
+        assertEquals(MINIMAL_TASK.getStatus().state(), curr.getStatus().state());
+        assertEquals(1, curr.getArtifacts().size());
+        assertEquals(1, curr.getArtifacts().get(0).parts().size());
+        assertEquals("text", ((TextPart)curr.getArtifacts().get(0).parts().get(0)).getText());
+
+        curr = httpClient.tasks.get(2);
+        assertEquals(MINIMAL_TASK.getId(), curr.getId());
+        assertEquals(MINIMAL_TASK.getContextId(), curr.getContextId());
+        assertEquals(TaskState.COMPLETED, curr.getStatus().state());
+        assertEquals(1, curr.getArtifacts().size());
+        assertEquals(1, curr.getArtifacts().get(0).parts().size());
+        assertEquals("text", ((TextPart)curr.getArtifacts().get(0).parts().get(0)).getText());
     }
 
     @Test
@@ -827,4 +940,19 @@ public class JSONRPCHandlerTest {
         void invoke(RequestContext context, EventQueue eventQueue) throws JSONRPCError;
     }
 
+    @Dependent
+    private static class TestHttpClient implements A2AHttpClient {
+        final List<Task> tasks = Collections.synchronizedList(new ArrayList<>());
+        volatile CountDownLatch latch;
+
+        @Override
+        public int post(String url, Task task) {
+            // System.out.println("----> adding " + task);
+            tasks.add(task);
+            if (latch != null) {
+                latch.countDown();
+            }
+            return 200;
+        }
+    }
 }

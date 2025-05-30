@@ -7,6 +7,7 @@ import static io.a2a.spec.TaskStatusUpdateEvent.STATUS_UPDATE;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.a2a.server.events.Event;
 
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
@@ -20,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         @JsonSubTypes.Type(value = TaskStatusUpdateEvent.class, name = STATUS_UPDATE),
         @JsonSubTypes.Type(value = TaskArtifactUpdateEvent.class, name = ARTIFACT_UPDATE)
 })
-public interface StreamingEventType {
+public interface StreamingEventType extends Event {
 
     String getType();
 }
