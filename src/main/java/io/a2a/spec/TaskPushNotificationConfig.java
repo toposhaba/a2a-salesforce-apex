@@ -10,10 +10,10 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record TaskPushNotificationConfig(String id, PushNotificationConfig pushNotificationConfig) {
+public record TaskPushNotificationConfig(String taskId, PushNotificationConfig pushNotificationConfig) {
 
     public TaskPushNotificationConfig {
-        Assert.checkNotNullParam("id", id);
+        Assert.checkNotNullParam("taskId", taskId);
         Assert.checkNotNullParam("pushNotificationConfig", pushNotificationConfig);
     }
 }

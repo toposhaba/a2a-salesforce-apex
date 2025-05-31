@@ -4,16 +4,16 @@ import static io.a2a.util.AsyncUtils.convertingProcessor;
 
 import java.util.concurrent.Flow;
 
+import io.a2a.spec.PublicAgentCard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import io.a2a.server.events.Event;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
-import io.a2a.spec.EventType;
-import io.a2a.spec.GetTaskPushNotificationRequest;
-import io.a2a.spec.GetTaskPushNotificationResponse;
+import io.a2a.spec.EventKind;
+import io.a2a.spec.GetTaskPushNotificationConfigRequest;
+import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
 import io.a2a.spec.JSONRPCError;
@@ -21,9 +21,9 @@ import io.a2a.spec.SendMessageRequest;
 import io.a2a.spec.SendMessageResponse;
 import io.a2a.spec.SendStreamingMessageRequest;
 import io.a2a.spec.SendStreamingMessageResponse;
-import io.a2a.spec.SetTaskPushNotificationRequest;
-import io.a2a.spec.SetTaskPushNotificationResponse;
-import io.a2a.spec.StreamingEventType;
+import io.a2a.spec.SetTaskPushNotificationConfigRequest;
+import io.a2a.spec.SetTaskPushNotificationConfigResponse;
+import io.a2a.spec.StreamingEventKind;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskNotFoundError;
 import io.a2a.spec.TaskPushNotificationConfig;
@@ -37,14 +37,14 @@ public class JSONRPCHandler {
     private RequestHandler requestHandler;
 
     @Inject
-    public JSONRPCHandler(AgentCard agentCard, RequestHandler requestHandler) {
+    public JSONRPCHandler(@PublicAgentCard AgentCard agentCard, RequestHandler requestHandler) {
         this.agentCard = agentCard;
         this.requestHandler = requestHandler;
     }
 
     public SendMessageResponse onMessageSend(SendMessageRequest request) {
         try {
-            EventType taskOrMessage = requestHandler.onMessageSend(request.getParams());
+            EventKind taskOrMessage = requestHandler.onMessageSend(request.getParams());
             return new SendMessageResponse(request.getId(), taskOrMessage);
         } catch (JSONRPCError e) {
             return new SendMessageResponse(request.getId(), e);
@@ -53,7 +53,7 @@ public class JSONRPCHandler {
 
 
     public Flow.Publisher<SendStreamingMessageResponse> onMessageSendStream(SendStreamingMessageRequest request) {
-        Flow.Publisher<StreamingEventType> publisher = requestHandler.onMessageSendStream(request.getParams());
+        Flow.Publisher<StreamingEventKind> publisher = requestHandler.onMessageSendStream(request.getParams());
         return convertingProcessor(publisher, event -> {
             try {
                 return new SendStreamingMessageResponse(request.getId(), event);
@@ -76,7 +76,7 @@ public class JSONRPCHandler {
     }
 
     public Flow.Publisher<SendStreamingMessageResponse> onResubscribeToTask(TaskResubscriptionRequest request) {
-        Flow.Publisher<StreamingEventType> publisher;
+        Flow.Publisher<StreamingEventKind> publisher;
         try {
             publisher = requestHandler.onResubscribeToTask(request.getParams());
         } catch (JSONRPCError e) {
@@ -91,21 +91,21 @@ public class JSONRPCHandler {
         });
     }
 
-    public GetTaskPushNotificationResponse getPushNotification(GetTaskPushNotificationRequest request) {
+    public GetTaskPushNotificationConfigResponse getPushNotification(GetTaskPushNotificationConfigRequest request) {
         try {
             TaskPushNotificationConfig config = requestHandler.onGetTaskPushNotificationConfig(request.getParams());
-            return new GetTaskPushNotificationResponse(request.getId().toString(), config);
+            return new GetTaskPushNotificationConfigResponse(request.getId().toString(), config);
         } catch (JSONRPCError e) {
-            return new GetTaskPushNotificationResponse(request.getId().toString(), e);
+            return new GetTaskPushNotificationConfigResponse(request.getId().toString(), e);
         }
     }
 
-    public SetTaskPushNotificationResponse setPushNotification(SetTaskPushNotificationRequest request) {
+    public SetTaskPushNotificationConfigResponse setPushNotification(SetTaskPushNotificationConfigRequest request) {
         try {
             TaskPushNotificationConfig config = requestHandler.onSetTaskPushNotificationConfig(request.getParams());
-            return new SetTaskPushNotificationResponse(request.getId().toString(), config);
+            return new SetTaskPushNotificationConfigResponse(request.getId().toString(), config);
         } catch (JSONRPCError e) {
-            return new SetTaskPushNotificationResponse(request.getId(), e);
+            return new SetTaskPushNotificationConfigResponse(request.getId(), e);
         }
     }
 

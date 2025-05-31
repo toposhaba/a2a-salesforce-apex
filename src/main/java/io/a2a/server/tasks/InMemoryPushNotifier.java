@@ -13,12 +13,14 @@ import io.a2a.spec.Task;
 import io.a2a.util.Utils;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class InMemoryPushNotifier implements PushNotifier {
     private final A2AHttpClient httpClient;
     private final Map<String, PushNotificationConfig> pushNotificationInfos = Collections.synchronizedMap(new HashMap<>());
 
+    @Inject
     public InMemoryPushNotifier(A2AHttpClient httpClient) {
         this.httpClient = httpClient;
     }

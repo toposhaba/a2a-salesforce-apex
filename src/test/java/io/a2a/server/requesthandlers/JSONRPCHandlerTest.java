@@ -32,8 +32,8 @@ import io.a2a.spec.AgentCard;
 import io.a2a.spec.Artifact;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
-import io.a2a.spec.GetTaskPushNotificationRequest;
-import io.a2a.spec.GetTaskPushNotificationResponse;
+import io.a2a.spec.GetTaskPushNotificationConfigRequest;
+import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
 import io.a2a.spec.JSONRPCError;
@@ -44,9 +44,9 @@ import io.a2a.spec.SendMessageRequest;
 import io.a2a.spec.SendMessageResponse;
 import io.a2a.spec.SendStreamingMessageRequest;
 import io.a2a.spec.SendStreamingMessageResponse;
-import io.a2a.spec.SetTaskPushNotificationRequest;
-import io.a2a.spec.SetTaskPushNotificationResponse;
-import io.a2a.spec.StreamingEventType;
+import io.a2a.spec.SetTaskPushNotificationConfigRequest;
+import io.a2a.spec.SetTaskPushNotificationConfigResponse;
+import io.a2a.spec.StreamingEventKind;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskArtifactUpdateEvent;
 import io.a2a.spec.TaskIdParams;
@@ -208,7 +208,7 @@ public class JSONRPCHandlerTest {
                 .taskId(MINIMAL_TASK.getId())
                 .contextId(MINIMAL_TASK.getContextId())
                 .build();
-        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams("1", message, null, null));
+        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams(message, null, null));
         SendMessageResponse response = handler.onMessageSend(request);
         assertNull(response.getError());
         // The Python implementation returns a Task here, but then again they are using hardcoded mocks and
@@ -229,7 +229,7 @@ public class JSONRPCHandlerTest {
                 .contextId(MINIMAL_TASK.getContextId())
                 .build();
 
-        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams("1", message, null, null));
+        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams(message, null, null));
         SendMessageResponse response;
         try (MockedConstruction<EventConsumer> mocked = Mockito.mockConstruction(
                 EventConsumer.class,
@@ -251,7 +251,7 @@ public class JSONRPCHandlerTest {
                 .taskId(MINIMAL_TASK.getId())
                 .contextId(MINIMAL_TASK.getContextId())
                 .build();
-        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams("1", message, null, null));
+        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams(message, null, null));
         SendMessageResponse response = handler.onMessageSend(request);
         assertNull(response.getError());
         // The Python implementation returns a Task here, but then again they are using hardcoded mocks and
@@ -272,7 +272,7 @@ public class JSONRPCHandlerTest {
                 .taskId(MINIMAL_TASK.getId())
                 .contextId(MINIMAL_TASK.getContextId())
                 .build();
-        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams("1", message, null, null));
+        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams(message, null, null));
         SendMessageResponse response;
         try (MockedConstruction<EventConsumer> mocked = Mockito.mockConstruction(
                 EventConsumer.class,
@@ -298,7 +298,7 @@ public class JSONRPCHandlerTest {
                 .contextId(MINIMAL_TASK.getContextId())
                 .build();
         SendMessageRequest request = new SendMessageRequest(
-                "1", new MessageSendParams("1", message, null, null));
+                "1", new MessageSendParams(message, null, null));
         SendMessageResponse response = handler.onMessageSend(request);
         assertInstanceOf(UnsupportedOperationError.class, response.getError());
         assertNull(response.getResult());
@@ -312,7 +312,7 @@ public class JSONRPCHandlerTest {
                 .contextId(MINIMAL_TASK.getContextId())
                 .build();
         SendMessageRequest request = new SendMessageRequest(
-                "1", new MessageSendParams("1", message, null, null));
+                "1", new MessageSendParams(message, null, null));
         SendMessageResponse response;
         try (MockedConstruction<EventConsumer> mocked = Mockito.mockConstruction(
                 EventConsumer.class,
@@ -338,10 +338,10 @@ public class JSONRPCHandlerTest {
             .build();
 
         SendStreamingMessageRequest request = new SendStreamingMessageRequest(
-                "1", new MessageSendParams("1", message, null, null));
+                "1", new MessageSendParams(message, null, null));
         Flow.Publisher<SendStreamingMessageResponse> response = handler.onMessageSendStream(request);
 
-        List<StreamingEventType> results = new ArrayList<>();
+        List<StreamingEventKind> results = new ArrayList<>();
         CountDownLatch latch = new CountDownLatch(1);
 
         response.subscribe(new Flow.Subscriber<>() {
@@ -407,7 +407,7 @@ public class JSONRPCHandlerTest {
             .build();
 
         SendStreamingMessageRequest request = new SendStreamingMessageRequest(
-                "1", new MessageSendParams("1", message, null, null));
+                "1", new MessageSendParams(message, null, null));
         Flow.Publisher<SendStreamingMessageResponse> response;
         try (MockedConstruction<EventConsumer> mocked = Mockito.mockConstruction(
                 EventConsumer.class,
@@ -466,13 +466,13 @@ public class JSONRPCHandlerTest {
 
 
         SendStreamingMessageRequest request = new SendStreamingMessageRequest(
-                "1", new MessageSendParams("1", message, null, null));
+                "1", new MessageSendParams(message, null, null));
         Flow.Publisher<SendStreamingMessageResponse> response = handler.onMessageSendStream(request);
 
         // This Publisher never completes so we subscribe in a new thread.
         // I _think_ that is as expected, and testOnMessageStreamNewMessageSendPushNotificationSuccess seems
         // to confirm this
-        final List<StreamingEventType> results = new ArrayList<>();
+        final List<StreamingEventKind> results = new ArrayList<>();
         final AtomicReference<Flow.Subscription> subscriptionRef = new AtomicReference<>();
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -512,7 +512,7 @@ public class JSONRPCHandlerTest {
                 .history(message)
                 .build();
         assertEquals(1, results.size());
-        StreamingEventType receivedType = results.get(0);
+        StreamingEventKind receivedType = results.get(0);
         assertInstanceOf(Task.class, receivedType);
         Task received = (Task) receivedType;
         assertEquals(expected.getId(), received.getId());
@@ -552,7 +552,7 @@ public class JSONRPCHandlerTest {
             .build();
 
         SendStreamingMessageRequest request = new SendStreamingMessageRequest(
-                "1", new MessageSendParams("1", message, null, null));
+                "1", new MessageSendParams(message, null, null));
         Flow.Publisher<SendStreamingMessageResponse> response;
         try (MockedConstruction<EventConsumer> mocked = Mockito.mockConstruction(
                 EventConsumer.class,
@@ -604,9 +604,9 @@ public class JSONRPCHandlerTest {
         TaskPushNotificationConfig taskPushConfig =
                 new TaskPushNotificationConfig(
                         MINIMAL_TASK.getId(), new
-                        PushNotificationConfig("http://example.con", null, null));
-        SetTaskPushNotificationRequest request = new SetTaskPushNotificationRequest("1", taskPushConfig);
-        SetTaskPushNotificationResponse response = handler.setPushNotification(request);
+                        PushNotificationConfig("http://example.com", null, null));
+        SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
+        SetTaskPushNotificationConfigResponse response = handler.setPushNotification(request);
         assertSame(taskPushConfig, response.getResult());
     }
 
@@ -622,14 +622,14 @@ public class JSONRPCHandlerTest {
         TaskPushNotificationConfig taskPushConfig =
                 new TaskPushNotificationConfig(
                         MINIMAL_TASK.getId(), new
-                        PushNotificationConfig("http://example.con", null, null));
+                        PushNotificationConfig("http://example.com", null, null));
 
-        SetTaskPushNotificationRequest request = new SetTaskPushNotificationRequest("1", taskPushConfig);
+        SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
         handler.setPushNotification(request);
 
-        GetTaskPushNotificationRequest getRequest =
-                new GetTaskPushNotificationRequest("111", new TaskIdParams(MINIMAL_TASK.getId()));
-        GetTaskPushNotificationResponse getResponse = handler.getPushNotification(getRequest);
+        GetTaskPushNotificationConfigRequest getRequest =
+                new GetTaskPushNotificationConfigRequest("111", new TaskIdParams(MINIMAL_TASK.getId()));
+        GetTaskPushNotificationConfigResponse getResponse = handler.getPushNotification(getRequest);
 
         assertEquals(taskPushConfig, getResponse.getResult());
     }
@@ -667,14 +667,14 @@ public class JSONRPCHandlerTest {
         TaskPushNotificationConfig config = new TaskPushNotificationConfig(
                 MINIMAL_TASK.getId(),
                 new PushNotificationConfig("http://example.com/push", null, null));
-        SetTaskPushNotificationRequest stpnRequest = new SetTaskPushNotificationRequest("1", config);
-        SetTaskPushNotificationResponse stpnResponse = handler.setPushNotification(stpnRequest);
+        SetTaskPushNotificationConfigRequest stpnRequest = new SetTaskPushNotificationConfigRequest("1", config);
+        SetTaskPushNotificationConfigResponse stpnResponse = handler.setPushNotification(stpnRequest);
         assertNull(stpnResponse.getError());
 
-        SendStreamingMessageRequest request = new SendStreamingMessageRequest("1", new MessageSendParams("1", MESSAGE, null, null));
+        SendStreamingMessageRequest request = new SendStreamingMessageRequest("1", new MessageSendParams(MESSAGE, null, null));
         Flow.Publisher<SendStreamingMessageResponse> response = handler.onMessageSendStream(request);
 
-        final List<StreamingEventType> results = Collections.synchronizedList(new ArrayList<>());
+        final List<StreamingEventKind> results = Collections.synchronizedList(new ArrayList<>());
         final AtomicReference<Flow.Subscription> subscriptionRef = new AtomicReference<>();
         final CountDownLatch latch = new CountDownLatch(6);
         httpClient.latch = latch;
@@ -769,11 +769,11 @@ public class JSONRPCHandlerTest {
                 .parts(new TextPart("text"))
                 .build();
         SendMessageResponse smr =
-                handler.onMessageSend(new SendMessageRequest("1", new MessageSendParams("1", message, null, null)));
+                handler.onMessageSend(new SendMessageRequest("1", new MessageSendParams(message, null, null)));
         assertNull(smr.getError());
 
 
-        List<StreamingEventType> results = new ArrayList<>();
+        List<StreamingEventKind> results = new ArrayList<>();
 
         // TODO - this does not trigger an event. I think because there are now several Publishers taking items
         //  from the same queue
@@ -842,7 +842,7 @@ public class JSONRPCHandlerTest {
             response = handler.onResubscribeToTask(request);
         }
 
-        List<StreamingEventType> results = new ArrayList<>();
+        List<StreamingEventKind> results = new ArrayList<>();
 
         // Unlike testOnResubscribeExistingTaskSuccess() the ZeroPublisher.fromIterable()
         // used to mock the events completes once it has sent all the items. So no special thread
@@ -922,18 +922,17 @@ public class JSONRPCHandlerTest {
     }
 
     private static AgentCard createAgentCard(boolean streaming, boolean pushNotifications, boolean stateTransitionHistory) {
-        return new AgentCard(
-                "test-card",
-                "A test agent card",
-                "http://example.con",
-                null,
-                "1.0",
-                "http://example.con/docs",
-                new AgentCapabilities(true, true, true),
-                null,
-                null,
-                null,
-                new ArrayList<>());
+        return new AgentCard.Builder()
+                .name("test-card")
+                .description("A test agent card")
+                .url("http://example.com")
+                .version("1.0")
+                .documentationUrl("http://example.com/docs")
+                .capabilities(new AgentCapabilities(streaming, pushNotifications, stateTransitionHistory))
+                .defaultInputModes(new ArrayList<>())
+                .defaultOutputModes(new ArrayList<>())
+                .skills(new ArrayList<>())
+                .build();
     }
 
     private interface AgentExecutorMethod {

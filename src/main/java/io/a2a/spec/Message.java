@@ -1,5 +1,7 @@
 package io.a2a.spec;
 
+import static io.a2a.spec.A2A.CANCEL_TASK_METHOD;
+
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -11,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import io.a2a.server.events.Event;
+
 import io.a2a.util.Assert;
 
 /**
@@ -19,7 +21,7 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Message implements EventType, StreamingEventType {
+public final class Message implements EventKind, StreamingEventKind {
 
     public static final TypeReference<Message> TYPE_REFERENCE = new TypeReference<>() {};
 
@@ -30,26 +32,34 @@ public class Message implements EventType, StreamingEventType {
     private String contextId;
     private String taskId;
     private final Map<String, Object> metadata;
-    private final String type;
+    private final String kind;
+    private final List<String> referenceTaskIds;
 
     public Message(Role role, List<Part<?>> parts, String messageId, String contextId, String taskId,
-                   Map<String, Object> metadata) {
-        this(role, parts, messageId, contextId, taskId, metadata, MESSAGE);
+                   List<String> referenceTaskIds, Map<String, Object> metadata) {
+        this(role, parts, messageId, contextId, taskId, referenceTaskIds, metadata, MESSAGE);
     }
 
     @JsonCreator
     public Message(@JsonProperty("role") Role role, @JsonProperty("parts") List<Part<?>> parts,
                    @JsonProperty("messageId") String messageId, @JsonProperty("contextId") String contextId,
-                   @JsonProperty("taskId") String taskId, @JsonProperty("metadata") Map<String, Object> metadata,
-                   @JsonProperty("type") String type) {
+                   @JsonProperty("taskId") String taskId, @JsonProperty("referenceTaskIds") List<String> referenceTaskIds,
+                   @JsonProperty("metadata") Map<String, Object> metadata,
+                   @JsonProperty("kind") String kind) {
+        Assert.checkNotNullParam("kind", kind);
         Assert.checkNotNullParam("parts", parts);
+        Assert.checkNotNullParam("role", role);
+        if (! kind.equals(MESSAGE)) {
+            throw new IllegalArgumentException("Invalid Message");
+        }
         this.role = role;
         this.parts = parts;
         this.messageId = messageId == null ? UUID.randomUUID().toString() : messageId;
         this.contextId = contextId;
         this.taskId = taskId;
+        this.referenceTaskIds = referenceTaskIds;
         this.metadata = metadata;
-        this.type = type;
+        this.kind = kind;
     }
 
     public Role getRole() {
@@ -84,9 +94,13 @@ public class Message implements EventType, StreamingEventType {
         this.contextId = contextId;
     }
 
+    public List<String> getReferenceTaskIds() {
+        return referenceTaskIds;
+    }
+
     @Override
-    public String getType() {
-        return type;
+    public String getKind() {
+        return kind;
     }
 
     public enum Role {
@@ -112,6 +126,7 @@ public class Message implements EventType, StreamingEventType {
         private String messageId;
         private String contextId;
         private String taskId;
+        private List<String> referenceTaskIds;
         private Map<String, Object> metadata;
 
         public Builder() {
@@ -123,6 +138,7 @@ public class Message implements EventType, StreamingEventType {
             messageId = message.messageId;
             contextId = message.contextId;
             taskId = message.taskId;
+            referenceTaskIds = message.referenceTaskIds;
             metadata = message.metadata;
         }
 
@@ -156,13 +172,18 @@ public class Message implements EventType, StreamingEventType {
             return this;
         }
 
+        public Builder referenceTaskIds(List<String> referenceTaskIds) {
+            this.referenceTaskIds = referenceTaskIds;
+            return this;
+        }
+
         public Builder metadata(Map<String, Object> metadata) {
             this.metadata = metadata;
             return this;
         }
 
         public Message build() {
-            return new Message(role, parts, messageId, contextId, taskId, metadata);
+            return new Message(role, parts, messageId, contextId, taskId, referenceTaskIds, metadata);
         }
     }
 }

@@ -1,13 +1,12 @@
 package io.a2a.examples.helloworld.server;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
-import io.a2a.spec.AgentAuthentication;
 import io.a2a.spec.AgentCapabilities;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.AgentSkill;
+import io.a2a.spec.PublicAgentCard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 
@@ -15,25 +14,25 @@ import jakarta.enterprise.inject.Produces;
 public class AgentCardProducer {
 
     @Produces
+    @PublicAgentCard
     public AgentCard agentCard() {
-        return new AgentCard(
-                "MyAgent",
-                "My agent card",
-                "http://localhost:9999",
-                null,
-                "1.0",
-                "http://example.com/docs",
-                new AgentCapabilities(true, true, true),
-                new AgentAuthentication(new ArrayList<String>(), null),
-                null,
-                null,
-                Collections.singletonList(new AgentSkill.Builder()
-                        .id("skill-123")
-                        .name("Greeter")
-                        .description("Greets the user")
-                        .tags(Collections.singletonList("greeting"))
-                        .build())
-        );
+        return new AgentCard.Builder()
+                .name("Hello World Agent")
+                .description("Just a hello world agent")
+                .url("http://localhost:9999")
+                .version("1.0.0")
+                .documentationUrl("http://example.com/docs")
+                .capabilities(new AgentCapabilities(true, true, true))
+                .defaultInputModes(Collections.singletonList("text"))
+                .defaultOutputModes(Collections.singletonList("text"))
+                .skills(Collections.singletonList(new AgentSkill.Builder()
+                                .id("hello_world")
+                                .name("Returns hello world")
+                                .description("just returns hello world")
+                                .tags(Collections.singletonList("hello world"))
+                                .examples(List.of("hi", "hello world"))
+                                .build()))
+                .build();
     }
 }
 

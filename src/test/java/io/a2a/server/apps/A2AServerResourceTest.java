@@ -1,6 +1,8 @@
 package io.a2a.server.apps;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -21,8 +23,8 @@ import io.a2a.server.tasks.TaskStore;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
-import io.a2a.spec.GetTaskPushNotificationRequest;
-import io.a2a.spec.GetTaskPushNotificationResponse;
+import io.a2a.spec.GetTaskPushNotificationConfigRequest;
+import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
 import io.a2a.spec.JSONRPCError;
@@ -34,8 +36,8 @@ import io.a2a.spec.SendMessageRequest;
 import io.a2a.spec.SendMessageResponse;
 import io.a2a.spec.SendStreamingMessageRequest;
 import io.a2a.spec.SendStreamingMessageResponse;
-import io.a2a.spec.SetTaskPushNotificationRequest;
-import io.a2a.spec.SetTaskPushNotificationResponse;
+import io.a2a.spec.SetTaskPushNotificationConfigRequest;
+import io.a2a.spec.SetTaskPushNotificationConfigResponse;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskNotFoundError;
@@ -214,7 +216,7 @@ public class A2AServerResourceTest {
                 .taskId(MINIMAL_TASK.getId())
                 .contextId(MINIMAL_TASK.getContextId())
                 .build();
-        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams("1", message, null, null));
+        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams(message, null, null));
         SendMessageResponse response = given()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(request)
@@ -229,7 +231,7 @@ public class A2AServerResourceTest {
         assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());
         assertEquals(MESSAGE.getRole(), messageResponse.getRole());
         Part<?> part = messageResponse.getParts().get(0);
-        assertEquals(Part.Type.TEXT, part.getType());
+        assertEquals(Part.Kind.TEXT, part.getKind());
         assertEquals("test message", ((TextPart) part).getText());
     }
 
@@ -241,7 +243,7 @@ public class A2AServerResourceTest {
                     .taskId(MINIMAL_TASK.getId())
                     .contextId(MINIMAL_TASK.getContextId())
                     .build();
-            SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams("1", message, null, null));
+            SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams(message, null, null));
             SendMessageResponse response = given()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(request)
@@ -256,7 +258,7 @@ public class A2AServerResourceTest {
             assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());
             assertEquals(MESSAGE.getRole(), messageResponse.getRole());
             Part<?> part = messageResponse.getParts().get(0);
-            assertEquals(Part.Type.TEXT, part.getType());
+            assertEquals(Part.Kind.TEXT, part.getKind());
             assertEquals("test message", ((TextPart) part).getText());
         } catch (Exception e) {
         } finally {
@@ -271,7 +273,7 @@ public class A2AServerResourceTest {
                 .contextId(MINIMAL_TASK.getContextId())
                 .build();
         SendStreamingMessageRequest request = new SendStreamingMessageRequest(
-                "1", new MessageSendParams("1", message, null, null));
+                "1", new MessageSendParams(message, null, null));
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target("http://localhost:8081/");
         Response response = target.request(MediaType.SERVER_SENT_EVENTS).post(Entity.json(request));
@@ -286,7 +288,7 @@ public class A2AServerResourceTest {
                     assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());
                     assertEquals(MESSAGE.getRole(), messageResponse.getRole());
                     Part<?> part = messageResponse.getParts().get(0);
-                    assertEquals(Part.Type.TEXT, part.getType());
+                    assertEquals(Part.Kind.TEXT, part.getKind());
                     assertEquals("test message", ((TextPart) part).getText());
                 }
             }
@@ -302,7 +304,7 @@ public class A2AServerResourceTest {
                     .contextId(MINIMAL_TASK.getContextId())
                     .build();
             SendStreamingMessageRequest request = new SendStreamingMessageRequest(
-                    "1", new MessageSendParams("1", message, null, null));
+                    "1", new MessageSendParams(message, null, null));
             Client client = ClientBuilder.newClient();
             WebTarget target = client.target("http://localhost:8081/");
             Response response = target.request(MediaType.SERVER_SENT_EVENTS).post(Entity.json(request));
@@ -317,7 +319,7 @@ public class A2AServerResourceTest {
                         assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());
                         assertEquals(MESSAGE.getRole(), messageResponse.getRole());
                         Part<?> part = messageResponse.getParts().get(0);
-                        assertEquals(Part.Type.TEXT, part.getType());
+                        assertEquals(Part.Kind.TEXT, part.getKind());
                         assertEquals("test message", ((TextPart) part).getText());
                     }
                 }
@@ -336,8 +338,8 @@ public class A2AServerResourceTest {
                     new TaskPushNotificationConfig(
                             MINIMAL_TASK.getId(), new
                             PushNotificationConfig("http://example.com", null, null));
-            SetTaskPushNotificationRequest request = new SetTaskPushNotificationRequest("1", taskPushConfig);
-            SetTaskPushNotificationResponse response = given()
+            SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
+            SetTaskPushNotificationConfigResponse response = given()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(request)
                     .when()
@@ -345,11 +347,11 @@ public class A2AServerResourceTest {
                     .then()
                     .statusCode(200)
                     .extract()
-                    .as(SetTaskPushNotificationResponse.class);
+                    .as(SetTaskPushNotificationConfigResponse.class);
             assertNull(response.getError());
             assertEquals(request.getId(), response.getId());
             TaskPushNotificationConfig config = response.getResult();
-            assertEquals(MINIMAL_TASK.getId(), config.id());
+            assertEquals(MINIMAL_TASK.getId(), config.taskId());
             assertEquals("http://example.com", config.pushNotificationConfig().url());
         } catch (Exception e) {
         } finally {
@@ -366,8 +368,8 @@ public class A2AServerResourceTest {
                             MINIMAL_TASK.getId(), new
                             PushNotificationConfig("http://example.com", null, null));
 
-            SetTaskPushNotificationRequest setTaskPushNotificationRequest = new SetTaskPushNotificationRequest("1", taskPushConfig);
-            SetTaskPushNotificationResponse setTaskPushNotificationResponse = given()
+            SetTaskPushNotificationConfigRequest setTaskPushNotificationRequest = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
+            SetTaskPushNotificationConfigResponse setTaskPushNotificationResponse = given()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(setTaskPushNotificationRequest)
                     .when()
@@ -375,12 +377,12 @@ public class A2AServerResourceTest {
                     .then()
                     .statusCode(200)
                     .extract()
-                    .as(SetTaskPushNotificationResponse.class);
+                    .as(SetTaskPushNotificationConfigResponse.class);
             assertNotNull(setTaskPushNotificationResponse);
 
-            GetTaskPushNotificationRequest request =
-                    new GetTaskPushNotificationRequest("111", new TaskIdParams(MINIMAL_TASK.getId()));
-            GetTaskPushNotificationResponse response = given()
+            GetTaskPushNotificationConfigRequest request =
+                    new GetTaskPushNotificationConfigRequest("111", new TaskIdParams(MINIMAL_TASK.getId()));
+            GetTaskPushNotificationConfigResponse response = given()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(request)
                     .when()
@@ -388,11 +390,11 @@ public class A2AServerResourceTest {
                     .then()
                     .statusCode(200)
                     .extract()
-                    .as(GetTaskPushNotificationResponse.class);
+                    .as(GetTaskPushNotificationConfigResponse.class);
             assertNull(response.getError());
             assertEquals(request.getId(), response.getId());
             TaskPushNotificationConfig config = response.getResult();
-            assertEquals(MINIMAL_TASK.getId(), config.id());
+            assertEquals(MINIMAL_TASK.getId(), config.taskId());
             assertEquals("http://example.com", config.pushNotificationConfig().url());
         } catch (Exception e) {
         } finally {
@@ -407,7 +409,7 @@ public class A2AServerResourceTest {
                 .contextId(SEND_MESSAGE_NOT_SUPPORTED.getContextId())
                 .build();
         SendMessageRequest request = new SendMessageRequest(
-                "1", new MessageSendParams("1", message, null, null));
+                "1", new MessageSendParams(message, null, null));
         SendMessageResponse response = given()
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
@@ -445,5 +447,16 @@ public class A2AServerResourceTest {
         assertTrue(agentCard.capabilities().streaming());
         assertTrue(agentCard.capabilities().stateTransitionHistory());
         assertTrue(agentCard.skills().isEmpty());
+    }
+
+    @Test
+    public void testGetExtendAgentCardNotSupported() {
+        given()
+                .contentType(MediaType.APPLICATION_JSON)
+                .when()
+                .get("/agent/authenticatedExtendedCard")
+                .then()
+                .statusCode(404)
+                .body("error", equalTo("Extended agent card not supported or not enabled."));
     }
 }

@@ -28,7 +28,9 @@ public final class TaskResubscriptionRequest extends JSONRPCRequest<TaskIdParams
         if (! method.equals(SEND_TASK_RESUBSCRIPTION_METHOD)) {
             throw new IllegalArgumentException("Invalid TaskResubscriptionRequest method");
         }
-
+        if (jsonrpc != null && ! jsonrpc.equals(JSONRPC_VERSION)) {
+            throw new IllegalArgumentException("Invalid JSON-RPC protocol version");
+        }
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
         this.id = id == null ? UUID.randomUUID().toString() : id;
         this.method = method;

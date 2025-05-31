@@ -10,7 +10,7 @@ public class JsonStreamingMessages {
                   "jsonrpc": "2.0",
                   "id": "1234",
                   "result": {
-                    "type": "task",
+                    "kind": "task",
                     "id": "task-123",
                     "contextId": "context-456",
                     "status": {
@@ -26,13 +26,13 @@ public class JsonStreamingMessages {
                   "jsonrpc": "2.0",
                   "id": "1234",
                   "result": {
-                    "type": "message",
+                    "kind": "message",
                     "role": "agent",
                     "messageId": "msg-123",
                     "contextId": "context-456",
                     "parts": [
                       {
-                        "type": "text",
+                        "kind": "text",
                         "text": "Hello, world!"
                       }
                     ]
@@ -50,7 +50,7 @@ public class JsonStreamingMessages {
                         "state": "submitted"
                     },
                     "final": false,
-                    "type": "status-update"
+                    "kind": "status-update"
                   }
             }""";
 
@@ -59,7 +59,7 @@ public class JsonStreamingMessages {
                   "jsonrpc": "2.0",
                   "id": "1234",
                   "result": {
-                    "type": "artifact-update",
+                    "kind": "artifact-update",
                     "taskId": "1",
                     "contextId": "2",
                     "append": false,
@@ -68,7 +68,7 @@ public class JsonStreamingMessages {
                         "artifactId": "artifact-1",
                         "parts": [
                          {
-                            "type": "text",
+                            "kind": "text",
                             "text": "Why did the chicken cross the road? To get to the other side!"
                          }
                         ]
@@ -94,18 +94,17 @@ public class JsonStreamingMessages {
              "id": "request-1234",
              "method": "message/stream",
              "params": {
-              "id": "1234",
               "message": {
                "role": "user",
                "parts": [
                 {
-                 "type": "text",
+                 "kind": "text",
                  "text": "tell me some jokes"
                 }
                ],
                "messageId": "message-1234",
                "contextId": "context-1234",
-               "type": "message"
+               "kind": "message"
               },
               "configuration": {
                 "acceptedOutputModes": ["text"],
@@ -116,6 +115,6 @@ public class JsonStreamingMessages {
 
     static final String SEND_MESSAGE_STREAMING_TEST_RESPONSE =
             "event: message\n" +
-            "data: {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"id\":\"2\",\"contextId\":\"context-1234\",\"status\":{\"state\":\"completed\"},\"artifacts\":[{\"artifactId\":\"artifact-1\",\"name\":\"joke\",\"parts\":[{\"type\":\"text\",\"text\":\"Why did the chicken cross the road? To get to the other side!\"}]}],\"metadata\":{},\"type\":\"task\"}}\n\n";
+            "data: {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"id\":\"2\",\"contextId\":\"context-1234\",\"status\":{\"state\":\"completed\"},\"artifacts\":[{\"artifactId\":\"artifact-1\",\"name\":\"joke\",\"parts\":[{\"kind\":\"text\",\"text\":\"Why did the chicken cross the road? To get to the other side!\"}]}],\"metadata\":{},\"kind\":\"task\"}}\n\n";
 
 } 

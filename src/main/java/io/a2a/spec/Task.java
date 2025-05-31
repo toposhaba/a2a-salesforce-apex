@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import io.a2a.server.events.Event;
+
 import io.a2a.util.Assert;
 
 /**
@@ -17,7 +17,7 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Task implements EventType, StreamingEventType {
+public final class Task implements EventKind, StreamingEventKind {
 
     public static final TypeReference<Task> TYPE_REFERENCE = new TypeReference<>() {};
 
@@ -28,7 +28,7 @@ public class Task implements EventType, StreamingEventType {
     private final List<Artifact> artifacts;
     private final List<Message> history;
     private final Map<String, Object> metadata;
-    private final String type;
+    private final String kind;
 
     public Task(String id, String contextId, TaskStatus status, List<Artifact> artifacts,
                 List<Message> history, Map<String, Object> metadata) {
@@ -38,17 +38,21 @@ public class Task implements EventType, StreamingEventType {
     @JsonCreator
     public Task(@JsonProperty("id") String id, @JsonProperty("contextId") String contextId, @JsonProperty("status") TaskStatus status,
                 @JsonProperty("artifacts") List<Artifact> artifacts, @JsonProperty("history") List<Message> history,
-                @JsonProperty("metadata") Map<String, Object> metadata, @JsonProperty("type") String type) {
+                @JsonProperty("metadata") Map<String, Object> metadata, @JsonProperty("kind") String kind) {
         Assert.checkNotNullParam("id", id);
         Assert.checkNotNullParam("contextId", contextId);
         Assert.checkNotNullParam("status", status);
+        Assert.checkNotNullParam("kind", kind);
+        if (! kind.equals(TASK)) {
+            throw new IllegalArgumentException("Invalid Task");
+        }
         this.id = id;
         this.contextId = contextId;
         this.status = status;
         this.artifacts = artifacts;
         this.history = history;
         this.metadata = metadata;
-        this.type = type;
+        this.kind = kind;
     }
 
     public String getId() {
@@ -75,8 +79,8 @@ public class Task implements EventType, StreamingEventType {
         return metadata;
     }
 
-    public String getType() {
-        return type;
+    public String getKind() {
+        return kind;
     }
 
     public static class Builder {

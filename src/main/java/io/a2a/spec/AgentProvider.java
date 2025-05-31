@@ -14,5 +14,6 @@ public record AgentProvider(String organization, String url) {
 
     public AgentProvider {
         Assert.checkNotNullParam("organization", organization);
+        Assert.checkNotNullParam("url", url);
     }
 }

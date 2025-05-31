@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public abstract sealed class JSONRPCResponse<T> implements JSONRPCMessage permits SendStreamingMessageResponse,
-        GetTaskResponse, CancelTaskResponse, SetTaskPushNotificationResponse, GetTaskPushNotificationResponse,
+        GetTaskResponse, CancelTaskResponse, SetTaskPushNotificationConfigResponse, GetTaskPushNotificationConfigResponse,
         SendMessageResponse, JSONRPCErrorResponse {
 
     protected String jsonrpc;
@@ -26,6 +26,15 @@ public abstract sealed class JSONRPCResponse<T> implements JSONRPCMessage permit
     }
 
     public JSONRPCResponse(String jsonrpc, Object id, T result, JSONRPCError error) {
+        if (jsonrpc != null && ! jsonrpc.equals(JSONRPC_VERSION)) {
+            throw new IllegalArgumentException("Invalid JSON-RPC protocol version");
+        }
+        if (error != null && result != null) {
+            throw new IllegalArgumentException("Invalid JSON-RPC error response");
+        }
+        if (error == null && result == null) {
+            throw new IllegalArgumentException("Invalid JSON-RPC success response");
+        }
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
         this.id = id == null ? UUID.randomUUID().toString() : id;
         this.result = result;

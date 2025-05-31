@@ -1,7 +1,7 @@
 package io.a2a.spec;
 
 import static io.a2a.spec.A2A.JSONRPC_VERSION;
-import static io.a2a.spec.A2A.SET_TASK_PUSH_NOTIFICATION_METHOD;
+import static io.a2a.spec.A2A.SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD;
 import static io.a2a.util.Utils.defaultIfNull;
 
 import java.util.UUID;
@@ -17,26 +17,28 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class SetTaskPushNotificationRequest extends JSONRPCRequest<TaskPushNotificationConfig> {
+public final class SetTaskPushNotificationConfigRequest extends JSONRPCRequest<TaskPushNotificationConfig> {
 
     @JsonCreator
-    public SetTaskPushNotificationRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
-                                          @JsonProperty("method") String method, @JsonProperty("params") TaskPushNotificationConfig params) {
+    public SetTaskPushNotificationConfigRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
+                                                @JsonProperty("method") String method, @JsonProperty("params") TaskPushNotificationConfig params) {
         Assert.checkNotNullParam("method", method);
         Assert.checkNotNullParam("params", params);
 
-        if (! method.equals(SET_TASK_PUSH_NOTIFICATION_METHOD)) {
+        if (! method.equals(SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD)) {
             throw new IllegalArgumentException("Invalid SetTaskPushNotificationRequest method");
         }
-
+        if (jsonrpc != null && ! jsonrpc.equals(JSONRPC_VERSION)) {
+            throw new IllegalArgumentException("Invalid JSON-RPC protocol version");
+        }
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
         this.id = id == null ? UUID.randomUUID().toString() : id;
         this.method = method;
         this.params = params;
     }
 
-    public SetTaskPushNotificationRequest(String id, TaskPushNotificationConfig taskPushConfig) {
-        this(null, id, SET_TASK_PUSH_NOTIFICATION_METHOD, taskPushConfig);
+    public SetTaskPushNotificationConfigRequest(String id, TaskPushNotificationConfig taskPushConfig) {
+        this(null, id, SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD, taskPushConfig);
     }
 
     public static class Builder {
@@ -45,28 +47,28 @@ public final class SetTaskPushNotificationRequest extends JSONRPCRequest<TaskPus
         private String method;
         private TaskPushNotificationConfig params;
 
-        public SetTaskPushNotificationRequest.Builder jsonrpc(String jsonrpc) {
+        public SetTaskPushNotificationConfigRequest.Builder jsonrpc(String jsonrpc) {
             this.jsonrpc = jsonrpc;
             return this;
         }
 
-        public SetTaskPushNotificationRequest.Builder id(Object id) {
+        public SetTaskPushNotificationConfigRequest.Builder id(Object id) {
             this.id = id;
             return this;
         }
 
-        public SetTaskPushNotificationRequest.Builder method(String method) {
+        public SetTaskPushNotificationConfigRequest.Builder method(String method) {
             this.method = method;
             return this;
         }
 
-        public SetTaskPushNotificationRequest.Builder params(TaskPushNotificationConfig params) {
+        public SetTaskPushNotificationConfigRequest.Builder params(TaskPushNotificationConfig params) {
             this.params = params;
             return this;
         }
 
-        public SetTaskPushNotificationRequest build() {
-            return new SetTaskPushNotificationRequest(jsonrpc, id, method, params);
+        public SetTaskPushNotificationConfigRequest build() {
+            return new SetTaskPushNotificationConfigRequest(jsonrpc, id, method, params);
         }
     }
 }

@@ -36,16 +36,16 @@ public class EventConsumerTest {
                 "id": "123",
                 "contextId": "session-xyz",
                 "status": {"state": "submitted"},
-                "type": "task"
+                "kind": "task"
             }
             """;
 
     private static final String MESSAGE_PAYLOAD = """
             {
                 "role": "agent",
-                "parts": [{"type": "text", "text": "test message"}],
+                "parts": [{"kind": "text", "text": "test message"}],
                 "messageId": "111",
-                "type": "message"
+                "kind": "message"
             }
             """;
 

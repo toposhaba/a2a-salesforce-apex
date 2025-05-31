@@ -5,18 +5,23 @@ import java.util.concurrent.Flow;
 import io.a2a.server.requesthandlers.JSONRPCHandler;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.CancelTaskRequest;
-import io.a2a.spec.GetTaskPushNotificationRequest;
+import io.a2a.spec.ExtendedAgentCard;
+import io.a2a.spec.GetTaskPushNotificationConfigRequest;
 import io.a2a.spec.GetTaskRequest;
+import io.a2a.spec.JSONErrorResponse;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.JSONRPCErrorResponse;
 import io.a2a.spec.JSONRPCRequest;
 import io.a2a.spec.JSONRPCResponse;
 import io.a2a.spec.SendMessageRequest;
 import io.a2a.spec.SendStreamingMessageRequest;
-import io.a2a.spec.SetTaskPushNotificationRequest;
+import io.a2a.spec.SetTaskPushNotificationConfigRequest;
 import io.a2a.spec.TaskResubscriptionRequest;
 import io.a2a.spec.UnsupportedOperationError;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -33,6 +38,10 @@ public class A2AServerResource {
 
     @Inject
     JSONRPCHandler jsonRpcHandler;
+
+    @Inject
+    @ExtendedAgentCard
+    Instance<AgentCard> extendedAgentCard;
 
     /**
      * Handles incoming POST requests to the main A2A endpoint. Dispatches the
@@ -80,16 +89,43 @@ public class A2AServerResource {
         return jsonRpcHandler.getAgentCard();
     }
 
+    /**
+     * Handles incoming GET requests to the authenticated extended agent card endpoint.
+     * Returns the agent card in JSON format.
+     *
+     * @return the authenticated extended agent card
+     */
+    @GET
+    @Path("/agent/authenticatedExtendedCard")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAuthenticatedExtendedAgentCard() {
+        // TODO need to add authentication for this endpoint
+        // https://github.com/fjuma/a2a-java-sdk/issues/77
+        if (! jsonRpcHandler.getAgentCard().supportsAuthenticatedExtendedCard()) {
+            JSONErrorResponse errorResponse = new JSONErrorResponse("Extended agent card not supported or not enabled.");
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(errorResponse).build();
+        }
+        if (! extendedAgentCard.isResolvable()) {
+            JSONErrorResponse errorResponse = new JSONErrorResponse("Authenticated extended agent card is supported but not configured on the server.");
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(errorResponse).build();
+        }
+        return Response.ok(extendedAgentCard.get())
+                .type(MediaType.APPLICATION_JSON)
+                .build();
+    }
+
     private Response processNonStreamingRequest(JSONRPCRequest<?> request) {
         JSONRPCResponse<?> response;
         if (request instanceof GetTaskRequest) {
             response = jsonRpcHandler.onGetTask((GetTaskRequest) request);
         } else if (request instanceof CancelTaskRequest) {
             response = jsonRpcHandler.onCancelTask((CancelTaskRequest) request);
-        } else if (request instanceof SetTaskPushNotificationRequest) {
-            response = jsonRpcHandler.setPushNotification((SetTaskPushNotificationRequest) request);
-        } else if (request instanceof GetTaskPushNotificationRequest) {
-            response = jsonRpcHandler.getPushNotification((GetTaskPushNotificationRequest) request);
+        } else if (request instanceof SetTaskPushNotificationConfigRequest) {
+            response = jsonRpcHandler.setPushNotification((SetTaskPushNotificationConfigRequest) request);
+        } else if (request instanceof GetTaskPushNotificationConfigRequest) {
+            response = jsonRpcHandler.getPushNotification((GetTaskPushNotificationConfigRequest) request);
         } else if (request instanceof SendMessageRequest) {
             response = jsonRpcHandler.onMessageSend((SendMessageRequest) request);
         } else {

@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import io.a2a.server.events.Event;
 import io.a2a.util.Assert;
 
 /**
@@ -15,7 +14,7 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TaskStatusUpdateEvent implements EventType, StreamingEventType {
+public final class TaskStatusUpdateEvent implements EventKind, StreamingEventKind {
 
     public static final String STATUS_UPDATE = "status-update";
     private final String taskId;
@@ -23,7 +22,7 @@ public class TaskStatusUpdateEvent implements EventType, StreamingEventType {
     private final String contextId;
     private final boolean isFinal;
     private final Map<String, Object> metadata;
-    private final String type;
+    private final String kind;
 
 
     public TaskStatusUpdateEvent(String taskId, TaskStatus status, String contextId, boolean isFinal,
@@ -34,16 +33,20 @@ public class TaskStatusUpdateEvent implements EventType, StreamingEventType {
     @JsonCreator
     public TaskStatusUpdateEvent(@JsonProperty("taskId") String taskId, @JsonProperty("status") TaskStatus status,
                                  @JsonProperty("contextId") String contextId, @JsonProperty("final") boolean isFinal,
-                                 @JsonProperty("metadata") Map<String, Object> metadata, @JsonProperty("type") String type) {
+                                 @JsonProperty("metadata") Map<String, Object> metadata, @JsonProperty("kind") String kind) {
         Assert.checkNotNullParam("taskId", taskId);
         Assert.checkNotNullParam("status", status);
         Assert.checkNotNullParam("contextId", contextId);
+        Assert.checkNotNullParam("kind", kind);
+        if (! kind.equals(STATUS_UPDATE)) {
+            throw new IllegalArgumentException("Invalid TaskStatusUpdateEvent");
+        }
         this.taskId = taskId;
         this.status = status;
         this.contextId = contextId;
         this.isFinal = isFinal;
         this.metadata = metadata;
-        this.type = type;
+        this.kind = kind;
     }
 
     public String getTaskId() {
@@ -68,8 +71,8 @@ public class TaskStatusUpdateEvent implements EventType, StreamingEventType {
     }
 
     @Override
-    public String getType() {
-        return type;
+    public String getKind() {
+        return kind;
     }
 
     public static class Builder {
@@ -78,7 +81,6 @@ public class TaskStatusUpdateEvent implements EventType, StreamingEventType {
         private String contextId;
         private boolean isFinal;
         private Map<String, Object> metadata;
-        private String type;
 
         public Builder taskId(String id) {
             this.taskId = id;
@@ -102,11 +104,6 @@ public class TaskStatusUpdateEvent implements EventType, StreamingEventType {
 
         public Builder metadata(Map<String, Object> metadata) {
             this.metadata = metadata;
-            return this;
-        }
-
-        public Builder type(String type) {
-            this.type = type;
             return this;
         }
 

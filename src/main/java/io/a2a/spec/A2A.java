@@ -4,6 +4,7 @@ import static io.a2a.util.Utils.unmarshalFrom;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -18,9 +19,9 @@ import okhttp3.Response;
 public class A2A {
 
     public static final String CANCEL_TASK_METHOD = "tasks/cancel";
-    public static final String GET_TASK_PUSH_NOTIFICATION_METHOD = "tasks/pushNotification/get";
+    public static final String GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD = "tasks/pushNotificationConfig/get";
     public static final String GET_TASK_METHOD = "tasks/get";
-    public static final String SET_TASK_PUSH_NOTIFICATION_METHOD = "tasks/pushNotification/set";
+    public static final String SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD = "tasks/pushNotificationConfig/set";
     public static final String SEND_TASK_RESUBSCRIPTION_METHOD = "tasks/resubscribe";
     public static final String SEND_STREAMING_MESSAGE_METHOD = "message/stream";
     public static final String SEND_MESSAGE_METHOD = "message/send";
@@ -108,11 +109,54 @@ public class A2A {
      * @throws A2AServerException if the agent card cannot be retrieved for any reason
      */
     public static AgentCard getAgentCard(OkHttpClient httpClient, String agentUrl) throws A2AServerException {
-        Request request = new Request.Builder()
-                .url(getRequestEndpoint(agentUrl, AGENT_CARD_REQUEST))
+        return getAgentCard(httpClient, agentUrl, null, null);
+    }
+
+    /**
+     * Get the agent card for an A2A agent.
+     *
+     * @param agentUrl the base URL for the agent whose agent card we want to retrieve
+     * @param relativeCardPath optional path to the agent card endpoint relative to the base
+     *                         agent URL, defaults to ".well-known/agent.json"
+     * @param authHeaders the HTTP authentication headers to use
+     * @return the agent card
+     * @throws A2AServerException if the agent card cannot be retrieved for any reason
+     */
+    public static AgentCard getAgentCard(String agentUrl, String relativeCardPath, Map<String, String> authHeaders) throws A2AServerException {
+        return getAgentCard(new OkHttpClient(), agentUrl, relativeCardPath, authHeaders);
+    }
+
+    /**
+     * Get the agent card for an A2A agent.
+     *
+     * @param httpClient the http client to use
+     * @param agentUrl the base URL for the agent whose agent card we want to retrieve
+     * @param relativeCardPath optional path to the agent card endpoint relative to the base
+     *                         agent URL, defaults to ".well-known/agent.json"
+     * @param authHeaders the HTTP authentication headers to use
+     * @return the agent card
+     * @throws A2AServerException if the agent card cannot be retrieved for any reason
+     */
+    public static AgentCard getAgentCard(OkHttpClient httpClient, String agentUrl, String relativeCardPath, Map<String, String> authHeaders) throws A2AServerException {
+        if (relativeCardPath == null || relativeCardPath.isEmpty()) {
+            relativeCardPath = AGENT_CARD_REQUEST;
+        } else {
+            if (relativeCardPath.startsWith("/")) {
+                relativeCardPath = relativeCardPath.substring(1);
+            }
+        }
+        Request.Builder requestBuilder = new Request.Builder()
+                .url(getRequestEndpoint(agentUrl, relativeCardPath))
                 .addHeader("Content-Type", "application/json")
-                .get()
-                .build();
+                .get();
+
+        if (authHeaders != null) {
+            for (Map.Entry<String, String> entry : authHeaders.entrySet()) {
+                requestBuilder.addHeader(entry.getKey(), entry.getValue());
+            }
+        }
+
+        Request request = requestBuilder.build();
 
         try (Response response = httpClient.newCall(request).execute()) {
             if (! response.isSuccessful()) {

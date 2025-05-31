@@ -1,9 +1,5 @@
 package io.a2a.client.sse;
 
-import static io.a2a.spec.Message.MESSAGE;
-import static io.a2a.spec.Task.TASK;
-import static io.a2a.spec.TaskArtifactUpdateEvent.ARTIFACT_UPDATE;
-import static io.a2a.spec.TaskStatusUpdateEvent.STATUS_UPDATE;
 import static io.a2a.util.Assert.checkNotNullParam;
 import static io.a2a.util.Utils.OBJECT_MAPPER;
 
@@ -16,18 +12,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import io.a2a.spec.JSONRPCError;
-import io.a2a.spec.Message;
-import io.a2a.spec.StreamingEventType;
-import io.a2a.spec.Task;
-import io.a2a.spec.TaskArtifactUpdateEvent;
+import io.a2a.spec.StreamingEventKind;
 import io.a2a.spec.TaskStatusUpdateEvent;
-import io.a2a.util.Assert;
-import okhttp3.OkHttpClient;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 import okhttp3.sse.EventSource;
 import okhttp3.sse.EventSourceListener;
-import okhttp3.sse.EventSources;
 
 /**
  * A listener for Server-Sent Events (SSE).
@@ -36,16 +25,16 @@ public class SSEEventListener extends EventSourceListener {
 
     private static final Logger log = LoggerFactory.getLogger(SSEEventListener.class);
     private final boolean logEvents;
-    private final Consumer<StreamingEventType> eventHandler;
+    private final Consumer<StreamingEventKind> eventHandler;
     private final Consumer<JSONRPCError> errorHandler;
     private final Runnable failureHandler;
 
-    public SSEEventListener(Consumer<StreamingEventType> eventHandler, Consumer<JSONRPCError> errorHandler,
+    public SSEEventListener(Consumer<StreamingEventKind> eventHandler, Consumer<JSONRPCError> errorHandler,
                             Runnable failureHandler) {
         this(false, eventHandler, errorHandler, failureHandler);
     }
 
-    public SSEEventListener(boolean logEvents, Consumer<StreamingEventType> eventHandler,
+    public SSEEventListener(boolean logEvents, Consumer<StreamingEventKind> eventHandler,
                             Consumer<JSONRPCError> errorHandler, Runnable failureHandler) {
         checkNotNullParam("eventHandler", eventHandler);
         checkNotNullParam("errorHandler", errorHandler);
@@ -100,7 +89,7 @@ public class SSEEventListener extends EventSourceListener {
             } else if (jsonNode.has("result")) {
                 // result can be a Task, Message, TaskStatusUpdateEvent, or TaskArtifactUpdateEvent
                 JsonNode result = jsonNode.path("result");
-                StreamingEventType event = OBJECT_MAPPER.treeToValue(result, StreamingEventType.class);
+                StreamingEventKind event = OBJECT_MAPPER.treeToValue(result, StreamingEventKind.class);
                 eventHandler.accept(event);
                 if (event instanceof TaskStatusUpdateEvent && ((TaskStatusUpdateEvent) event).isFinal()) {
                     eventSource.cancel(); // close SSE channel
@@ -115,7 +104,7 @@ public class SSEEventListener extends EventSourceListener {
 
     public static class Builder {
         private boolean logEvents;
-        private Consumer<StreamingEventType> eventHandler;
+        private Consumer<StreamingEventKind> eventHandler;
         private Consumer<JSONRPCError> errorHandler;
         private Runnable failureHandler;
 
@@ -124,7 +113,7 @@ public class SSEEventListener extends EventSourceListener {
             return this;
         }
 
-        public Builder eventHandler(Consumer<StreamingEventType> eventHandler) {
+        public Builder eventHandler(Consumer<StreamingEventKind> eventHandler) {
             this.eventHandler = eventHandler;
             return this;
         }

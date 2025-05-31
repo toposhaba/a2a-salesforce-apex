@@ -2,11 +2,10 @@ package io.a2a.server.requesthandlers;
 
 import java.util.concurrent.Flow;
 
-import io.a2a.server.events.Event;
-import io.a2a.spec.EventType;
+import io.a2a.spec.EventKind;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.MessageSendParams;
-import io.a2a.spec.StreamingEventType;
+import io.a2a.spec.StreamingEventKind;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskPushNotificationConfig;
@@ -17,13 +16,13 @@ public interface RequestHandler {
 
     Task onCancelTask(TaskIdParams params) throws JSONRPCError;
 
-    EventType onMessageSend(MessageSendParams params) throws JSONRPCError;
+    EventKind onMessageSend(MessageSendParams params) throws JSONRPCError;
 
-    Flow.Publisher<StreamingEventType> onMessageSendStream(MessageSendParams params) throws JSONRPCError;
+    Flow.Publisher<StreamingEventKind> onMessageSendStream(MessageSendParams params) throws JSONRPCError;
 
     TaskPushNotificationConfig onSetTaskPushNotificationConfig(TaskPushNotificationConfig params) throws JSONRPCError;
 
     TaskPushNotificationConfig onGetTaskPushNotificationConfig(TaskIdParams params) throws JSONRPCError;
 
-    Flow.Publisher<StreamingEventType> onResubscribeToTask(TaskIdParams params) throws JSONRPCError;
+    Flow.Publisher<StreamingEventKind> onResubscribeToTask(TaskIdParams params) throws JSONRPCError;
 }

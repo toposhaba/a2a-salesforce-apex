@@ -28,7 +28,9 @@ public final class GetTaskRequest extends JSONRPCRequest<TaskQueryParams> {
         if (! method.equals(GET_TASK_METHOD)) {
             throw new IllegalArgumentException("Invalid GetTaskRequest method");
         }
-
+        if (jsonrpc != null && ! jsonrpc.equals(JSONRPC_VERSION)) {
+            throw new IllegalArgumentException("Invalid JSON-RPC protocol version");
+        }
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
         this.id = id == null ? UUID.randomUUID().toString() : id;
         this.method = method;

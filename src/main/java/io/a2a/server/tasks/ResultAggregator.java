@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.a2a.server.events.Event;
 import io.a2a.server.events.EventConsumer;
 import io.a2a.spec.A2AServerException;
-import io.a2a.spec.EventType;
+import io.a2a.spec.EventKind;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Message;
 import io.a2a.spec.Task;
@@ -28,7 +28,7 @@ public class ResultAggregator {
         this.message = message;
     }
 
-    public EventType getCurrentResult() {
+    public EventKind getCurrentResult() {
         if (message != null) {
             return message;
         }
@@ -44,8 +44,8 @@ public class ResultAggregator {
         }));
     }
 
-    public EventType consumeAll(EventConsumer consumer) {
-        AtomicReference<EventType> returnedEvent = new AtomicReference<>();
+    public EventKind consumeAll(EventConsumer consumer) {
+        AtomicReference<EventKind> returnedEvent = new AtomicReference<>();
         Flow.Publisher<Event> all = consumer.consumeAll();
         AtomicReference<Throwable> error = new AtomicReference<>();
         consumer(
@@ -140,7 +140,7 @@ public class ResultAggregator {
         }
     }
 
-    public record EventTypeAndInterrupt(EventType eventType, boolean interrupted) {
+    public record EventTypeAndInterrupt(EventKind eventType, boolean interrupted) {
 
     }
 }

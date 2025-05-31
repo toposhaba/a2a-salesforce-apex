@@ -16,9 +16,9 @@ import io.a2a.util.Assert;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class FilePart extends Part<FileContent> {
 
-    private FileContent file;
-    private Map<String, Object> metadata;
-    private Type type;
+    private final FileContent file;
+    private final Map<String, Object> metadata;
+    private final Kind kind;
 
     public FilePart(FileContent file) {
         this(file, null);
@@ -29,12 +29,12 @@ public class FilePart extends Part<FileContent> {
         Assert.checkNotNullParam("file", file);
         this.file = file;
         this.metadata = metadata;
-        this.type = Type.FILE;
+        this.kind = Kind.FILE;
     }
 
     @Override
-    public Type getType() {
-        return type;
+    public Kind getKind() {
+        return kind;
     }
 
     public FileContent getFile() {

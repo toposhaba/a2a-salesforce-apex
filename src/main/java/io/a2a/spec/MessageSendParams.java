@@ -12,7 +12,7 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record MessageSendParams(String id, Message message, MessageSendConfiguration configuration,
+public record MessageSendParams(Message message, MessageSendConfiguration configuration,
                                 Map<String, Object> metadata) {
 
     public MessageSendParams {
@@ -20,15 +20,9 @@ public record MessageSendParams(String id, Message message, MessageSendConfigura
     }
 
     public static class Builder {
-        String id;
         Message message;
         MessageSendConfiguration configuration;
         Map<String, Object> metadata;
-
-        public Builder id(String id) {
-            this.id = id;
-            return this;
-        }
 
         public Builder message(Message message) {
             this.message = message;
@@ -46,7 +40,7 @@ public record MessageSendParams(String id, Message message, MessageSendConfigura
         }
 
         public MessageSendParams build() {
-            return new MessageSendParams(id, message, configuration, metadata);
+            return new MessageSendParams(message, configuration, metadata);
         }
     }
 }
