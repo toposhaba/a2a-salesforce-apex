@@ -62,6 +62,7 @@ import io.a2a.spec.UnsupportedOperationError;
 import mutiny.zero.ZeroPublisher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
@@ -714,7 +715,7 @@ public class JSONRPCHandlerTest {
         latch.await(2, TimeUnit.SECONDS);
         subscriptionRef.get().cancel();
         if (results.size() != 3) {
-            // TODO - this is very strange. The results array is synchronized, and the latch is counted down
+                // TODO - this is very strange. The results array is synchronized, and the latch is counted down
             //  AFTER adding items to the list. Still, I am seeing intermittently, but frequently that
             //  the results list only has two items.
             long end = System.currentTimeMillis() + 5000;
@@ -920,6 +921,66 @@ public class JSONRPCHandlerTest {
         assertEquals(1, results.size());
         assertNull(results.get(0).getResult());
         assertInstanceOf(TaskNotFoundError.class, results.get(0).getError());
+    }
+
+    @Test
+    @Disabled
+    public void testStreamingNotSupportedError() {
+
+    }
+
+    @Test
+    @Disabled
+    public void testPushNotificationsNotSupportedError() {
+
+    }
+
+    @Test
+    @Disabled
+    public void testOnGetPushNotificationNoPushNotifier() {
+
+    }
+
+    @Test
+    @Disabled
+    public void testOnSetPushNotificationNoPushNotifier() {
+
+    }
+
+    @Test
+    @Disabled
+    public void testOnMessageSendInternalError() {
+
+    }
+
+    @Test
+    @Disabled
+    public void testOnMessageStreamInternalError() {
+
+    }
+
+    @Test
+    @Disabled
+    public void testDefaultRequestHandlerWithCustomComponents() {
+
+    }
+
+    @Test
+    @Disabled
+    public void testOnMessageSendErrorHandling() {
+
+    }
+
+    @Test
+    @Disabled
+    public void testOnMessageSendTaskIdMismatch() {
+
+    }
+
+    @Test
+    @Disabled
+    public void testOnMessageStreamTaskIdMismatch() {
+
     }
 
     private static AgentCard createAgentCard(boolean streaming, boolean pushNotifications, boolean stateTransitionHistory) {
