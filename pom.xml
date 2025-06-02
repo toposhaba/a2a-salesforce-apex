@@ -28,6 +28,9 @@
         <okhttp.version>4.12.0</okhttp.version>
         <rest-assured.version>5.5.1</rest-assured.version>
         <slf4j.version>2.0.17</slf4j.version>
+
+        <!-- Redirect test output to file -->
+        <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
     </properties>
 
     <dependencyManagement>

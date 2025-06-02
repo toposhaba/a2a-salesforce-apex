@@ -1,8 +1,8 @@
 package io.a2a.client;
 
 import static io.a2a.spec.A2A.CANCEL_TASK_METHOD;
-import static io.a2a.spec.A2A.GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD;
 import static io.a2a.spec.A2A.GET_TASK_METHOD;
+import static io.a2a.spec.A2A.GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD;
 import static io.a2a.spec.A2A.JSONRPC_VERSION;
 import static io.a2a.spec.A2A.SEND_MESSAGE_METHOD;
 import static io.a2a.spec.A2A.SEND_STREAMING_MESSAGE_METHOD;
@@ -17,7 +17,6 @@ import java.util.function.Consumer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-
 import io.a2a.client.sse.SSEEventListener;
 import io.a2a.spec.A2A;
 import io.a2a.spec.A2AServerException;
@@ -41,7 +40,6 @@ import io.a2a.spec.StreamingEventKind;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
-
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;

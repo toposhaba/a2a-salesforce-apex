@@ -1,19 +1,15 @@
 package io.a2a.server.tasks;
 
-import java.io.StringWriter;
-import java.net.http.HttpClient;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
 import io.a2a.http.A2AHttpClient;
 import io.a2a.spec.PushNotificationConfig;
 import io.a2a.spec.Task;
-import io.a2a.util.Utils;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class InMemoryPushNotifier implements PushNotifier {
