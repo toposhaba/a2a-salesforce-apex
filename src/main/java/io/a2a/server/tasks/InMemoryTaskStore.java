@@ -4,8 +4,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.a2a.spec.Task;
 import jakarta.enterprise.context.ApplicationScoped;
+
+import io.a2a.spec.Task;
 
 @ApplicationScoped
 public class InMemoryTaskStore implements TaskStore {

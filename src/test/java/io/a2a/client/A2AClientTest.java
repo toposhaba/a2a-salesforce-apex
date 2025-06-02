@@ -33,6 +33,7 @@ import java.util.Map;
 import io.a2a.spec.A2AServerException;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.AgentSkill;
+import io.a2a.spec.Artifact;
 import io.a2a.spec.CancelTaskResponse;
 import io.a2a.spec.FileContent;
 import io.a2a.spec.FilePart;
@@ -40,15 +41,6 @@ import io.a2a.spec.FileWithBytes;
 import io.a2a.spec.FileWithUri;
 import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskResponse;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.matchers.MatchType;
-import org.mockserver.model.JsonBody;
-
-import io.a2a.spec.Artifact;
 import io.a2a.spec.Message;
 import io.a2a.spec.MessageSendConfiguration;
 import io.a2a.spec.MessageSendParams;
@@ -65,6 +57,12 @@ import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
 import io.a2a.spec.TaskState;
 import io.a2a.spec.TextPart;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockserver.integration.ClientAndServer;
+import org.mockserver.matchers.MatchType;
+import org.mockserver.model.JsonBody;
 
 public class A2AClientTest {
 
