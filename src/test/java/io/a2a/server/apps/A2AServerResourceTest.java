@@ -336,8 +336,7 @@ public class A2AServerResourceTest {
         try {
             TaskPushNotificationConfig taskPushConfig =
                     new TaskPushNotificationConfig(
-                            MINIMAL_TASK.getId(), new
-                            PushNotificationConfig("http://example.com", null, null));
+                            MINIMAL_TASK.getId(), new PushNotificationConfig.Builder().url("http://example.com").build());
             SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
             SetTaskPushNotificationConfigResponse response = given()
                     .contentType(MediaType.APPLICATION_JSON)
@@ -365,8 +364,7 @@ public class A2AServerResourceTest {
         try {
             TaskPushNotificationConfig taskPushConfig =
                     new TaskPushNotificationConfig(
-                            MINIMAL_TASK.getId(), new
-                            PushNotificationConfig("http://example.com", null, null));
+                            MINIMAL_TASK.getId(), new PushNotificationConfig.Builder().url("http://example.com").build());
 
             SetTaskPushNotificationConfigRequest setTaskPushNotificationRequest = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
             SetTaskPushNotificationConfigResponse setTaskPushNotificationResponse = given()

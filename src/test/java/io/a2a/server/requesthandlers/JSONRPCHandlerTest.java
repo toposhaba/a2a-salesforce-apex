@@ -603,8 +603,7 @@ public class JSONRPCHandlerTest {
 
         TaskPushNotificationConfig taskPushConfig =
                 new TaskPushNotificationConfig(
-                        MINIMAL_TASK.getId(), new
-                        PushNotificationConfig("http://example.com", null, null));
+                        MINIMAL_TASK.getId(), new PushNotificationConfig.Builder().url("http://example.com").build());
         SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
         SetTaskPushNotificationConfigResponse response = handler.setPushNotification(request);
         assertSame(taskPushConfig, response.getResult());
@@ -621,8 +620,7 @@ public class JSONRPCHandlerTest {
 
         TaskPushNotificationConfig taskPushConfig =
                 new TaskPushNotificationConfig(
-                        MINIMAL_TASK.getId(), new
-                        PushNotificationConfig("http://example.com", null, null));
+                        MINIMAL_TASK.getId(), new PushNotificationConfig.Builder().url("http://example.com").build());
 
         SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
         handler.setPushNotification(request);
@@ -666,7 +664,7 @@ public class JSONRPCHandlerTest {
 
         TaskPushNotificationConfig config = new TaskPushNotificationConfig(
                 MINIMAL_TASK.getId(),
-                new PushNotificationConfig("http://example.com/push", null, null));
+                new PushNotificationConfig.Builder().url("http://example.com").build());
         SetTaskPushNotificationConfigRequest stpnRequest = new SetTaskPushNotificationConfigRequest("1", config);
         SetTaskPushNotificationConfigResponse stpnResponse = handler.setPushNotification(stpnRequest);
         assertNull(stpnResponse.getError());
