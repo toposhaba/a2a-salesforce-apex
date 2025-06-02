@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import io.a2a.server.events.Event;
 import io.a2a.util.Assert;
 
@@ -11,6 +14,8 @@ import io.a2a.util.Assert;
  * Represents a JSONRPC error.
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
+@JsonDeserialize(using = JSONRPCErrorDeserializer.class)
+@JsonSerialize(using = JSONRPCErrorSerializer.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class JSONRPCError extends Error implements Event, A2AError {
 
