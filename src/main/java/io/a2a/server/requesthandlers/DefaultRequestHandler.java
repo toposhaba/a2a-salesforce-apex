@@ -17,6 +17,7 @@ import jakarta.inject.Inject;
 
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
+import io.a2a.server.agentexecution.SimpleRequestContextBuilder;
 import io.a2a.server.events.Event;
 import io.a2a.server.events.EventConsumer;
 import io.a2a.server.events.EventQueue;
@@ -45,6 +46,7 @@ public class DefaultRequestHandler implements RequestHandler {
     private final TaskStore taskStore;
     private final QueueManager queueManager;
     private final PushNotifier pushNotifier;
+    private final RequestContext.Builder requestContextBuilder;
 
     // TODO the value upstream is asyncio.Task. Trying a Runnable
     private final Map<String, Runnable> runningAgents = Collections.synchronizedMap(new HashMap<>());
@@ -52,11 +54,16 @@ public class DefaultRequestHandler implements RequestHandler {
     private final Executor executor = Executors.newCachedThreadPool();
 
     @Inject
-    public DefaultRequestHandler(AgentExecutor agentExecutor, TaskStore taskStore, QueueManager queueManager, PushNotifier pushNotifier) {
+    public DefaultRequestHandler(AgentExecutor agentExecutor, TaskStore taskStore,
+                                 QueueManager queueManager, PushNotifier pushNotifier) {
         this.agentExecutor = agentExecutor;
         this.taskStore = taskStore;
         this.queueManager = queueManager;
         this.pushNotifier = pushNotifier;
+        // TODO In Python this is also a constructor parameter defaulting to this SimpleRequestContextBuilder
+        //  implementation if the parameter is null. Skip that for now, since otherwise I get CDI errors, and
+        //  I am unsure about the correct scope.
+        this.requestContextBuilder = new SimpleRequestContextBuilder(taskStore, false);
     }
 
     @Override
@@ -87,7 +94,11 @@ public class DefaultRequestHandler implements RequestHandler {
             queue = EventQueue.create();
         }
         agentExecutor.cancel(
-                new RequestContext(null, task.getId(), task.getContextId(), task, null),
+                requestContextBuilder
+                        .setTaskId(task.getId())
+                        .setContextId(task.getContextId())
+                        .setTask(task)
+                        .build(),
                 queue);
 
         // TODO need to cancel the asyncio.Task looked up from runningAgents
@@ -118,12 +129,11 @@ public class DefaultRequestHandler implements RequestHandler {
             }
         }
 
-        RequestContext requestContext = new RequestContext(
-                params,
-                task == null ? null : task.getId(),
-                task == null ? null : task.getContextId(),
-                task,
-                null);
+        RequestContext requestContext = requestContextBuilder
+                .setParams(params).setTaskId(task == null ? null : task.getId())
+                .setContextId(task == null ? null : task.getContextId())
+                .setTask(task).setRelatedTasks(null)
+                .build();
 
         String taskId = requestContext.getTaskId();
         EventQueue queue = queueManager.createOrTap(taskId);
@@ -177,12 +187,11 @@ public class DefaultRequestHandler implements RequestHandler {
             }
         }
 
-        RequestContext requestContext = new RequestContext(
-                params,
-                task == null ? null : task.getId(),
-                task == null ? null : task.getContextId(),
-                task,
-                null);
+        RequestContext requestContext = requestContextBuilder
+                .setParams(params).setTaskId(task == null ? null : task.getId())
+                .setContextId(task == null ? null : task.getContextId())
+                .setTask(task)
+                .build();
 
         AtomicReference<String> taskId = new AtomicReference<>(requestContext.getTaskId());
         EventQueue queue = queueManager.createOrTap(taskId.get());
