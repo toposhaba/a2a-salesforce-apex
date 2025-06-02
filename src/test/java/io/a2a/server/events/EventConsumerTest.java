@@ -51,7 +51,7 @@ public class EventConsumerTest {
 
     @BeforeEach
     public void init() {
-        eventQueue = new EventQueue();
+        eventQueue = EventQueue.create();
         eventConsumer = new EventConsumer(eventQueue);
     }
 
