@@ -7,6 +7,7 @@ import static io.a2a.util.AsyncUtils.processor;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
@@ -132,9 +133,10 @@ public class DefaultRequestHandler implements RequestHandler {
         }
 
         RequestContext requestContext = requestContextBuilder.get()
-                .setParams(params).setTaskId(task == null ? null : task.getId())
-                .setContextId(task == null ? null : task.getContextId())
-                .setTask(task).setRelatedTasks(null)
+                .setParams(params)
+                .setTaskId(task == null ? null : task.getId())
+                .setContextId(params.message().getContextId())
+                .setTask(task)
                 .build();
 
         String taskId = requestContext.getTaskId();
@@ -190,8 +192,9 @@ public class DefaultRequestHandler implements RequestHandler {
         }
 
         RequestContext requestContext = requestContextBuilder.get()
-                .setParams(params).setTaskId(task == null ? null : task.getId())
-                .setContextId(task == null ? null : task.getContextId())
+                .setParams(params)
+                .setTaskId(task == null ? null : task.getId())
+                .setContextId(params.message().getContextId())
                 .setTask(task)
                 .build();
 
@@ -215,7 +218,13 @@ public class DefaultRequestHandler implements RequestHandler {
 
             Flow.Publisher<Event> eventPublisher =
                     processor(createTubeConfig(), results, ((errorConsumer, event) -> {
-                if (event instanceof Task createdTask && !taskId.get().equals(createdTask.getId())) {
+                if (event instanceof Task createdTask) {
+                    if (!Objects.equals(taskId.get(), createdTask.getId())) {
+                        errorConsumer.accept(new InternalError("Task ID mismatch in agent response"));
+                    }
+
+                    // TODO the Python implementation no longer has the following block but removing it causes
+                    //  failures here
                     try {
                         queueManager.add(createdTask.getId(), queue);
                         taskId.set(createdTask.getId());
@@ -307,6 +316,8 @@ public class DefaultRequestHandler implements RequestHandler {
 
     private void runEventStream(RequestContext requestContext, EventQueue queue)  throws JSONRPCError {
         agentExecutor.execute(requestContext, queue);
+        // TODO this is in the Python implementation, but enabling it causes test hangs
+        // queue.close();
     }
 
     private void registerProducer(String taskId, Runnable providerRunnable) {

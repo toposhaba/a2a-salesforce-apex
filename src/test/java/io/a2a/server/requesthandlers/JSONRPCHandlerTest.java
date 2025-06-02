@@ -670,7 +670,10 @@ public class JSONRPCHandlerTest {
         SetTaskPushNotificationConfigResponse stpnResponse = handler.setPushNotification(stpnRequest);
         assertNull(stpnResponse.getError());
 
-        SendStreamingMessageRequest request = new SendStreamingMessageRequest("1", new MessageSendParams(MESSAGE, null, null));
+        Message msg = new Message.Builder(MESSAGE)
+                .taskId(MINIMAL_TASK.getId())
+                .build();
+        SendStreamingMessageRequest request = new SendStreamingMessageRequest("1", new MessageSendParams(msg, null, null));
         Flow.Publisher<SendStreamingMessageResponse> response = handler.onMessageSendStream(request);
 
         final List<StreamingEventKind> results = Collections.synchronizedList(new ArrayList<>());
