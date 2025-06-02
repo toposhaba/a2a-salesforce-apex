@@ -7,16 +7,19 @@ import static io.a2a.util.AsyncUtils.processor;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
+import io.a2a.server.agentexecution.SimpleRequestContextBuilder;
 import io.a2a.server.events.Event;
 import io.a2a.server.events.EventConsumer;
 import io.a2a.server.events.EventQueue;
@@ -45,6 +48,7 @@ public class DefaultRequestHandler implements RequestHandler {
     private final TaskStore taskStore;
     private final QueueManager queueManager;
     private final PushNotifier pushNotifier;
+    private final Supplier<RequestContext.Builder> requestContextBuilder;
 
     // TODO the value upstream is asyncio.Task. Trying a Runnable
     private final Map<String, Runnable> runningAgents = Collections.synchronizedMap(new HashMap<>());
@@ -52,11 +56,17 @@ public class DefaultRequestHandler implements RequestHandler {
     private final Executor executor = Executors.newCachedThreadPool();
 
     @Inject
-    public DefaultRequestHandler(AgentExecutor agentExecutor, TaskStore taskStore, QueueManager queueManager, PushNotifier pushNotifier) {
+    public DefaultRequestHandler(AgentExecutor agentExecutor, TaskStore taskStore,
+                                 QueueManager queueManager, PushNotifier pushNotifier) {
         this.agentExecutor = agentExecutor;
         this.taskStore = taskStore;
         this.queueManager = queueManager;
         this.pushNotifier = pushNotifier;
+        // TODO In Python this is also a constructor parameter defaulting to this SimpleRequestContextBuilder
+        //  implementation if the parameter is null. Skip that for now, since otherwise I get CDI errors, and
+        //  I am unsure about the correct scope.
+        //  Also reworked to make a Supplier since otherwise the builder gets polluted with wrong tasks
+        this.requestContextBuilder = () -> new SimpleRequestContextBuilder(taskStore, false);
     }
 
     @Override
@@ -87,7 +97,11 @@ public class DefaultRequestHandler implements RequestHandler {
             queue = EventQueue.create();
         }
         agentExecutor.cancel(
-                new RequestContext(null, task.getId(), task.getContextId(), task, null),
+                requestContextBuilder.get()
+                        .setTaskId(task.getId())
+                        .setContextId(task.getContextId())
+                        .setTask(task)
+                        .build(),
                 queue);
 
         // TODO need to cancel the asyncio.Task looked up from runningAgents
@@ -118,12 +132,12 @@ public class DefaultRequestHandler implements RequestHandler {
             }
         }
 
-        RequestContext requestContext = new RequestContext(
-                params,
-                task == null ? null : task.getId(),
-                task == null ? null : task.getContextId(),
-                task,
-                null);
+        RequestContext requestContext = requestContextBuilder.get()
+                .setParams(params)
+                .setTaskId(task == null ? null : task.getId())
+                .setContextId(params.message().getContextId())
+                .setTask(task)
+                .build();
 
         String taskId = requestContext.getTaskId();
         EventQueue queue = queueManager.createOrTap(taskId);
@@ -177,12 +191,12 @@ public class DefaultRequestHandler implements RequestHandler {
             }
         }
 
-        RequestContext requestContext = new RequestContext(
-                params,
-                task == null ? null : task.getId(),
-                task == null ? null : task.getContextId(),
-                task,
-                null);
+        RequestContext requestContext = requestContextBuilder.get()
+                .setParams(params)
+                .setTaskId(task == null ? null : task.getId())
+                .setContextId(params.message().getContextId())
+                .setTask(task)
+                .build();
 
         AtomicReference<String> taskId = new AtomicReference<>(requestContext.getTaskId());
         EventQueue queue = queueManager.createOrTap(taskId.get());
@@ -204,7 +218,13 @@ public class DefaultRequestHandler implements RequestHandler {
 
             Flow.Publisher<Event> eventPublisher =
                     processor(createTubeConfig(), results, ((errorConsumer, event) -> {
-                if (event instanceof Task createdTask && !taskId.get().equals(createdTask.getId())) {
+                if (event instanceof Task createdTask) {
+                    if (!Objects.equals(taskId.get(), createdTask.getId())) {
+                        errorConsumer.accept(new InternalError("Task ID mismatch in agent response"));
+                    }
+
+                    // TODO the Python implementation no longer has the following block but removing it causes
+                    //  failures here
                     try {
                         queueManager.add(createdTask.getId(), queue);
                         taskId.set(createdTask.getId());
@@ -296,6 +316,8 @@ public class DefaultRequestHandler implements RequestHandler {
 
     private void runEventStream(RequestContext requestContext, EventQueue queue)  throws JSONRPCError {
         agentExecutor.execute(requestContext, queue);
+        // TODO this is in the Python implementation, but enabling it causes test hangs
+        // queue.close();
     }
 
     private void registerProducer(String taskId, Runnable providerRunnable) {

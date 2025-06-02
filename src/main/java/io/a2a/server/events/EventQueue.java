@@ -2,7 +2,6 @@ package io.a2a.server.events;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -33,7 +32,7 @@ public abstract class EventQueue {
         queue.add(event);
     }
 
-    public abstract EventQueue tap();
+    abstract EventQueue tap();
 
     public Event dequeueEvent(int waitMilliSeconds) {
         if (closed && queue.isEmpty()) {
@@ -62,7 +61,7 @@ public abstract class EventQueue {
     static class MainQueue extends EventQueue {
         private final List<ChildQueue> children = new CopyOnWriteArrayList<>();
 
-        public EventQueue tap() {
+        EventQueue tap() {
             ChildQueue child = new ChildQueue(this);
             children.add(child);
             return child;
@@ -97,7 +96,7 @@ public abstract class EventQueue {
         }
 
         @Override
-        public EventQueue tap() {
+        EventQueue tap() {
             throw new IllegalStateException("Can only tap the main queue");
         }
     }

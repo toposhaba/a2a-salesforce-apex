@@ -1,6 +1,8 @@
 package io.a2a.server.events;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -122,7 +124,6 @@ public class EventConsumerTest {
 
             @Override
             public void onNext(Event item) {
-                System.out.println("b");
                 receivedEvents.add(item);
                 subscription.request(1);
 
@@ -139,10 +140,120 @@ public class EventConsumerTest {
             }
         });
 
+        assertNull(error.get());
         assertEquals(events.size(), receivedEvents.size());
         for (int i = 0; i < events.size(); i++) {
             assertSame(events.get(i), receivedEvents.get(i));
         }
+    }
+
+    @Test
+    public void testConsumeUntilMessage() throws Exception {
+        List<Event> events = List.of(
+                Utils.unmarshalFrom(MINIMAL_TASK, Task.TYPE_REFERENCE),
+                new TaskArtifactUpdateEvent.Builder()
+                        .taskId("task-123")
+                        .contextId("session-xyz")
+                        .artifact(new Artifact.Builder()
+                                .artifactId("11")
+                                .parts(new TextPart("text"))
+                                .build())
+                        .build(),
+                new TaskStatusUpdateEvent.Builder()
+                        .taskId("task-123")
+                        .contextId("session-xyz")
+                        .status(new TaskStatus(TaskState.WORKING))
+                        .isFinal(true)
+                        .build());
+
+        for (Event event : events) {
+            eventQueue.enqueueEvent(event);
+        }
+
+        Flow.Publisher<Event> publisher = eventConsumer.consumeAll();
+        final List<Event> receivedEvents = new ArrayList<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
+
+        publisher.subscribe(new Flow.Subscriber<>() {
+            private Flow.Subscription subscription;
+
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                this.subscription = subscription;
+                subscription.request(1);
+            }
+
+            @Override
+            public void onNext(Event item) {
+                receivedEvents.add(item);
+                subscription.request(1);
+
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                error.set(throwable);
+            }
+
+            @Override
+            public void onComplete() {
+                subscription.cancel();
+            }
+        });
+
+        assertNull(error.get());
+        assertEquals(3, receivedEvents.size());
+        for (int i = 0; i < 3; i++) {
+            assertSame(events.get(i), receivedEvents.get(i));
+        }
+    }
+
+    @Test
+    public void testConsumeMessageEvents() throws Exception {
+        Message message = Utils.unmarshalFrom(MESSAGE_PAYLOAD, Message.TYPE_REFERENCE);
+        Message message2 = new Message.Builder(message).build();
+
+        List<Event> events = List.of(message, message2);
+
+        for (Event event : events) {
+            eventQueue.enqueueEvent(event);
+        }
+
+        Flow.Publisher<Event> publisher = eventConsumer.consumeAll();
+        final List<Event> receivedEvents = new ArrayList<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
+
+        publisher.subscribe(new Flow.Subscriber<>() {
+            private Flow.Subscription subscription;
+
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                this.subscription = subscription;
+                subscription.request(1);
+            }
+
+            @Override
+            public void onNext(Event item) {
+                receivedEvents.add(item);
+                subscription.request(1);
+
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                error.set(throwable);
+            }
+
+            @Override
+            public void onComplete() {
+                subscription.cancel();
+            }
+        });
+
+        assertNull(error.get());
+        // The stream is closed after the first Message
+        assertEquals(1, receivedEvents.size());
+        assertSame(message, receivedEvents.get(0));
     }
 
     private void enqueueAndConsumeOneEvent(Event event) throws Exception {
