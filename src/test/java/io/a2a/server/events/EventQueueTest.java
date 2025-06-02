@@ -44,7 +44,7 @@ public class EventQueueTest {
 
     @BeforeEach
     public void init() {
-        eventQueue = new EventQueue();
+        eventQueue = EventQueue.create();
 
     }
 

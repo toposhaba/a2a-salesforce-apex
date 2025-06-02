@@ -55,7 +55,7 @@ public class InMemoryQueueManager implements QueueManager {
             if (queue != null) {
                 return queue.tap();
             }
-            queue = new EventQueue();
+            queue = EventQueue.create();
             queues.put(taskId, queue);
             return queue;
         }

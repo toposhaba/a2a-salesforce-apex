@@ -747,7 +747,6 @@ public class JSONRPCHandlerTest {
     }
 
     @Test
-    @Disabled
     public void testOnResubscribeExistingTaskSuccess() {
         JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);
         taskStore.save(MINIMAL_TASK);
@@ -766,6 +765,7 @@ public class JSONRPCHandlerTest {
         Message message = new Message.Builder()
                 .taskId(MINIMAL_TASK.getId())
                 .contextId(MINIMAL_TASK.getContextId())
+                .role(Message.Role.AGENT)
                 .parts(new TextPart("text"))
                 .build();
         SendMessageResponse smr =
@@ -790,7 +790,6 @@ public class JSONRPCHandlerTest {
             @Override
             public void onNext(SendStreamingMessageResponse item) {
                 results.add(item.getResult());
-                System.out.println("----> " + item);
                 subscription.request(1);
             }
 
