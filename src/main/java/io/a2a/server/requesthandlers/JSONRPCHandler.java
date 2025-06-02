@@ -4,6 +4,9 @@ import static io.a2a.util.AsyncUtils.convertingProcessor;
 
 import java.util.concurrent.Flow;
 
+import io.a2a.spec.A2AServerException;
+import io.a2a.spec.InvalidRequestError;
+import io.a2a.spec.PublicAgentCard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -56,6 +59,13 @@ public class JSONRPCHandler {
 
 
     public Flow.Publisher<SendStreamingMessageResponse> onMessageSendStream(SendStreamingMessageRequest request) {
+        if (!agentCard.capabilities().streaming()) {
+            return ZeroPublisher.fromItems(
+                    new SendStreamingMessageResponse(
+                            request.getId(),
+                            new InvalidRequestError("Streaming is not supported by the agent")));
+        }
+
         try {
             Flow.Publisher<StreamingEventKind> publisher = requestHandler.onMessageSendStream(request.getParams());
             return convertingProcessor(publisher, event -> {
@@ -120,6 +130,10 @@ public class JSONRPCHandler {
     }
 
     public SetTaskPushNotificationConfigResponse setPushNotification(SetTaskPushNotificationConfigRequest request) {
+        if (!agentCard.capabilities().pushNotifications()) {
+            return new SetTaskPushNotificationConfigResponse(request.getId(),
+                    new InvalidRequestError("Push notifications are not supported by the agent"));
+        }
         try {
             TaskPushNotificationConfig config = requestHandler.onSetTaskPushNotificationConfig(request.getParams());
             return new SetTaskPushNotificationConfigResponse(request.getId().toString(), config);

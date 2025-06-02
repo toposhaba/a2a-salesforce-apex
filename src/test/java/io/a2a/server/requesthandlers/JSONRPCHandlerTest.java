@@ -2,8 +2,10 @@ package io.a2a.server.requesthandlers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,6 +28,7 @@ import io.a2a.server.events.InMemoryQueueManager;
 import io.a2a.server.tasks.InMemoryPushNotifier;
 import io.a2a.server.tasks.InMemoryTaskStore;
 import io.a2a.server.tasks.PushNotifier;
+import io.a2a.server.tasks.ResultAggregator;
 import io.a2a.server.tasks.TaskStore;
 import io.a2a.spec.AgentCapabilities;
 import io.a2a.spec.AgentCard;
@@ -36,6 +39,8 @@ import io.a2a.spec.GetTaskPushNotificationConfigRequest;
 import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
+import io.a2a.spec.InternalError;
+import io.a2a.spec.InvalidRequestError;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Message;
 import io.a2a.spec.MessageSendParams;
@@ -83,6 +88,7 @@ public class JSONRPCHandlerTest {
             .parts(new TextPart("test message"))
             .build();
 
+    AgentExecutor executor;
     TaskStore taskStore;
     RequestHandler requestHandler;
     AgentExecutorMethod agentExecutorExecute;
@@ -93,7 +99,7 @@ public class JSONRPCHandlerTest {
 
     @BeforeEach
     public void init() {
-        AgentExecutor executor = new AgentExecutor() {
+        executor = new AgentExecutor() {
             @Override
             public void execute(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
                 if (agentExecutorExecute != null) {
@@ -889,7 +895,7 @@ public class JSONRPCHandlerTest {
         List<SendStreamingMessageResponse> results = new ArrayList<>();
         AtomicReference<Throwable> error = new AtomicReference<>();
 
-        response.subscribe(new Flow.Subscriber<SendStreamingMessageResponse>() {
+        response.subscribe(new Flow.Subscriber<>() {
             private Flow.Subscription subscription;
 
             @Override
@@ -922,50 +928,210 @@ public class JSONRPCHandlerTest {
     }
 
     @Test
-    @Disabled
     public void testStreamingNotSupportedError() {
+        AgentCard card = createAgentCard(false, true, true);
+        JSONRPCHandler handler = new JSONRPCHandler(card, requestHandler);
 
+        SendStreamingMessageRequest request = new SendStreamingMessageRequest.Builder()
+                .id("1")
+                .params(new MessageSendParams.Builder()
+                        .message(MESSAGE)
+                        .build())
+                .build();
+        Flow.Publisher<SendStreamingMessageResponse> response = handler.onMessageSendStream(request);
+
+        List<SendStreamingMessageResponse> results = new ArrayList<>();
+        AtomicReference<Throwable> error = new AtomicReference<>();
+
+        response.subscribe(new Flow.Subscriber<SendStreamingMessageResponse>() {
+            private Flow.Subscription subscription;
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                this.subscription = subscription;
+                subscription.request(1);
+            }
+
+            @Override
+            public void onNext(SendStreamingMessageResponse item) {
+                results.add(item);
+                subscription.request(1);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                error.set(throwable);
+                subscription.cancel();
+            }
+
+            @Override
+            public void onComplete() {
+                subscription.cancel();
+            }
+        });
+
+        assertEquals(1, results.size());
+        if (results.get(0).getError() != null && results.get(0).getError() instanceof InvalidRequestError ire) {
+            assertEquals("Streaming is not supported by the agent", ire.getMessage());
+        } else {
+            fail("Expected a response containing an error");
+        }
     }
 
     @Test
-    @Disabled
     public void testPushNotificationsNotSupportedError() {
+        AgentCard card = createAgentCard(true, false, true);
+        JSONRPCHandler handler = new JSONRPCHandler(card, requestHandler);
+        taskStore.save(MINIMAL_TASK);
 
+        TaskPushNotificationConfig config =
+                new TaskPushNotificationConfig(
+                        MINIMAL_TASK.getId(),
+                        new PushNotificationConfig.Builder()
+                                .url("http://example.com")
+                                .build());
+
+        SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest.Builder()
+                .params(config)
+                .build();
+        SetTaskPushNotificationConfigResponse response = handler.setPushNotification(request);
+        assertInstanceOf(InvalidRequestError.class, response.getError());
+        assertEquals("Push notifications are not supported by the agent", response.getError().getMessage());
     }
 
     @Test
-    @Disabled
     public void testOnGetPushNotificationNoPushNotifier() {
+        // Create request handler without a push notifier
+        DefaultRequestHandler requestHandler = new DefaultRequestHandler(executor, taskStore, queueManager, null);
+        AgentCard card = createAgentCard(false, true, false);
+        JSONRPCHandler handler = new JSONRPCHandler(card, requestHandler);
 
+        taskStore.save(MINIMAL_TASK);
+
+        GetTaskPushNotificationConfigRequest request =
+                new GetTaskPushNotificationConfigRequest("id", new TaskIdParams(MINIMAL_TASK.getId()));
+        GetTaskPushNotificationConfigResponse response = handler.getPushNotification(request);
+
+        assertNotNull(response.getError());
+        assertInstanceOf(UnsupportedOperationError.class, response.getError());
+        assertEquals("This operation is not supported", response.getError().getMessage());
     }
 
     @Test
-    @Disabled
     public void testOnSetPushNotificationNoPushNotifier() {
+        // Create request handler without a push notifier
+        DefaultRequestHandler requestHandler = new DefaultRequestHandler(executor, taskStore, queueManager, null);
+        AgentCard card = createAgentCard(false, true, false);
+        JSONRPCHandler handler = new JSONRPCHandler(card, requestHandler);
 
+        taskStore.save(MINIMAL_TASK);
+
+                TaskPushNotificationConfig config =
+                new TaskPushNotificationConfig(
+                        MINIMAL_TASK.getId(),
+                        new PushNotificationConfig.Builder()
+                                .url("http://example.com")
+                                .build());
+
+        SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest.Builder()
+                .params(config)
+                .build();
+        SetTaskPushNotificationConfigResponse response = handler.setPushNotification(request);
+
+        assertInstanceOf(UnsupportedOperationError.class, response.getError());
+        assertEquals("This operation is not supported", response.getError().getMessage());
     }
 
     @Test
-    @Disabled
     public void testOnMessageSendInternalError() {
+        DefaultRequestHandler mocked = Mockito.mock(DefaultRequestHandler.class);
+        Mockito.doThrow(new InternalError("Internal Error")).when(mocked).onMessageSend(Mockito.any(MessageSendParams.class));
 
+        JSONRPCHandler handler = new JSONRPCHandler(CARD, mocked);
+
+        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams(MESSAGE, null, null));
+        SendMessageResponse response = handler.onMessageSend(request);
+
+        System.out.println(response);
+        assertInstanceOf(InternalError.class, response.getError());
     }
 
     @Test
-    @Disabled
     public void testOnMessageStreamInternalError() {
+        DefaultRequestHandler mocked = Mockito.mock(DefaultRequestHandler.class);
+        Mockito.doThrow(new InternalError("Internal Error")).when(mocked).onMessageSendStream(Mockito.any(MessageSendParams.class));
 
+        JSONRPCHandler handler = new JSONRPCHandler(CARD, mocked);
+
+        SendStreamingMessageRequest request = new SendStreamingMessageRequest("1", new MessageSendParams(MESSAGE, null, null));
+        Flow.Publisher<SendStreamingMessageResponse> response = handler.onMessageSendStream(request);
+
+
+        List<SendStreamingMessageResponse> results = new ArrayList<>();
+        AtomicReference<Throwable> error = new AtomicReference<>();
+
+        response.subscribe(new Flow.Subscriber<SendStreamingMessageResponse>() {
+            private Flow.Subscription subscription;
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                this.subscription = subscription;
+                subscription.request(1);
+            }
+
+            @Override
+            public void onNext(SendStreamingMessageResponse item) {
+                results.add(item);
+                subscription.request(1);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                error.set(throwable);
+                subscription.cancel();
+            }
+
+            @Override
+            public void onComplete() {
+                subscription.cancel();
+            }
+        });
+
+        assertEquals(1, results.size());
+        assertInstanceOf(InternalError.class, results.get(0).getError());
     }
 
     @Test
     @Disabled
     public void testDefaultRequestHandlerWithCustomComponents() {
-
+        // Not much happening in the Python test beyond checking that the DefaultRequestHandler
+        // constructor sets the fields as expected
     }
 
     @Test
-    @Disabled
     public void testOnMessageSendErrorHandling() {
+        DefaultRequestHandler requestHandler = new DefaultRequestHandler(executor, taskStore, queueManager, null);
+        AgentCard card = createAgentCard(false, true, false);
+        JSONRPCHandler handler = new JSONRPCHandler(card, requestHandler);
+
+        taskStore.save(MINIMAL_TASK);
+
+        Message message = new Message.Builder(MESSAGE)
+                .taskId(MINIMAL_TASK.getId())
+                .contextId(MINIMAL_TASK.getContextId())
+                .build();
+
+        SendMessageRequest request = new SendMessageRequest("1", new MessageSendParams(message, null, null));
+        SendMessageResponse response;
+
+        try (MockedConstruction<ResultAggregator> mocked = Mockito.mockConstruction(
+                ResultAggregator.class,
+                (mock, context) ->
+                        Mockito.doThrow(
+                                new UnsupportedOperationError())
+                                .when(mock).consumeAndBreakOnInterrupt(Mockito.any(EventConsumer.class)))){
+            response = handler.onMessageSend(request);
+        }
+
+        assertInstanceOf(UnsupportedOperationError.class, response.getError());
 
     }
 
