@@ -11,6 +11,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -46,7 +47,7 @@ public class DefaultRequestHandler implements RequestHandler {
     private final TaskStore taskStore;
     private final QueueManager queueManager;
     private final PushNotifier pushNotifier;
-    private final RequestContext.Builder requestContextBuilder;
+    private final Supplier<RequestContext.Builder> requestContextBuilder;
 
     // TODO the value upstream is asyncio.Task. Trying a Runnable
     private final Map<String, Runnable> runningAgents = Collections.synchronizedMap(new HashMap<>());
@@ -63,7 +64,8 @@ public class DefaultRequestHandler implements RequestHandler {
         // TODO In Python this is also a constructor parameter defaulting to this SimpleRequestContextBuilder
         //  implementation if the parameter is null. Skip that for now, since otherwise I get CDI errors, and
         //  I am unsure about the correct scope.
-        this.requestContextBuilder = new SimpleRequestContextBuilder(taskStore, false);
+        //  Also reworked to make a Supplier since otherwise the builder gets polluted with wrong tasks
+        this.requestContextBuilder = () -> new SimpleRequestContextBuilder(taskStore, false);
     }
 
     @Override
@@ -94,7 +96,7 @@ public class DefaultRequestHandler implements RequestHandler {
             queue = EventQueue.create();
         }
         agentExecutor.cancel(
-                requestContextBuilder
+                requestContextBuilder.get()
                         .setTaskId(task.getId())
                         .setContextId(task.getContextId())
                         .setTask(task)
@@ -129,7 +131,7 @@ public class DefaultRequestHandler implements RequestHandler {
             }
         }
 
-        RequestContext requestContext = requestContextBuilder
+        RequestContext requestContext = requestContextBuilder.get()
                 .setParams(params).setTaskId(task == null ? null : task.getId())
                 .setContextId(task == null ? null : task.getContextId())
                 .setTask(task).setRelatedTasks(null)
@@ -187,7 +189,7 @@ public class DefaultRequestHandler implements RequestHandler {
             }
         }
 
-        RequestContext requestContext = requestContextBuilder
+        RequestContext requestContext = requestContextBuilder.get()
                 .setParams(params).setTaskId(task == null ? null : task.getId())
                 .setContextId(task == null ? null : task.getContextId())
                 .setTask(task)

@@ -33,6 +33,7 @@ public class RequestContext {
 
         // if the taskId and contextId were specified, they must match the params
         if (params != null) {
+            System.out.println("====> " + taskId + " " + params.message().getTaskId());
             if (taskId != null && ! params.message().getTaskId().equals(taskId)) {
                 throw new InvalidParamsError("bad task id");
             } else {
