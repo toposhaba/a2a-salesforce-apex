@@ -38,9 +38,7 @@ import io.a2a.util.Assert;
         @JsonSubTypes.Type(value = SendMessageRequest.class, name = SEND_MESSAGE_METHOD),
         @JsonSubTypes.Type(value = SendStreamingMessageRequest.class, name = SEND_STREAMING_MESSAGE_METHOD)
 })
-public abstract sealed class JSONRPCRequest<T> implements JSONRPCMessage permits GetTaskRequest,
-        CancelTaskRequest, SetTaskPushNotificationConfigRequest, GetTaskPushNotificationConfigRequest,
-        TaskResubscriptionRequest, SendMessageRequest, SendStreamingMessageRequest {
+public abstract sealed class JSONRPCRequest<T> implements JSONRPCMessage permits NonStreamingJSONRPCRequest, StreamingJSONRPCRequest {
 
     protected String jsonrpc;
     protected Object id;

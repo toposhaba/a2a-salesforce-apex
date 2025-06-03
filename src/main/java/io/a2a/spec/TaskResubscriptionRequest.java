@@ -17,7 +17,7 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class TaskResubscriptionRequest extends JSONRPCRequest<TaskIdParams> {
+public final class TaskResubscriptionRequest extends StreamingJSONRPCRequest<TaskIdParams> {
 
     @JsonCreator
     public TaskResubscriptionRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,

@@ -17,7 +17,7 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class CancelTaskRequest extends JSONRPCRequest<TaskIdParams> {
+public final class CancelTaskRequest extends NonStreamingJSONRPCRequest<TaskIdParams> {
 
     @JsonCreator
     public CancelTaskRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,

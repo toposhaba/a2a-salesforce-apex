@@ -26,9 +26,11 @@ import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.JSONRPCErrorResponse;
 import io.a2a.spec.JSONRPCRequest;
 import io.a2a.spec.JSONRPCResponse;
+import io.a2a.spec.NonStreamingJSONRPCRequest;
 import io.a2a.spec.SendMessageRequest;
 import io.a2a.spec.SendStreamingMessageRequest;
 import io.a2a.spec.SetTaskPushNotificationConfigRequest;
+import io.a2a.spec.StreamingJSONRPCRequest;
 import io.a2a.spec.TaskResubscriptionRequest;
 import io.a2a.spec.UnsupportedOperationError;
 
@@ -52,11 +54,7 @@ public class A2AServerResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response handleNonStreamingRequests(JSONRPCRequest<?> request) {
-        if (request instanceof SendStreamingMessageRequest || request instanceof TaskResubscriptionRequest) {
-            JSONRPCResponse<?> response = generateErrorResponse(request, new UnsupportedOperationError());
-            return Response.ok(response).type(MediaType.APPLICATION_JSON).build();
-        }
+    public JSONRPCResponse<?> handleNonStreamingRequests(NonStreamingJSONRPCRequest<?> request) {
         return processNonStreamingRequest(request);
     }
 
@@ -67,12 +65,8 @@ public class A2AServerResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.SERVER_SENT_EVENTS)
-    public Response handleStreamingRequests(JSONRPCRequest<?> request, @Context SseEventSink sseEventSink, @Context Sse sse) {
-        if (!(request instanceof SendStreamingMessageRequest) && !(request instanceof TaskResubscriptionRequest)) {
-            JSONRPCResponse<?> response = generateErrorResponse(request, new UnsupportedOperationError());
-            return Response.ok(response).type(MediaType.APPLICATION_JSON).build();
-        }
-        return processStreamingRequest(request, sseEventSink, sse);
+    public void handleStreamingRequests(StreamingJSONRPCRequest<?> request, @Context SseEventSink sseEventSink, @Context Sse sse) {
+        processStreamingRequest(request, sseEventSink, sse);
     }
 
     /**
@@ -115,39 +109,34 @@ public class A2AServerResource {
                 .build();
     }
 
-    private Response processNonStreamingRequest(JSONRPCRequest<?> request) {
-        JSONRPCResponse<?> response;
+    private JSONRPCResponse<?> processNonStreamingRequest(NonStreamingJSONRPCRequest<?> request) {
         if (request instanceof GetTaskRequest) {
-            response = jsonRpcHandler.onGetTask((GetTaskRequest) request);
+            return jsonRpcHandler.onGetTask((GetTaskRequest) request);
         } else if (request instanceof CancelTaskRequest) {
-            response = jsonRpcHandler.onCancelTask((CancelTaskRequest) request);
+            return jsonRpcHandler.onCancelTask((CancelTaskRequest) request);
         } else if (request instanceof SetTaskPushNotificationConfigRequest) {
-            response = jsonRpcHandler.setPushNotification((SetTaskPushNotificationConfigRequest) request);
+            return jsonRpcHandler.setPushNotification((SetTaskPushNotificationConfigRequest) request);
         } else if (request instanceof GetTaskPushNotificationConfigRequest) {
-            response = jsonRpcHandler.getPushNotification((GetTaskPushNotificationConfigRequest) request);
+            return jsonRpcHandler.getPushNotification((GetTaskPushNotificationConfigRequest) request);
         } else if (request instanceof SendMessageRequest) {
-            response = jsonRpcHandler.onMessageSend((SendMessageRequest) request);
+            return jsonRpcHandler.onMessageSend((SendMessageRequest) request);
         } else {
-            response = generateErrorResponse(request, new UnsupportedOperationError());
+            return generateErrorResponse(request, new UnsupportedOperationError());
         }
-        return Response.ok(response).type(MediaType.APPLICATION_JSON).build();
     }
 
-    private Response processStreamingRequest(JSONRPCRequest<?> request, SseEventSink sseEventSink, Sse sse) {
+    private void processStreamingRequest(StreamingJSONRPCRequest<?> request, SseEventSink sseEventSink, Sse sse) {
         Flow.Publisher<? extends JSONRPCResponse<?>> publisher;
         if (request instanceof SendStreamingMessageRequest) {
             publisher = jsonRpcHandler.onMessageSendStream((SendStreamingMessageRequest) request);
-            return handleStreamingResponse(publisher, sseEventSink, sse);
+            handleStreamingResponse(publisher, sseEventSink, sse);
         } else if (request instanceof TaskResubscriptionRequest) {
             publisher = jsonRpcHandler.onResubscribeToTask((TaskResubscriptionRequest) request);
-            return handleStreamingResponse(publisher, sseEventSink, sse);
-        } else {
-            JSONRPCResponse<?> response = generateErrorResponse(request, new UnsupportedOperationError());
-            return Response.ok(response).type(MediaType.APPLICATION_JSON).build();
+            handleStreamingResponse(publisher, sseEventSink, sse);
         }
     }
 
-    private Response handleStreamingResponse(Flow.Publisher<? extends JSONRPCResponse<?>> publisher, SseEventSink sseEventSink, Sse sse) {
+    private void handleStreamingResponse(Flow.Publisher<? extends JSONRPCResponse<?>> publisher, SseEventSink sseEventSink, Sse sse) {
         publisher.subscribe(new Flow.Subscriber<JSONRPCResponse<?>>() {
             private Flow.Subscription subscription;
 
@@ -176,8 +165,6 @@ public class A2AServerResource {
                 sseEventSink.close();
             }
         });
-
-        return Response.ok().type(MediaType.SERVER_SENT_EVENTS).build();
     }
 
     private JSONRPCResponse<?> generateErrorResponse(JSONRPCRequest<?> request, JSONRPCError error) {

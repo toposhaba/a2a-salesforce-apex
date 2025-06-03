@@ -17,7 +17,7 @@ import io.a2a.util.Assert;
  */
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class SendStreamingMessageRequest extends JSONRPCRequest<MessageSendParams> {
+public final class SendStreamingMessageRequest extends StreamingJSONRPCRequest<MessageSendParams> {
 
     @JsonCreator
     public SendStreamingMessageRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
