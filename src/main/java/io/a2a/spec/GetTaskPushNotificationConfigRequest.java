@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import io.a2a.util.Assert;
 
 /**
@@ -22,17 +23,16 @@ public final class GetTaskPushNotificationConfigRequest extends NonStreamingJSON
     @JsonCreator
     public GetTaskPushNotificationConfigRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
                                                 @JsonProperty("method") String method, @JsonProperty("params") TaskIdParams params) {
-        Assert.checkNotNullParam("method", method);
-
-
-        if (! method.equals(GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD)) {
-            throw new IllegalArgumentException("Invalid GetTaskPushNotificationRequest method");
-        }
         if (jsonrpc != null && ! jsonrpc.equals(JSONRPC_VERSION)) {
             throw new IllegalArgumentException("Invalid JSON-RPC protocol version");
         }
+        Assert.checkNotNullParam("method", method);
+        if (! method.equals(GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD)) {
+            throw new IllegalArgumentException("Invalid GetTaskPushNotificationRequest method");
+        }
+        Assert.isNullOrStringOrInteger(id);
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
-        this.id = id == null ? UUID.randomUUID().toString() : id;
+        this.id = id;
         this.method = method;
         this.params = params;
     }
@@ -68,6 +68,9 @@ public final class GetTaskPushNotificationConfigRequest extends NonStreamingJSON
         }
 
         public GetTaskPushNotificationConfigRequest build() {
+            if (id == null) {
+                id = UUID.randomUUID().toString();
+            }
             return new GetTaskPushNotificationConfigRequest(jsonrpc, id, method, params);
         }
     }

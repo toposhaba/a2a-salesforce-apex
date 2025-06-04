@@ -26,7 +26,9 @@ import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.ExtendedAgentCard;
 import io.a2a.spec.GetTaskPushNotificationConfigRequest;
 import io.a2a.spec.GetTaskRequest;
+import io.a2a.spec.IdJsonMappingException;
 import io.a2a.spec.InvalidParamsError;
+import io.a2a.spec.InvalidParamsJsonMappingException;
 import io.a2a.spec.InvalidRequestError;
 import io.a2a.spec.JSONErrorResponse;
 import io.a2a.spec.JSONParseError;
@@ -34,6 +36,8 @@ import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.JSONRPCErrorResponse;
 import io.a2a.spec.JSONRPCRequest;
 import io.a2a.spec.JSONRPCResponse;
+import io.a2a.spec.MethodNotFoundError;
+import io.a2a.spec.MethodNotFoundJsonMappingException;
 import io.a2a.spec.NonStreamingJSONRPCRequest;
 import io.a2a.spec.SendMessageRequest;
 import io.a2a.spec.SendStreamingMessageRequest;
@@ -184,29 +188,33 @@ public class A2AServerResource {
 
         @Override
         public Response toResponse(JsonParseException exception) {
-            // TODO include request id in the error response
+            // parse error, not possible to determine the request id
             return Response.ok(new JSONRPCErrorResponse(new JSONParseError())).type(MediaType.APPLICATION_JSON).build();
         }
 
     }
 
     @Provider
-    public class JsonMappingExceptionMapper implements ExceptionMapper<JsonMappingException> {
+    public static class JsonMappingExceptionMapper implements ExceptionMapper<JsonMappingException> {
 
         @Override
         public Response toResponse(JsonMappingException exception) {
             if (exception.getCause() instanceof JsonParseException) {
-                // TODO include request id in the error response
                 return Response.ok(new JSONRPCErrorResponse(new JSONParseError())).type(MediaType.APPLICATION_JSON).build();
+            } else if (exception instanceof MethodNotFoundJsonMappingException) {
+                Object id = ((MethodNotFoundJsonMappingException) exception).getId();
+                return Response.ok(new JSONRPCErrorResponse(id, new MethodNotFoundError()))
+                        .type(MediaType.APPLICATION_JSON).build();
+            } else if (exception instanceof InvalidParamsJsonMappingException) {
+                Object id = ((InvalidParamsJsonMappingException) exception).getId();
+                return Response.ok(new JSONRPCErrorResponse(id, new InvalidParamsError()))
+                        .type(MediaType.APPLICATION_JSON).build();
+            } else if (exception instanceof IdJsonMappingException) {
+                Object id = ((IdJsonMappingException) exception).getId();
+                return Response.ok(new JSONRPCErrorResponse(id, new InvalidRequestError()))
+                        .type(MediaType.APPLICATION_JSON).build();
             }
-            if (! exception.getPath().isEmpty()) {
-                JsonMappingException.Reference exceptionPathReference = exception.getPath().get(0);
-                if (exceptionPathReference.getFieldName() != null && exceptionPathReference.getFieldName().equals("params")) {
-                    // TODO include request id in the error response
-                    return Response.ok(new JSONRPCErrorResponse(new InvalidParamsError())).type(MediaType.APPLICATION_JSON).build();
-                }
-            }
-            // TODO include request id in the error response
+            // not possible to determine the request id
             return Response.ok(new JSONRPCErrorResponse(new InvalidRequestError())).type(MediaType.APPLICATION_JSON).build();
         }
 

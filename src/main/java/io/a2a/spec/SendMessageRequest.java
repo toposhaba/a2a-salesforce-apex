@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import io.a2a.util.Assert;
 
 /**
@@ -22,23 +23,26 @@ public final class SendMessageRequest extends NonStreamingJSONRPCRequest<Message
     @JsonCreator
     public SendMessageRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
                               @JsonProperty("method") String method, @JsonProperty("params") MessageSendParams params) {
-        Assert.checkNotNullParam("method", method);
-        Assert.checkNotNullParam("params", params);
-
-        if (! method.equals(SEND_MESSAGE_METHOD)) {
-            throw new IllegalArgumentException("Invalid SendMessageRequest method");
+        if (jsonrpc == null || jsonrpc.isEmpty()) {
+            throw new IllegalArgumentException("JSON-RPC protocol version cannot be null or empty");
         }
         if (jsonrpc != null && ! jsonrpc.equals(JSONRPC_VERSION)) {
             throw new IllegalArgumentException("Invalid JSON-RPC protocol version");
         }
+        Assert.checkNotNullParam("method", method);
+        if (! method.equals(SEND_MESSAGE_METHOD)) {
+            throw new IllegalArgumentException("Invalid SendMessageRequest method");
+        }
+        Assert.checkNotNullParam("params", params);
+        Assert.isNullOrStringOrInteger(id);
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
-        this.id = id == null ? UUID.randomUUID().toString() : id;
+        this.id = id;
         this.method = method;
         this.params = params;
     }
 
     public SendMessageRequest(Object id, MessageSendParams params) {
-        this(null, id, SEND_MESSAGE_METHOD, params);
+        this(JSONRPC_VERSION, id, SEND_MESSAGE_METHOD, params);
     }
 
     public static class Builder {
@@ -68,6 +72,9 @@ public final class SendMessageRequest extends NonStreamingJSONRPCRequest<Message
         }
 
         public SendMessageRequest build() {
+            if (id == null) {
+                id = UUID.randomUUID().toString();
+            }
             return new SendMessageRequest(jsonrpc, id, method, params);
         }
     }

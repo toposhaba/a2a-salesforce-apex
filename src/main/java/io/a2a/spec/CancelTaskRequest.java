@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import io.a2a.util.Assert;
 
 /**
@@ -22,17 +23,17 @@ public final class CancelTaskRequest extends NonStreamingJSONRPCRequest<TaskIdPa
     @JsonCreator
     public CancelTaskRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
                              @JsonProperty("method") String method, @JsonProperty("params") TaskIdParams params) {
-        Assert.checkNotNullParam("method", method);
-        Assert.checkNotNullParam("params", params);
-
-        if (! method.equals(CANCEL_TASK_METHOD)) {
-            throw new IllegalArgumentException("Invalid CancelTaskRequest method");
-        }
         if (jsonrpc != null && ! jsonrpc.equals(JSONRPC_VERSION)) {
             throw new IllegalArgumentException("Invalid JSON-RPC protocol version");
         }
+        Assert.checkNotNullParam("method", method);
+        if (! method.equals(CANCEL_TASK_METHOD)) {
+            throw new IllegalArgumentException("Invalid CancelTaskRequest method");
+        }
+        Assert.checkNotNullParam("params", params);
+        Assert.isNullOrStringOrInteger(id);
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
-        this.id = id == null ? UUID.randomUUID().toString() : id;
+        this.id = id;
         this.method = method;
         this.params = params;
     }
@@ -68,6 +69,9 @@ public final class CancelTaskRequest extends NonStreamingJSONRPCRequest<TaskIdPa
         }
 
         public CancelTaskRequest build() {
+            if (id == null) {
+                id = UUID.randomUUID().toString();
+            }
             return new CancelTaskRequest(jsonrpc, id, method, params);
         }
     }

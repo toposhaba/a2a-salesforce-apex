@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import io.a2a.util.Assert;
 
 /**
@@ -22,17 +23,17 @@ public final class SetTaskPushNotificationConfigRequest extends NonStreamingJSON
     @JsonCreator
     public SetTaskPushNotificationConfigRequest(@JsonProperty("jsonrpc") String jsonrpc, @JsonProperty("id") Object id,
                                                 @JsonProperty("method") String method, @JsonProperty("params") TaskPushNotificationConfig params) {
-        Assert.checkNotNullParam("method", method);
-        Assert.checkNotNullParam("params", params);
-
-        if (! method.equals(SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD)) {
-            throw new IllegalArgumentException("Invalid SetTaskPushNotificationRequest method");
-        }
         if (jsonrpc != null && ! jsonrpc.equals(JSONRPC_VERSION)) {
             throw new IllegalArgumentException("Invalid JSON-RPC protocol version");
         }
+        Assert.checkNotNullParam("method", method);
+        if (! method.equals(SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD)) {
+            throw new IllegalArgumentException("Invalid SetTaskPushNotificationRequest method");
+        }
+        Assert.checkNotNullParam("params", params);
+        Assert.isNullOrStringOrInteger(id);
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
-        this.id = id == null ? UUID.randomUUID().toString() : id;
+        this.id = id;
         this.method = method;
         this.params = params;
     }
@@ -68,6 +69,9 @@ public final class SetTaskPushNotificationConfigRequest extends NonStreamingJSON
         }
 
         public SetTaskPushNotificationConfigRequest build() {
+            if (id == null) {
+                id = UUID.randomUUID().toString();
+            }
             return new SetTaskPushNotificationConfigRequest(jsonrpc, id, method, params);
         }
     }
