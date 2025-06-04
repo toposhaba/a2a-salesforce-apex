@@ -44,7 +44,7 @@ public final class SetTaskPushNotificationConfigRequest extends NonStreamingJSON
     public static class Builder {
         private String jsonrpc;
         private Object id;
-        private String method;
+        private String method = SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD;
         private TaskPushNotificationConfig params;
 
         public SetTaskPushNotificationConfigRequest.Builder jsonrpc(String jsonrpc) {

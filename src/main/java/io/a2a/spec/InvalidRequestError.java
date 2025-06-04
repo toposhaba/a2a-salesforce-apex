@@ -20,4 +20,8 @@ public class InvalidRequestError extends JSONRPCError {
                 defaultIfNull(message, "Request payload validation error"),
                 data);
     }
+
+    public InvalidRequestError(String message) {
+        this(null, message, null);
+    }
 }
