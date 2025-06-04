@@ -13,6 +13,8 @@ import io.a2a.spec.Artifact;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskArtifactUpdateEvent;
+import io.a2a.spec.TaskNotCancelableError;
+import io.a2a.spec.TaskNotFoundError;
 import io.a2a.spec.TaskState;
 import io.a2a.spec.TaskStatus;
 import io.a2a.spec.TaskStatusUpdateEvent;
@@ -65,15 +67,7 @@ public class AgentExecutorProducer {
                         return;
                     }
 
-                    eventQueue.enqueueEvent(new TaskArtifactUpdateEvent.Builder()
-                            .taskId(context.getTaskId())
-                            .contextId(context.getContextId())
-                            .artifact(new Artifact.Builder()
-                                    .name("response")
-                                    .description("Agent response to user message")
-                                    .parts(List.of(new TextPart("Hello World!")))
-                                    .build())
-                            .build());
+                    
 
                     eventQueue.enqueueEvent(new TaskStatusUpdateEvent.Builder()
                             .taskId(context.getTaskId())
@@ -82,6 +76,7 @@ public class AgentExecutorProducer {
                             .isFinal(true)
                             .build());
                 } catch (Exception e) {
+                    e.printStackTrace();
                     eventQueue.enqueueEvent(new TaskStatusUpdateEvent.Builder()
                             .taskId(context.getTaskId())
                             .contextId(context.getContextId())
@@ -93,7 +88,26 @@ public class AgentExecutorProducer {
 
             @Override
             public void cancel(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
-                throw new UnsupportedOperationError();
+                Task task = context.getTask();
+                if (task == null) {
+                    System.out.println("====> task not found");
+                    throw new TaskNotFoundError();
+                }
+                if (task.getStatus().state() == TaskState.CANCELED) {
+                    System.out.println("====> task already canceled");
+                    throw new TaskNotCancelableError();
+                }
+                if (task.getStatus().state() == TaskState.COMPLETED) {
+                    System.out.println("====> task already completed");
+                    throw new TaskNotCancelableError();
+                }
+                runningTasks.remove(task.getId());
+                eventQueue.enqueueEvent(new TaskStatusUpdateEvent.Builder()
+                        .taskId(task.getId())
+                        .contextId(task.getContextId())
+                        .status(new TaskStatus(TaskState.CANCELED))
+                        .isFinal(true)
+                        .build());
             }
         };
     }
