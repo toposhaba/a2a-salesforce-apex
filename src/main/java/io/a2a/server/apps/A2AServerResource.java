@@ -26,6 +26,7 @@ import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.ExtendedAgentCard;
 import io.a2a.spec.GetTaskPushNotificationConfigRequest;
 import io.a2a.spec.GetTaskRequest;
+import io.a2a.spec.InvalidParamsError;
 import io.a2a.spec.InvalidRequestError;
 import io.a2a.spec.JSONErrorResponse;
 import io.a2a.spec.JSONParseError;
@@ -183,6 +184,7 @@ public class A2AServerResource {
 
         @Override
         public Response toResponse(JsonParseException exception) {
+            // TODO include request id in the error response
             return Response.ok(new JSONRPCErrorResponse(new JSONParseError())).type(MediaType.APPLICATION_JSON).build();
         }
 
@@ -194,8 +196,17 @@ public class A2AServerResource {
         @Override
         public Response toResponse(JsonMappingException exception) {
             if (exception.getCause() instanceof JsonParseException) {
+                // TODO include request id in the error response
                 return Response.ok(new JSONRPCErrorResponse(new JSONParseError())).type(MediaType.APPLICATION_JSON).build();
             }
+            if (! exception.getPath().isEmpty()) {
+                JsonMappingException.Reference exceptionPathReference = exception.getPath().get(0);
+                if (exceptionPathReference.getFieldName() != null && exceptionPathReference.getFieldName().equals("params")) {
+                    // TODO include request id in the error response
+                    return Response.ok(new JSONRPCErrorResponse(new InvalidParamsError())).type(MediaType.APPLICATION_JSON).build();
+                }
+            }
+            // TODO include request id in the error response
             return Response.ok(new JSONRPCErrorResponse(new InvalidRequestError())).type(MediaType.APPLICATION_JSON).build();
         }
 

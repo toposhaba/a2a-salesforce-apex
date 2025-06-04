@@ -24,4 +24,8 @@ public class InvalidParamsError extends JSONRPCError {
     public InvalidParamsError(String message) {
         this(null, message, null);
     }
+
+    public InvalidParamsError() {
+        this(null, null, null);
+    }
 }
