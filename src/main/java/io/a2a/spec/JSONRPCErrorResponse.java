@@ -24,4 +24,8 @@ public final class JSONRPCErrorResponse extends JSONRPCResponse<Void> {
     public JSONRPCErrorResponse(Object id, JSONRPCError error) {
         this(null, id, null, error);
     }
+
+    public JSONRPCErrorResponse(JSONRPCError error) {
+        this(null, null, null, error);
+    }
 }

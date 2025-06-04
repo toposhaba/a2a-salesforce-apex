@@ -12,8 +12,13 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 
 import io.a2a.server.requesthandlers.JSONRPCHandler;
 import io.a2a.spec.AgentCard;
@@ -21,7 +26,9 @@ import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.ExtendedAgentCard;
 import io.a2a.spec.GetTaskPushNotificationConfigRequest;
 import io.a2a.spec.GetTaskRequest;
+import io.a2a.spec.InvalidRequestError;
 import io.a2a.spec.JSONErrorResponse;
+import io.a2a.spec.JSONParseError;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.JSONRPCErrorResponse;
 import io.a2a.spec.JSONRPCRequest;
@@ -169,6 +176,29 @@ public class A2AServerResource {
 
     private JSONRPCResponse<?> generateErrorResponse(JSONRPCRequest<?> request, JSONRPCError error) {
         return new JSONRPCErrorResponse(request.getId(), error);
+    }
+
+    @Provider
+    public class JsonParseExceptionMapper implements ExceptionMapper<JsonParseException> {
+
+        @Override
+        public Response toResponse(JsonParseException exception) {
+            return Response.ok(new JSONRPCErrorResponse(new JSONParseError())).type(MediaType.APPLICATION_JSON).build();
+        }
+
+    }
+
+    @Provider
+    public class JsonMappingExceptionMapper implements ExceptionMapper<JsonMappingException> {
+
+        @Override
+        public Response toResponse(JsonMappingException exception) {
+            if (exception.getCause() instanceof JsonParseException) {
+                return Response.ok(new JSONRPCErrorResponse(new JSONParseError())).type(MediaType.APPLICATION_JSON).build();
+            }
+            return Response.ok(new JSONRPCErrorResponse(new InvalidRequestError())).type(MediaType.APPLICATION_JSON).build();
+        }
+
     }
 }
 

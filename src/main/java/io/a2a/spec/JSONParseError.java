@@ -10,6 +10,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class JSONParseError extends JSONRPCError implements A2AError {
+
+    public JSONParseError() {
+        this(null, null, null);
+    }
+
     @JsonCreator
     public JSONParseError(
             @JsonProperty("code") Integer code,

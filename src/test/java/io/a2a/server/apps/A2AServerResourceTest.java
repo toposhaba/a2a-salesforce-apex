@@ -28,6 +28,8 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.a2a.server.events.Event;
 import io.a2a.server.events.InMemoryQueueManager;
 import io.a2a.server.tasks.TaskStore;
@@ -39,7 +41,9 @@ import io.a2a.spec.GetTaskPushNotificationConfigRequest;
 import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
+import io.a2a.spec.JSONParseError;
 import io.a2a.spec.JSONRPCError;
+import io.a2a.spec.JSONRPCErrorResponse;
 import io.a2a.spec.Message;
 import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.Part;
@@ -603,5 +607,45 @@ public class A2AServerResourceTest {
                 .then()
                 .statusCode(404)
                 .body("error", equalTo("Extended agent card not supported or not enabled."));
+    }
+
+    @Test
+    public void testMalformedJSONRequest() {
+        // missing closing bracket
+        String malformedRequest = """
+            {
+             "jsonrpc": "2.0",
+             "id": "request-1234",
+             "method": "message/send",
+             "params": {
+              "message": {
+               "role": "user",
+               "parts": [
+                {
+                 "kind": "text",
+                 "text": "tell me a joke"
+                }
+               ],
+               "messageId": "message-1234",
+               "contextId": "context-1234",
+               "kind": "message"
+              },
+              "configuration": {
+                "acceptedOutputModes": ["text"],
+                "blocking": true
+              },
+             }
+            """;
+        JSONRPCErrorResponse response = given()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(malformedRequest)
+                .when()
+                .post("/")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(JSONRPCErrorResponse.class);
+        assertNotNull(response.getError());
+        assertEquals(new JSONParseError().getCode(), response.getError().getCode());
     }
 }

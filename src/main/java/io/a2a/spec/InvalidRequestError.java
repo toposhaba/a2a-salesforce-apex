@@ -10,6 +10,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class InvalidRequestError extends JSONRPCError {
+
+    public InvalidRequestError() {
+        this(null, null, null);
+    }
+
     @JsonCreator
     public InvalidRequestError(
             @JsonProperty("code") Integer code,
