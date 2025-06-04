@@ -13,6 +13,7 @@ public abstract class EventQueue {
     private final BlockingQueue<Event> queue = new ArrayBlockingQueue<Event>(1000);
     private volatile boolean closed = false;
 
+
     protected EventQueue() {
         parent = null;
     }
@@ -34,9 +35,9 @@ public abstract class EventQueue {
 
     abstract EventQueue tap();
 
-    public Event dequeueEvent(int waitMilliSeconds) {
+    public Event dequeueEvent(int waitMilliSeconds) throws EventQueueClosedException {
         if (closed && queue.isEmpty()) {
-            throw new IllegalStateException("Queue is closed. Event will not be dequeued");
+            throw new EventQueueClosedException();
         }
         if (waitMilliSeconds <= 0) {
             return queue.poll();
@@ -55,6 +56,12 @@ public abstract class EventQueue {
     }
 
     public void close() {
+        synchronized (this) {
+            if (closed) {
+                return;
+            }
+            closed = true;
+        }
         queue.drainTo(new ArrayList<>());
     }
 

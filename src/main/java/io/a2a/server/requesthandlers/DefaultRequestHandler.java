@@ -20,6 +20,7 @@ import jakarta.inject.Inject;
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.agentexecution.SimpleRequestContextBuilder;
+import io.a2a.server.events.EnhancedRunnable;
 import io.a2a.server.events.Event;
 import io.a2a.server.events.EventConsumer;
 import io.a2a.server.events.EventQueue;
@@ -51,7 +52,7 @@ public class DefaultRequestHandler implements RequestHandler {
     private final Supplier<RequestContext.Builder> requestContextBuilder;
 
     // TODO the value upstream is asyncio.Task. Trying a Runnable
-    private final Map<String, Runnable> runningAgents = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, EnhancedRunnable> runningAgents = Collections.synchronizedMap(new HashMap<>());
 
     private final Executor executor = Executors.newCachedThreadPool();
 
@@ -143,13 +144,7 @@ public class DefaultRequestHandler implements RequestHandler {
         EventQueue queue = queueManager.createOrTap(taskId);
         ResultAggregator resultAggregator = new ResultAggregator(taskManager, null);
 
-        Runnable providerRunnable = new Runnable() {
-            @Override
-            public void run() {
-                runEventStream(requestContext, queue);
-            }
-        };
-        registerProducer(taskId, providerRunnable);
+        EnhancedRunnable producerRunnable = registerProducer(taskId, requestContext, queue);
 
         EventConsumer consumer = new EventConsumer(queue);
         // TODO https://github.com/fjuma/a2a-java-sdk/issues/62 Add this callback
@@ -165,9 +160,9 @@ public class DefaultRequestHandler implements RequestHandler {
         } finally {
             if (interrupted) {
                 // TODO Make this async
-                cleanupProducer(providerRunnable, taskId);
+                cleanupProducer(producerRunnable, taskId);
             } else {
-                cleanupProducer(providerRunnable, taskId);
+                cleanupProducer(producerRunnable, taskId);
             }
         }
 
@@ -202,13 +197,7 @@ public class DefaultRequestHandler implements RequestHandler {
         EventQueue queue = queueManager.createOrTap(taskId.get());
         ResultAggregator resultAggregator = new ResultAggregator(taskManager, null);
 
-        Runnable producerRunnable = new Runnable() {
-            @Override
-            public void run() {
-                runEventStream(requestContext, queue);
-            }
-        };
-        registerProducer(taskId.get(), producerRunnable);
+        EnhancedRunnable producerRunnable = registerProducer(taskId.get(), requestContext, queue);
 
         EventConsumer consumer = new EventConsumer(queue);
         // TODO https://github.com/fjuma/a2a-java-sdk/issues/62 Add this callback
@@ -317,12 +306,26 @@ public class DefaultRequestHandler implements RequestHandler {
     private void runEventStream(RequestContext requestContext, EventQueue queue)  throws JSONRPCError {
         agentExecutor.execute(requestContext, queue);
         // TODO this is in the Python implementation, but enabling it causes test hangs
-        // queue.close();
+         queue.close();
     }
 
-    private void registerProducer(String taskId, Runnable providerRunnable) {
-        runningAgents.put(taskId, providerRunnable);
-        executor.execute(providerRunnable);
+    private EnhancedRunnable registerProducer(String taskId, RequestContext requestContext, EventQueue eventQueue) {
+        EnhancedRunnable runnable = new EnhancedRunnable() {
+            @Override
+            public void run() {
+                try {
+                    runEventStream(requestContext, eventQueue);
+                } catch (Throwable throwable) {
+                    setError(throwable);
+                } finally {
+                    invokeDoneCallbacks();
+                }
+
+            }
+        };
+        runningAgents.put(taskId, runnable);
+        executor.execute(runnable);
+        return runnable;
     }
 
     private void cleanupProducer(Runnable producerRunnable, String taskId) {

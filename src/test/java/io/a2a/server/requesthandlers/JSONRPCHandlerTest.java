@@ -1183,7 +1183,6 @@ public class JSONRPCHandlerTest {
     }
 
     @Test
-    @Disabled
     public void testOnMessageSendTaskIdMismatch() {
 
     }
