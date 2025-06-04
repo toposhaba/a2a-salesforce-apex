@@ -11,6 +11,7 @@ import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -144,10 +145,11 @@ public class DefaultRequestHandler implements RequestHandler {
         EventQueue queue = queueManager.createOrTap(taskId);
         ResultAggregator resultAggregator = new ResultAggregator(taskManager, null);
 
-        EnhancedRunnable producerRunnable = registerProducer(taskId, requestContext, queue);
+        EnhancedRunnable producerRunnable = registerAndExecuteAgentAsync(taskId, requestContext, queue);
 
         EventConsumer consumer = new EventConsumer(queue);
-        // TODO https://github.com/fjuma/a2a-java-sdk/issues/62 Add this callback
+
+        producerRunnable.addDoneCallback(consumer.createAgentRunnableDoneCallback());
 
         boolean interrupted = false;
         ResultAggregator.EventTypeAndInterrupt etai = resultAggregator.consumeAndBreakOnInterrupt(consumer);
@@ -197,7 +199,7 @@ public class DefaultRequestHandler implements RequestHandler {
         EventQueue queue = queueManager.createOrTap(taskId.get());
         ResultAggregator resultAggregator = new ResultAggregator(taskManager, null);
 
-        EnhancedRunnable producerRunnable = registerProducer(taskId.get(), requestContext, queue);
+        EnhancedRunnable producerRunnable = registerAndExecuteAgentAsync(taskId.get(), requestContext, queue);
 
         EventConsumer consumer = new EventConsumer(queue);
         // TODO https://github.com/fjuma/a2a-java-sdk/issues/62 Add this callback
@@ -306,10 +308,16 @@ public class DefaultRequestHandler implements RequestHandler {
     private void runEventStream(RequestContext requestContext, EventQueue queue)  throws JSONRPCError {
         agentExecutor.execute(requestContext, queue);
         // TODO this is in the Python implementation, but enabling it causes test hangs
-         queue.close();
+        try {
+            queue.getPollingStartedLatch().await(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            queue.close();
+        }
     }
 
-    private EnhancedRunnable registerProducer(String taskId, RequestContext requestContext, EventQueue eventQueue) {
+    private EnhancedRunnable registerAndExecuteAgentAsync(String taskId, RequestContext requestContext, EventQueue eventQueue) {
         EnhancedRunnable runnable = new EnhancedRunnable() {
             @Override
             public void run() {

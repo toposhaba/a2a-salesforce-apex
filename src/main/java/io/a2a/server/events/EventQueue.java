@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public abstract class EventQueue {
@@ -12,6 +13,7 @@ public abstract class EventQueue {
     // TODO decide on a capacity (or more appropriate queue data structures)
     private final BlockingQueue<Event> queue = new ArrayBlockingQueue<Event>(1000);
     private volatile boolean closed = false;
+    private CountDownLatch pollingStartedLatch = new CountDownLatch(1);
 
 
     protected EventQueue() {
@@ -33,12 +35,18 @@ public abstract class EventQueue {
         queue.add(event);
     }
 
+    // TODO This is internal use only, move somewhere else if it works (possibly make package private, and expose via the queue manager)
+    public CountDownLatch getPollingStartedLatch() {
+        return pollingStartedLatch;
+    }
+
     abstract EventQueue tap();
 
     public Event dequeueEvent(int waitMilliSeconds) throws EventQueueClosedException {
         if (closed && queue.isEmpty()) {
             throw new EventQueueClosedException();
         }
+        pollingStartedLatch.countDown();
         if (waitMilliSeconds <= 0) {
             return queue.poll();
         }

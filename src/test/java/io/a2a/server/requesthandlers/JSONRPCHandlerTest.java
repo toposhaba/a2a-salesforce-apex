@@ -1184,6 +1184,16 @@ public class JSONRPCHandlerTest {
 
     @Test
     public void testOnMessageSendTaskIdMismatch() {
+        JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);
+        taskStore.save(MINIMAL_TASK);
+
+        agentExecutorExecute = ((context, eventQueue) -> {
+            eventQueue.enqueueEvent(MINIMAL_TASK);
+        });
+        SendMessageRequest request = new SendMessageRequest("1",
+                new MessageSendParams(MESSAGE, null, null));
+        SendMessageResponse response = handler.onMessageSend(request);
+        assertInstanceOf(InternalError.class, response.getError());
 
     }
 
