@@ -19,11 +19,12 @@ public final class GetTaskPushNotificationConfigResponse extends JSONRPCResponse
         super(jsonrpc, id, result, error);
     }
 
-    public GetTaskPushNotificationConfigResponse(String id, JSONRPCError error) {
+    public GetTaskPushNotificationConfigResponse(Object id, JSONRPCError error) {
         this(null, id, null, error);
     }
 
-    public GetTaskPushNotificationConfigResponse(String id, TaskPushNotificationConfig result) {
+    public GetTaskPushNotificationConfigResponse(Object id, TaskPushNotificationConfig result) {
         this(null, id, result, null);
     }
+
 }
