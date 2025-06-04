@@ -978,6 +978,53 @@ public class JSONRPCHandlerTest {
     }
 
     @Test
+    public void testStreamingNotSupportedErrorOnResubscribeToTask() {
+        // This test does not exist in the Python implementation
+        AgentCard card = createAgentCard(false, true, true);
+        JSONRPCHandler handler = new JSONRPCHandler(card, requestHandler);
+
+        TaskResubscriptionRequest request = new TaskResubscriptionRequest("1", new TaskIdParams(MINIMAL_TASK.getId()));
+        Flow.Publisher<SendStreamingMessageResponse> response = handler.onResubscribeToTask(request);
+
+        List<SendStreamingMessageResponse> results = new ArrayList<>();
+        AtomicReference<Throwable> error = new AtomicReference<>();
+
+        response.subscribe(new Flow.Subscriber<SendStreamingMessageResponse>() {
+            private Flow.Subscription subscription;
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                this.subscription = subscription;
+                subscription.request(1);
+            }
+
+            @Override
+            public void onNext(SendStreamingMessageResponse item) {
+                results.add(item);
+                subscription.request(1);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                error.set(throwable);
+                subscription.cancel();
+            }
+
+            @Override
+            public void onComplete() {
+                subscription.cancel();
+            }
+        });
+
+        assertEquals(1, results.size());
+        if (results.get(0).getError() != null && results.get(0).getError() instanceof InvalidRequestError ire) {
+            assertEquals("Streaming is not supported by the agent", ire.getMessage());
+        } else {
+            fail("Expected a response containing an error");
+        }
+    }
+
+
+    @Test
     public void testPushNotificationsNotSupportedError() {
         AgentCard card = createAgentCard(true, false, true);
         JSONRPCHandler handler = new JSONRPCHandler(card, requestHandler);

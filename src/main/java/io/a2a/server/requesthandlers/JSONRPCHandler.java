@@ -4,9 +4,6 @@ import static io.a2a.util.AsyncUtils.convertingProcessor;
 
 import java.util.concurrent.Flow;
 
-import io.a2a.spec.A2AServerException;
-import io.a2a.spec.InvalidRequestError;
-import io.a2a.spec.PublicAgentCard;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -19,6 +16,7 @@ import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
 import io.a2a.spec.InternalError;
+import io.a2a.spec.InvalidRequestError;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.PublicAgentCard;
 import io.a2a.spec.SendMessageRequest;
@@ -99,9 +97,15 @@ public class JSONRPCHandler {
     }
 
     public Flow.Publisher<SendStreamingMessageResponse> onResubscribeToTask(TaskResubscriptionRequest request) {
+        if (!agentCard.capabilities().streaming()) {
+            return ZeroPublisher.fromItems(
+                    new SendStreamingMessageResponse(
+                            request.getId(),
+                            new InvalidRequestError("Streaming is not supported by the agent")));
+        }
+
         try {
-            Flow.Publisher<StreamingEventKind> publisher;
-            publisher = requestHandler.onResubscribeToTask(request.getParams());
+            Flow.Publisher<StreamingEventKind> publisher = requestHandler.onResubscribeToTask(request.getParams());
             return convertingProcessor(publisher, streamingEventType -> {
                 try {
                     return new SendStreamingMessageResponse(request.getId(), streamingEventType);
