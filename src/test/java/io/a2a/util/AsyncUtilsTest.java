@@ -694,54 +694,5 @@ public class AsyncUtilsTest {
         latch.await(2, TimeUnit.SECONDS);
         assertEquals(6, results.size());
     }
-
-        @Test
-    public void testMutinyZeroEventPropagationMultiThreadedSanity() throws Exception {
-        Flow.Publisher<String> source = ZeroPublisher.fromItems("one", "two", "three");
-
-        final CountDownLatch latch = new CountDownLatch(3);
-
-        final List<String> results = Collections.synchronizedList(new ArrayList<>());
-
-            class TestRunnable implements Runnable {
-                @Override
-                public void run() {
-                    source.subscribe(new Flow.Subscriber<>() {
-                        private Flow.Subscription subscription;
-
-                        @Override
-                        public void onSubscribe(Flow.Subscription subscription) {
-                            this.subscription = subscription;
-                            subscription.request(1);
-                        }
-
-                        @Override
-                        public void onNext(String item) {
-                            results.add(item);
-                            subscription.request(1);
-                            latch.countDown();
-                        }
-
-                        @Override
-                        public void onError(Throwable throwable) {
-                            subscription.cancel();
-                        }
-
-                        @Override
-                        public void onComplete() {
-                            subscription.cancel();
-                        }
-                    });
-                }
-            }
-        TestRunnable r1 = new TestRunnable();
-        TestRunnable r2 = new TestRunnable();
-
-        Executor e = Executors.newFixedThreadPool(2);
-        e.execute(r1);
-        e.execute(r2);
-
-        latch.await(2, TimeUnit.SECONDS);
-        assertEquals(6, results.size());
-    }
+    
 }
