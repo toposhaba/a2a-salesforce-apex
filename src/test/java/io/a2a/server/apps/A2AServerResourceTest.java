@@ -12,6 +12,13 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.Client;
@@ -21,10 +28,11 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
+import io.a2a.server.events.Event;
+import io.a2a.server.events.InMemoryQueueManager;
 import io.a2a.server.tasks.TaskStore;
 import io.a2a.spec.AgentCard;
+import io.a2a.spec.Artifact;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.CancelTaskResponse;
 import io.a2a.spec.GetTaskPushNotificationConfigRequest;
@@ -43,6 +51,7 @@ import io.a2a.spec.SendStreamingMessageResponse;
 import io.a2a.spec.SetTaskPushNotificationConfigRequest;
 import io.a2a.spec.SetTaskPushNotificationConfigResponse;
 import io.a2a.spec.Task;
+import io.a2a.spec.TaskArtifactUpdateEvent;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskNotFoundError;
 import io.a2a.spec.TaskPushNotificationConfig;
@@ -50,8 +59,10 @@ import io.a2a.spec.TaskQueryParams;
 import io.a2a.spec.TaskResubscriptionRequest;
 import io.a2a.spec.TaskState;
 import io.a2a.spec.TaskStatus;
+import io.a2a.spec.TaskStatusUpdateEvent;
 import io.a2a.spec.TextPart;
 import io.a2a.spec.UnsupportedOperationError;
+import io.a2a.util.Utils;
 import io.quarkus.test.junit.QuarkusTest;
 
 import org.junit.jupiter.api.Test;
@@ -59,10 +70,11 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 public class A2AServerResourceTest {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     @Inject
     TaskStore taskStore;
+
+    @Inject
+    InMemoryQueueManager queueManager;
 
     private static final Task MINIMAL_TASK = new Task.Builder()
             .id("task-123")
@@ -278,11 +290,12 @@ public class A2AServerResourceTest {
         WebTarget target = client.target("http://localhost:8081/");
         Response response = target.request(MediaType.SERVER_SENT_EVENTS).post(Entity.json(request));
         InputStream inputStream = response.readEntity(InputStream.class);
+        boolean dataRead = false;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("data: ")) {
-                    SendStreamingMessageResponse sendStreamingMessageResponse = OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
+                    SendStreamingMessageResponse sendStreamingMessageResponse = Utils.OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
                     assertNull(sendStreamingMessageResponse.getError());
                     Message messageResponse =  (Message) sendStreamingMessageResponse.getResult();
                     assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());
@@ -290,9 +303,11 @@ public class A2AServerResourceTest {
                     Part<?> part = messageResponse.getParts().get(0);
                     assertEquals(Part.Kind.TEXT, part.getKind());
                     assertEquals("test message", ((TextPart) part).getText());
+                    dataRead = true;
                 }
             }
         }
+        assertTrue(dataRead);
     }
 
     @Test
@@ -309,11 +324,12 @@ public class A2AServerResourceTest {
             WebTarget target = client.target("http://localhost:8081/");
             Response response = target.request(MediaType.SERVER_SENT_EVENTS).post(Entity.json(request));
             InputStream inputStream = response.readEntity(InputStream.class);
+            boolean dataRead = false;
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     if (line.startsWith("data: ")) {
-                        SendStreamingMessageResponse sendStreamingMessageResponse = OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
+                        SendStreamingMessageResponse sendStreamingMessageResponse = Utils.OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
                         assertNull(sendStreamingMessageResponse.getError());
                         Message messageResponse = (Message) sendStreamingMessageResponse.getResult();
                         assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());
@@ -321,9 +337,11 @@ public class A2AServerResourceTest {
                         Part<?> part = messageResponse.getParts().get(0);
                         assertEquals(Part.Kind.TEXT, part.getKind());
                         assertEquals("test message", ((TextPart) part).getText());
+                        dataRead = true;
                     }
                 }
             }
+            assertTrue(dataRead);
         } catch (Exception e) {
         } finally {
             taskStore.delete(MINIMAL_TASK.getId());
@@ -336,8 +354,7 @@ public class A2AServerResourceTest {
         try {
             TaskPushNotificationConfig taskPushConfig =
                     new TaskPushNotificationConfig(
-                            MINIMAL_TASK.getId(), new
-                            PushNotificationConfig("http://example.com", null, null));
+                            MINIMAL_TASK.getId(), new PushNotificationConfig.Builder().url("http://example.com").build());
             SetTaskPushNotificationConfigRequest request = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
             SetTaskPushNotificationConfigResponse response = given()
                     .contentType(MediaType.APPLICATION_JSON)
@@ -365,8 +382,7 @@ public class A2AServerResourceTest {
         try {
             TaskPushNotificationConfig taskPushConfig =
                     new TaskPushNotificationConfig(
-                            MINIMAL_TASK.getId(), new
-                            PushNotificationConfig("http://example.com", null, null));
+                            MINIMAL_TASK.getId(), new PushNotificationConfig.Builder().url("http://example.com").build());
 
             SetTaskPushNotificationConfigRequest setTaskPushNotificationRequest = new SetTaskPushNotificationConfigRequest("1", taskPushConfig);
             SetTaskPushNotificationConfigResponse setTaskPushNotificationResponse = given()
@@ -403,25 +419,132 @@ public class A2AServerResourceTest {
     }
 
     @Test
+    public void testResubscribeExistingTaskSuccess() throws Exception {
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        taskStore.save(MINIMAL_TASK);
+
+        try {
+            // attempting to send a streaming message instead of explicitly calling queueManager#createOrTap
+            // does not work because after the message is sent, the queue becomes null but task resubscription
+            // requires the queue to still be active
+            queueManager.createOrTap(MINIMAL_TASK.getId());
+
+            CountDownLatch taskResubscriptionRequestSent = new CountDownLatch(1);
+            CountDownLatch taskResubscriptionResponseReceived = new CountDownLatch(2);
+            AtomicReference<SendStreamingMessageResponse> firstResponse = new AtomicReference<>();
+            AtomicReference<SendStreamingMessageResponse> secondResponse = new AtomicReference<>();
+
+            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                // resubscribe to the task, requires the task and its queue to still be active
+                TaskResubscriptionRequest taskResubscriptionRequest = new TaskResubscriptionRequest("1", new TaskIdParams(MINIMAL_TASK.getId()));
+                Client client = ClientBuilder.newClient();
+                WebTarget target = client.target("http://localhost:8081/");
+                taskResubscriptionRequestSent.countDown();
+                Response response = target.request(MediaType.SERVER_SENT_EVENTS).post(Entity.json(taskResubscriptionRequest));
+                InputStream inputStream = response.readEntity(InputStream.class);
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (line.startsWith("data: ")) {
+                            SendStreamingMessageResponse sendStreamingMessageResponse = Utils.OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
+                            if (taskResubscriptionResponseReceived.getCount() == 2) {
+                                firstResponse.set(sendStreamingMessageResponse);
+                            } else {
+                                secondResponse.set(sendStreamingMessageResponse);
+                            }
+                            taskResubscriptionResponseReceived.countDown();
+                            if (taskResubscriptionResponseReceived.getCount() == 0) {
+                                break;
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                } finally {
+                    response.close();
+                    client.close();
+                }
+            }, executorService);
+
+            try {
+                taskResubscriptionRequestSent.await();
+                // sleep to ensure that the events are sent after the client request is made
+                Thread.sleep(1000);
+                List<Event> events = List.of(
+                        new TaskArtifactUpdateEvent.Builder()
+                                .taskId(MINIMAL_TASK.getId())
+                                .contextId(MINIMAL_TASK.getContextId())
+                                .artifact(new Artifact.Builder()
+                                        .artifactId("11")
+                                        .parts(new TextPart("text"))
+                                        .build())
+                                .build(),
+                        new TaskStatusUpdateEvent.Builder()
+                                .taskId(MINIMAL_TASK.getId())
+                                .contextId(MINIMAL_TASK.getContextId())
+                                .status(new TaskStatus(TaskState.COMPLETED))
+                                .isFinal(true)
+                                .build());
+
+                for (Event event : events) {
+                    queueManager.get(MINIMAL_TASK.getId()).enqueueEvent(event);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            // wait for the client to receive the responses
+            taskResubscriptionResponseReceived.await();
+
+            assertNotNull(firstResponse.get());
+            SendStreamingMessageResponse sendStreamingMessageResponse = firstResponse.get();
+            assertNull(sendStreamingMessageResponse.getError());
+            TaskArtifactUpdateEvent taskArtifactUpdateEvent = (TaskArtifactUpdateEvent) sendStreamingMessageResponse.getResult();
+            assertEquals(MINIMAL_TASK.getId(), taskArtifactUpdateEvent.getTaskId());
+            assertEquals(MINIMAL_TASK.getContextId(), taskArtifactUpdateEvent.getContextId());
+            Part<?> part = taskArtifactUpdateEvent.getArtifact().parts().get(0);
+            assertEquals(Part.Kind.TEXT, part.getKind());
+            assertEquals("text", ((TextPart) part).getText());
+
+            assertNotNull(secondResponse.get());
+            sendStreamingMessageResponse = secondResponse.get();
+            assertNull(sendStreamingMessageResponse.getError());
+            TaskStatusUpdateEvent taskStatusUpdateEvent = (TaskStatusUpdateEvent) sendStreamingMessageResponse.getResult();
+            assertEquals(MINIMAL_TASK.getId(), taskStatusUpdateEvent.getTaskId());
+            assertEquals(MINIMAL_TASK.getContextId(), taskStatusUpdateEvent.getContextId());
+            assertEquals(TaskState.COMPLETED, taskStatusUpdateEvent.getStatus().state());
+            assertNotNull(taskStatusUpdateEvent.getStatus().timestamp());
+        } finally {
+            taskStore.delete(MINIMAL_TASK.getId());
+            executorService.shutdown();
+            if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+            }
+        }
+    }
+
+    @Test
     public void testResubscribeNoExistingTaskError() throws Exception {
         TaskResubscriptionRequest request = new TaskResubscriptionRequest("1", new TaskIdParams("non-existent-task"));
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target("http://localhost:8081/");
         Response response = target.request(MediaType.SERVER_SENT_EVENTS).post(Entity.json(request));
         InputStream inputStream = response.readEntity(InputStream.class);
+        boolean dataRead = false;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("data: ")) {
-                    SendStreamingMessageResponse sendStreamingMessageResponse = OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
+                    SendStreamingMessageResponse sendStreamingMessageResponse = Utils.OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
                     assertEquals(request.getId(), sendStreamingMessageResponse.getId());
                     assertNull(sendStreamingMessageResponse.getResult());
                     // this should be an instance of TaskNotFoundError, see https://github.com/fjuma/a2a-java-sdk/issues/23
                     assertInstanceOf(JSONRPCError.class, sendStreamingMessageResponse.getError());
                     assertEquals(new TaskNotFoundError().getCode(), sendStreamingMessageResponse.getError().getCode());
+                    dataRead = true;
                 }
             }
         }
+        assertTrue(dataRead);
     }
     
     @Test
