@@ -3,10 +3,10 @@ package io.a2a.spec;
 import static io.a2a.spec.A2A.JSONRPC_VERSION;
 import static io.a2a.util.Utils.defaultIfNull;
 
-import java.util.UUID;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+
+import io.a2a.util.Assert;
 
 /**
  * Represents a JSONRPC response.
@@ -35,8 +35,9 @@ public abstract sealed class JSONRPCResponse<T> implements JSONRPCMessage permit
         if (error == null && result == null) {
             throw new IllegalArgumentException("Invalid JSON-RPC success response");
         }
+        Assert.isNullOrStringOrInteger(id);
         this.jsonrpc = defaultIfNull(jsonrpc, JSONRPC_VERSION);
-        this.id = id == null ? UUID.randomUUID().toString() : id;
+        this.id = id;
         this.result = result;
         this.error = error;
     }

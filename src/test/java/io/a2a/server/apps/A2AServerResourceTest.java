@@ -40,11 +40,13 @@ import io.a2a.spec.GetTaskPushNotificationConfigResponse;
 import io.a2a.spec.GetTaskRequest;
 import io.a2a.spec.GetTaskResponse;
 import io.a2a.spec.InvalidParamsError;
+import io.a2a.spec.InvalidRequestError;
 import io.a2a.spec.JSONParseError;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.JSONRPCErrorResponse;
 import io.a2a.spec.Message;
 import io.a2a.spec.MessageSendParams;
+import io.a2a.spec.MethodNotFoundError;
 import io.a2a.spec.Part;
 import io.a2a.spec.PushNotificationConfig;
 import io.a2a.spec.SendMessageRequest;
@@ -609,32 +611,9 @@ public class A2AServerResourceTest {
     }
 
     @Test
-    public void testMalformedJSONRequest() {
+    public void testMalformedJSONRPCRequest() {
         // missing closing bracket
-        String malformedRequest = """
-            {
-             "jsonrpc": "2.0",
-             "id": "request-1234",
-             "method": "message/send",
-             "params": {
-              "message": {
-               "role": "user",
-               "parts": [
-                {
-                 "kind": "text",
-                 "text": "tell me a joke"
-                }
-               ],
-               "messageId": "message-1234",
-               "contextId": "context-1234",
-               "kind": "message"
-              },
-              "configuration": {
-                "acceptedOutputModes": ["text"],
-                "blocking": true
-              },
-             }
-            """;
+        String malformedRequest = "{\"jsonrpc\": \"2.0\", \"method\": \"message/send\", \"params\": {\"foo\": \"bar\"}";
         JSONRPCErrorResponse response = given()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(malformedRequest)
@@ -649,17 +628,19 @@ public class A2AServerResourceTest {
     }
 
     @Test
-    public void testInvalidParamsJSONRequest() {
+    public void testInvalidParamsJSONRPCRequest() {
         String invalidParamsRequest = """
-            {
-             "jsonrpc": "2.0",
-             "id": "request-1234",
-             "method": "message/send",
-             "params": {
-              "message": {"parts": "invalid"}
-             }
-            }
+            {"jsonrpc": "2.0", "method": "message/send", "params": "not_a_dict", "id": "1"}
             """;
+        testInvalidParams(invalidParamsRequest);
+
+        invalidParamsRequest = """
+            {"jsonrpc": "2.0", "method": "message/send", "params": {"message": {"parts": "invalid"}}, "id": "1"}
+            """;
+        testInvalidParams(invalidParamsRequest);
+    }
+
+    private void testInvalidParams(String invalidParamsRequest) {
         JSONRPCErrorResponse response = given()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(invalidParamsRequest)
@@ -671,5 +652,81 @@ public class A2AServerResourceTest {
                 .as(JSONRPCErrorResponse.class);
         assertNotNull(response.getError());
         assertEquals(new InvalidParamsError().getCode(), response.getError().getCode());
+        assertEquals("1", response.getId());
+    }
+
+    @Test
+    public void testInvalidJSONRPCRequestMissingJsonrpc() {
+        String invalidRequest = """
+            {
+             "method": "message/send",
+             "params": {}
+            }
+            """;
+        JSONRPCErrorResponse response = given()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(invalidRequest)
+                .when()
+                .post("/")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(JSONRPCErrorResponse.class);
+        assertNotNull(response.getError());
+        assertEquals(new InvalidRequestError().getCode(), response.getError().getCode());
+    }
+
+    @Test
+    public void testInvalidJSONRPCRequestMissingMethod() {
+        String invalidRequest = """
+            {"jsonrpc": "2.0", "params": {}}
+            """;
+        JSONRPCErrorResponse response = given()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(invalidRequest)
+                .when()
+                .post("/")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(JSONRPCErrorResponse.class);
+        assertNotNull(response.getError());
+        assertEquals(new InvalidRequestError().getCode(), response.getError().getCode());
+    }
+
+    @Test
+    public void testInvalidJSONRPCRequestInvalidId() {
+        String invalidRequest = """
+            {"jsonrpc": "2.0", "method": "message/send", "params": {}, "id": {"bad": "type"}}
+            """;
+        JSONRPCErrorResponse response = given()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(invalidRequest)
+                .when()
+                .post("/")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(JSONRPCErrorResponse.class);
+        assertNotNull(response.getError());
+        assertEquals(new InvalidRequestError().getCode(), response.getError().getCode());
+    }
+
+    @Test
+    public void testInvalidJSONRPCRequestNonExistentMethod() {
+        String invalidRequest = """
+            {"jsonrpc": "2.0", "method" : "nonexistent/method", "params": {}}
+            """;
+        JSONRPCErrorResponse response = given()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(invalidRequest)
+                .when()
+                .post("/")
+                .then()
+                .statusCode(200)
+                .extract()
+                .as(JSONRPCErrorResponse.class);
+        assertNotNull(response.getError());
+        assertEquals(new MethodNotFoundError().getCode(), response.getError().getCode());
     }
 }

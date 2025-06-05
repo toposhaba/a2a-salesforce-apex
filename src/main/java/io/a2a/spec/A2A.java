@@ -168,4 +168,15 @@ public class A2A {
         }
     }
 
+    protected static boolean isValidMethodName(String methodName) {
+        return methodName != null && (methodName.equals(CANCEL_TASK_METHOD)
+                || methodName.equals(GET_TASK_METHOD)
+                || methodName.equals(GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD)
+                || methodName.equals(SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD)
+                || methodName.equals(SEND_TASK_RESUBSCRIPTION_METHOD)
+                || methodName.equals(SEND_MESSAGE_METHOD)
+                || methodName.equals(SEND_STREAMING_MESSAGE_METHOD));
+
+    }
+
 }

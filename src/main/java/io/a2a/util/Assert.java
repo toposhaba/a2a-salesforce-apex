@@ -22,5 +22,10 @@ public final class Assert {
         if (value == null) throw new IllegalArgumentException("Parameter '" + name + "' may not be null");
     }
 
+    public static void isNullOrStringOrInteger(Object value) {
+        if (! (value == null || value instanceof String || value instanceof Integer)) {
+            throw new IllegalArgumentException("Id must be null, a String, or an Integer");
+        }
+    }
 
 }

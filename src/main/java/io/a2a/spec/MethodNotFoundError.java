@@ -20,4 +20,8 @@ public class MethodNotFoundError extends JSONRPCError {
                 defaultIfNull(message, "Method not found"),
                 data);
     }
+
+    public MethodNotFoundError() {
+        this(-32601, null, null);
+    }
 }
