@@ -1198,9 +1198,49 @@ public class JSONRPCHandlerTest {
     }
 
     @Test
-    @Disabled
     public void testOnMessageStreamTaskIdMismatch() {
+        JSONRPCHandler handler = new JSONRPCHandler(CARD, requestHandler);
+        taskStore.save(MINIMAL_TASK);
 
+        agentExecutorExecute = ((context, eventQueue) -> {
+            eventQueue.enqueueEvent(MINIMAL_TASK);
+        });
+
+        SendStreamingMessageRequest request = new SendStreamingMessageRequest("1", new MessageSendParams(MESSAGE, null, null));
+        Flow.Publisher<SendStreamingMessageResponse> response = handler.onMessageSendStream(request);
+
+        List<SendStreamingMessageResponse> results = new ArrayList<>();
+        AtomicReference<Throwable> error = new AtomicReference<>();
+
+        response.subscribe(new Flow.Subscriber<SendStreamingMessageResponse>() {
+            private Flow.Subscription subscription;
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                this.subscription = subscription;
+                subscription.request(1);
+            }
+
+            @Override
+            public void onNext(SendStreamingMessageResponse item) {
+                results.add(item);
+                subscription.request(1);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                error.set(throwable);
+                subscription.cancel();
+            }
+
+            @Override
+            public void onComplete() {
+                subscription.cancel();
+            }
+        });
+
+        assertNull(error.get());
+        assertEquals(1, results.size());
+        assertInstanceOf(InternalError.class, results.get(0).getError());
     }
 
     private static AgentCard createAgentCard(boolean streaming, boolean pushNotifications, boolean stateTransitionHistory) {
