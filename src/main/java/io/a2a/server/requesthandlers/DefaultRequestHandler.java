@@ -32,6 +32,7 @@ import io.a2a.server.tasks.ResultAggregator;
 import io.a2a.server.tasks.TaskManager;
 import io.a2a.server.tasks.TaskStore;
 import io.a2a.spec.EventKind;
+import io.a2a.spec.InternalError;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.PushNotificationConfig;
@@ -42,9 +43,14 @@ import io.a2a.spec.TaskNotFoundError;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
 import io.a2a.spec.UnsupportedOperationError;
+import io.a2a.util.TempLoggerWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
 public class DefaultRequestHandler implements RequestHandler {
+
+    private static final Logger log = new TempLoggerWrapper(LoggerFactory.getLogger(DefaultRequestHandler.class));
 
     private final AgentExecutor agentExecutor;
     private final TaskStore taskStore;
@@ -73,10 +79,13 @@ public class DefaultRequestHandler implements RequestHandler {
 
     @Override
     public Task onGetTask(TaskQueryParams params) throws JSONRPCError {
+        log.debug("onGetTask {}", params.id());
         Task task = taskStore.get(params.id());
         if (task == null) {
+            log.debug("No task found for {}. Throwing TaskNotFoundError", params.id());
             throw new TaskNotFoundError();
         }
+        log.debug("Task found {}", task);
         return task;
     }
 
@@ -119,6 +128,7 @@ public class DefaultRequestHandler implements RequestHandler {
 
     @Override
     public EventKind onMessageSend(MessageSendParams params) throws JSONRPCError {
+        log.debug("onMessageSend - task: {}; context {}", params.message().getTaskId(), params.message().getContextId());
         TaskManager taskManager = new TaskManager(
                 params.message().getTaskId(),
                 params.message().getContextId(),
@@ -127,9 +137,11 @@ public class DefaultRequestHandler implements RequestHandler {
 
         Task task = taskManager.getTask();
         if (task != null) {
+            log.debug("Found task updating with message {}", params.message());
             task = taskManager.updateWithMessage(params.message(), task);
 
             if (shouldAddPushInfo(params)) {
+                log.debug("Adding push info");
                 pushNotifier.setInfo(task.getId(), params.configuration().pushNotification());
             }
         }
@@ -142,6 +154,8 @@ public class DefaultRequestHandler implements RequestHandler {
                 .build();
 
         String taskId = requestContext.getTaskId();
+        log.debug("Request context taskId: {}", taskId);
+
         EventQueue queue = queueManager.createOrTap(taskId);
         ResultAggregator resultAggregator = new ResultAggregator(taskManager, null);
 
@@ -156,9 +170,17 @@ public class DefaultRequestHandler implements RequestHandler {
 
         try {
             if (etai == null) {
-                throw new InternalError();
+                log.debug("No result, throwing InternalError");
+                throw new InternalError("No result");
             }
             interrupted = etai.interrupted();
+            log.debug("Was interrupted: {}", interrupted);
+
+            EventKind kind = etai.eventType();
+            if (kind instanceof Task taskResult && taskId != taskResult.getId()) {
+                throw new InternalError("Task ID mismatch in agent response");
+            }
+
         } finally {
             if (interrupted) {
                 // TODO Make this async
@@ -168,6 +190,7 @@ public class DefaultRequestHandler implements RequestHandler {
             }
         }
 
+        log.debug("Returning: {}", etai.eventType());
         return etai.eventType();
     }
 
@@ -275,7 +298,7 @@ public class DefaultRequestHandler implements RequestHandler {
 
         PushNotificationConfig pushNotificationConfig = pushNotifier.getInfo(params.id());
         if (pushNotificationConfig == null) {
-            throw new InternalError();
+            throw new InternalError("No push notification config found");
         }
 
         return new TaskPushNotificationConfig(params.id(), pushNotificationConfig);

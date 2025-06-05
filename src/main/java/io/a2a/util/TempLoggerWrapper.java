@@ -10,10 +10,10 @@ import org.slf4j.spi.LoggingEventBuilder;
  * Temporary wrapper class for Logger to log debug and trace messages at info level since I am not able to figure
  * out how to enable debug logging via configuration.
  */
-public class TempLogger implements Logger {
+public class TempLoggerWrapper implements Logger {
     private final Logger delegate;
 
-    public TempLogger(Logger delegate) {
+    public TempLoggerWrapper(Logger delegate) {
         this.delegate = delegate;
     }
 
@@ -106,7 +106,7 @@ public class TempLogger implements Logger {
 
     @Override
     public boolean isDebugEnabled() {
-        return delegate.isDebugEnabled();
+        return delegate.isInfoEnabled();
     }
 
     @Override

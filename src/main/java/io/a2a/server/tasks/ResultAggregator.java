@@ -17,9 +17,14 @@ import io.a2a.spec.Message;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskState;
 import io.a2a.spec.TaskStatusUpdateEvent;
+import io.a2a.util.TempLoggerWrapper;
 import io.a2a.util.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ResultAggregator {
+    private static final Logger log = new TempLoggerWrapper(LoggerFactory.getLogger(ResultAggregator.class));
+
     private final TaskManager taskManager;
     private volatile Message message;
 

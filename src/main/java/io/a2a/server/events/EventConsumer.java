@@ -40,9 +40,11 @@ public class EventConsumer {
                 .withBackpressureStrategy(BackpressureStrategy.BUFFER)
                 .withBufferSize(256);
         return ZeroPublisher.create(conf, tube -> {
+            boolean completed = false;
             try {
                 while (true) {
                     if (error != null) {
+                        completed = true;
                         tube.fail(error);
                         return;
                     }
@@ -65,6 +67,7 @@ public class EventConsumer {
                         }
                         tube.send(event);
                     } catch (EventQueueClosedException e) {
+                        completed = true;
                         tube.complete();
                         return;
                     } catch (Exception e) {
@@ -94,7 +97,9 @@ public class EventConsumer {
                     }
                 }
             } finally {
-                tube.complete();
+                if (!completed) {
+                    tube.complete();
+                }
             }
         });
     }
