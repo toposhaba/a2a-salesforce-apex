@@ -11,6 +11,7 @@ import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -20,6 +21,7 @@ import jakarta.inject.Inject;
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.agentexecution.SimpleRequestContextBuilder;
+import io.a2a.server.events.EnhancedRunnable;
 import io.a2a.server.events.Event;
 import io.a2a.server.events.EventConsumer;
 import io.a2a.server.events.EventQueue;
@@ -30,6 +32,7 @@ import io.a2a.server.tasks.ResultAggregator;
 import io.a2a.server.tasks.TaskManager;
 import io.a2a.server.tasks.TaskStore;
 import io.a2a.spec.EventKind;
+import io.a2a.spec.InternalError;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.PushNotificationConfig;
@@ -40,9 +43,14 @@ import io.a2a.spec.TaskNotFoundError;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
 import io.a2a.spec.UnsupportedOperationError;
+import io.a2a.util.TempLoggerWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
 public class DefaultRequestHandler implements RequestHandler {
+
+    private static final Logger log = new TempLoggerWrapper(LoggerFactory.getLogger(DefaultRequestHandler.class));
 
     private final AgentExecutor agentExecutor;
     private final TaskStore taskStore;
@@ -51,7 +59,7 @@ public class DefaultRequestHandler implements RequestHandler {
     private final Supplier<RequestContext.Builder> requestContextBuilder;
 
     // TODO the value upstream is asyncio.Task. Trying a Runnable
-    private final Map<String, Runnable> runningAgents = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, EnhancedRunnable> runningAgents = Collections.synchronizedMap(new HashMap<>());
 
     private final Executor executor = Executors.newCachedThreadPool();
 
@@ -71,10 +79,13 @@ public class DefaultRequestHandler implements RequestHandler {
 
     @Override
     public Task onGetTask(TaskQueryParams params) throws JSONRPCError {
+        log.debug("onGetTask {}", params.id());
         Task task = taskStore.get(params.id());
         if (task == null) {
+            log.debug("No task found for {}. Throwing TaskNotFoundError", params.id());
             throw new TaskNotFoundError();
         }
+        log.debug("Task found {}", task);
         return task;
     }
 
@@ -117,6 +128,7 @@ public class DefaultRequestHandler implements RequestHandler {
 
     @Override
     public EventKind onMessageSend(MessageSendParams params) throws JSONRPCError {
+        log.debug("onMessageSend - task: {}; context {}", params.message().getTaskId(), params.message().getContextId());
         TaskManager taskManager = new TaskManager(
                 params.message().getTaskId(),
                 params.message().getContextId(),
@@ -125,9 +137,11 @@ public class DefaultRequestHandler implements RequestHandler {
 
         Task task = taskManager.getTask();
         if (task != null) {
+            log.debug("Found task updating with message {}", params.message());
             task = taskManager.updateWithMessage(params.message(), task);
 
             if (shouldAddPushInfo(params)) {
+                log.debug("Adding push info");
                 pushNotifier.setInfo(task.getId(), params.configuration().pushNotification());
             }
         }
@@ -140,37 +154,43 @@ public class DefaultRequestHandler implements RequestHandler {
                 .build();
 
         String taskId = requestContext.getTaskId();
+        log.debug("Request context taskId: {}", taskId);
+
         EventQueue queue = queueManager.createOrTap(taskId);
         ResultAggregator resultAggregator = new ResultAggregator(taskManager, null);
 
-        Runnable providerRunnable = new Runnable() {
-            @Override
-            public void run() {
-                runEventStream(requestContext, queue);
-            }
-        };
-        registerProducer(taskId, providerRunnable);
+        EnhancedRunnable producerRunnable = registerAndExecuteAgentAsync(taskId, requestContext, queue);
 
         EventConsumer consumer = new EventConsumer(queue);
-        // TODO https://github.com/fjuma/a2a-java-sdk/issues/62 Add this callback
+
+        producerRunnable.addDoneCallback(consumer.createAgentRunnableDoneCallback());
 
         boolean interrupted = false;
         ResultAggregator.EventTypeAndInterrupt etai = resultAggregator.consumeAndBreakOnInterrupt(consumer);
 
         try {
             if (etai == null) {
-                throw new InternalError();
+                log.debug("No result, throwing InternalError");
+                throw new InternalError("No result");
             }
             interrupted = etai.interrupted();
+            log.debug("Was interrupted: {}", interrupted);
+
+            EventKind kind = etai.eventType();
+            if (kind instanceof Task taskResult && taskId != taskResult.getId()) {
+                throw new InternalError("Task ID mismatch in agent response");
+            }
+
         } finally {
             if (interrupted) {
                 // TODO Make this async
-                cleanupProducer(providerRunnable, taskId);
+                cleanupProducer(producerRunnable, taskId);
             } else {
-                cleanupProducer(providerRunnable, taskId);
+                cleanupProducer(producerRunnable, taskId);
             }
         }
 
+        log.debug("Returning: {}", etai.eventType());
         return etai.eventType();
     }
 
@@ -202,13 +222,7 @@ public class DefaultRequestHandler implements RequestHandler {
         EventQueue queue = queueManager.createOrTap(taskId.get());
         ResultAggregator resultAggregator = new ResultAggregator(taskManager, null);
 
-        Runnable producerRunnable = new Runnable() {
-            @Override
-            public void run() {
-                runEventStream(requestContext, queue);
-            }
-        };
-        registerProducer(taskId.get(), producerRunnable);
+        EnhancedRunnable producerRunnable = registerAndExecuteAgentAsync(taskId.get(), requestContext, queue);
 
         EventConsumer consumer = new EventConsumer(queue);
         // TODO https://github.com/fjuma/a2a-java-sdk/issues/62 Add this callback
@@ -284,7 +298,7 @@ public class DefaultRequestHandler implements RequestHandler {
 
         PushNotificationConfig pushNotificationConfig = pushNotifier.getInfo(params.id());
         if (pushNotificationConfig == null) {
-            throw new InternalError();
+            throw new InternalError("No push notification config found");
         }
 
         return new TaskPushNotificationConfig(params.id(), pushNotificationConfig);
@@ -317,12 +331,32 @@ public class DefaultRequestHandler implements RequestHandler {
     private void runEventStream(RequestContext requestContext, EventQueue queue)  throws JSONRPCError {
         agentExecutor.execute(requestContext, queue);
         // TODO this is in the Python implementation, but enabling it causes test hangs
-        // queue.close();
+        try {
+            queueManager.signalPollingStarted(queue);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            queue.close();
+        }
     }
 
-    private void registerProducer(String taskId, Runnable providerRunnable) {
-        runningAgents.put(taskId, providerRunnable);
-        executor.execute(providerRunnable);
+    private EnhancedRunnable registerAndExecuteAgentAsync(String taskId, RequestContext requestContext, EventQueue eventQueue) {
+        EnhancedRunnable runnable = new EnhancedRunnable() {
+            @Override
+            public void run() {
+                try {
+                    runEventStream(requestContext, eventQueue);
+                } catch (Throwable throwable) {
+                    setError(throwable);
+                } finally {
+                    invokeDoneCallbacks();
+                }
+
+            }
+        };
+        runningAgents.put(taskId, runnable);
+        executor.execute(runnable);
+        return runnable;
     }
 
     private void cleanupProducer(Runnable producerRunnable, String taskId) {

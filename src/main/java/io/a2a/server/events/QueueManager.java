@@ -10,4 +10,6 @@ public interface QueueManager {
     void close(String taskId);
 
     EventQueue createOrTap(String taskId);
+
+    void signalPollingStarted(EventQueue eventQueue) throws InterruptedException;
 }

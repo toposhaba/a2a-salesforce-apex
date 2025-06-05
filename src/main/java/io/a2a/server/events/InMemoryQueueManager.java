@@ -3,6 +3,7 @@ package io.a2a.server.events;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -59,5 +60,10 @@ public class InMemoryQueueManager implements QueueManager {
             queues.put(taskId, queue);
             return queue;
         }
+    }
+
+    @Override
+    public void signalPollingStarted(EventQueue eventQueue) throws InterruptedException {
+        eventQueue.getPollingStartedLatch().await(10, TimeUnit.SECONDS);
     }
 }

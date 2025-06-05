@@ -15,7 +15,7 @@ import mutiny.zero.ZeroPublisher;
 
 public class EventConsumer {
     private final EventQueue queue;
-    private Exception exception;
+    private Throwable error;
     private final Executor executor = Executors.newCachedThreadPool();
 
 
@@ -27,7 +27,7 @@ public class EventConsumer {
         this.queue = queue;
     }
 
-    public Event consumeOne() throws A2AServerException {
+    public Event consumeOne() throws A2AServerException, EventQueueClosedException {
         Event event = queue.dequeueEvent(NO_WAIT);
         if (event == null) {
             throw new A2AServerException(ERROR_MSG, new InternalError(ERROR_MSG));
@@ -40,8 +40,14 @@ public class EventConsumer {
                 .withBackpressureStrategy(BackpressureStrategy.BUFFER)
                 .withBufferSize(256);
         return ZeroPublisher.create(conf, tube -> {
+            boolean completed = false;
             try {
                 while (true) {
+                    if (error != null) {
+                        completed = true;
+                        tube.fail(error);
+                        return;
+                    }
                     // We use a timeout when waiting for an event from the queue.
                     // This is required because it allows the loop to check if
                     // `self._exception` has been set by the `agent_task_callback`.
@@ -60,6 +66,10 @@ public class EventConsumer {
                             return;
                         }
                         tube.send(event);
+                    } catch (EventQueueClosedException e) {
+                        completed = true;
+                        tube.complete();
+                        return;
                     } catch (Exception e) {
                         // Continue polling until there is a final event
                         continue;
@@ -87,8 +97,18 @@ public class EventConsumer {
                     }
                 }
             } finally {
-                tube.complete();
+                if (!completed) {
+                    tube.complete();
+                }
             }
         });
+    }
+
+    public EnhancedRunnable.DoneCallback createAgentRunnableDoneCallback() {
+        return agentRunnable -> {
+            if (agentRunnable.getError() != null) {
+                error = agentRunnable.getError();
+            }
+        };
     }
 }

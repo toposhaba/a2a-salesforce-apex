@@ -65,13 +65,13 @@ public class EventQueueTest {
     }
 
     @Test
-    public void testDequeueEventEmptyQueueNoWait() {
+    public void testDequeueEventEmptyQueueNoWait() throws Exception {
         Event dequeuedEvent = eventQueue.dequeueEvent(-1);
         assertNull(dequeuedEvent);
     }
 
     @Test
-    public void testDequeueEventWait() {
+    public void testDequeueEventWait() throws Exception {
         Event event = new TaskStatusUpdateEvent.Builder()
                 .taskId("task-123")
                 .contextId("session-xyz")
@@ -85,7 +85,7 @@ public class EventQueueTest {
     }
 
     @Test
-    public void testTaskDone() {
+    public void testTaskDone() throws Exception {
         Event event = new TaskArtifactUpdateEvent.Builder()
                 .taskId("task-123")
                 .contextId("session-xyz")
@@ -101,7 +101,7 @@ public class EventQueueTest {
     }
 
     @Test
-    public void testEnqueueDifferentEventTypes() {
+    public void testEnqueueDifferentEventTypes() throws Exception {
         List<Event> events = List.of(
                 new TaskNotFoundError(),
                 new JSONRPCError(111, "rpc error", null));

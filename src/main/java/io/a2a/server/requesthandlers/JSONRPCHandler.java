@@ -1,6 +1,7 @@
 package io.a2a.server.requesthandlers;
 
 import static io.a2a.util.AsyncUtils.convertingProcessor;
+import static io.a2a.util.AsyncUtils.createTubeConfig;
 
 import java.util.concurrent.Flow;
 
@@ -66,14 +67,41 @@ public class JSONRPCHandler {
 
         try {
             Flow.Publisher<StreamingEventKind> publisher = requestHandler.onMessageSendStream(request.getParams());
-            return convertingProcessor(publisher, event -> {
-                try {
-                    return new SendStreamingMessageResponse(request.getId(), event);
-                } catch (JSONRPCError error) {
-                    return new SendStreamingMessageResponse(request.getId(), error);
-                } catch (Throwable t) {
-                    return new SendStreamingMessageResponse(request.getId(), new InternalError(t.getMessage()));
-                }
+            // We can't use the normal convertingProcessor since that propagates any errors as an error handled
+            // via Subscriber.onError() rather than as part of the SendStreamingResponse payload
+            return ZeroPublisher.create(createTubeConfig(), tube -> {
+                publisher.subscribe(new Flow.Subscriber<StreamingEventKind>() {
+                    Flow.Subscription subscription;
+                    @Override
+                    public void onSubscribe(Flow.Subscription subscription) {
+                        this.subscription = subscription;
+                        subscription.request(1);
+                    }
+
+                    @Override
+                    public void onNext(StreamingEventKind item) {
+                        tube.send(new SendStreamingMessageResponse(request.getId(), item));
+                        subscription.request(1);
+                    }
+
+                    @Override
+                    public void onError(Throwable throwable) {
+                        if (throwable instanceof JSONRPCError jsonrpcError) {
+                            tube.send(new SendStreamingMessageResponse(request.getId(), jsonrpcError));
+                        } else {
+                            tube.send(
+                                    new SendStreamingMessageResponse(
+                                            request.getId(), new
+                                            InternalError(throwable.getMessage())));
+                        }
+                        onComplete();
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        tube.complete();
+                    }
+                });
             });
         } catch (JSONRPCError e) {
             return ZeroPublisher.fromItems(new SendStreamingMessageResponse(request.getId(), e));

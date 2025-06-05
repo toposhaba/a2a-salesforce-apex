@@ -5,19 +5,30 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import io.a2a.util.TempLoggerWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public abstract class EventQueue {
+
+    private static final Logger log = new TempLoggerWrapper(LoggerFactory.getLogger(EventQueue.class));
+
     private final EventQueue parent;
     // TODO decide on a capacity (or more appropriate queue data structures)
     private final BlockingQueue<Event> queue = new ArrayBlockingQueue<Event>(1000);
     private volatile boolean closed = false;
 
+
+
     protected EventQueue() {
-        parent = null;
+        this(null);
     }
 
     protected EventQueue(EventQueue parent) {
+        log.trace("Creating {}, parent: {}", this, parent);
         this.parent = parent;
     }
 
@@ -25,28 +36,49 @@ public abstract class EventQueue {
         return new MainQueue();
     }
 
+    abstract CountDownLatch getPollingStartedLatch();
+
     public void enqueueEvent(Event event) {
         if (closed) {
-            throw new IllegalStateException("EventQueue is closed");
+            log.warn("Queue is closed. Event will not be enqueued. {} {}", this, event);
+            return;
         }
+        // Call toString() since for errors we don't really want the full stacktrace
         queue.add(event);
+        log.debug("Enqueued event {} {}", event instanceof Throwable ? event.toString() : event, this);
     }
 
     abstract EventQueue tap();
 
-    public Event dequeueEvent(int waitMilliSeconds) {
+    public Event dequeueEvent(int waitMilliSeconds) throws EventQueueClosedException {
         if (closed && queue.isEmpty()) {
-            throw new IllegalStateException("Queue is closed. Event will not be dequeued");
-        }
-        if (waitMilliSeconds <= 0) {
-            return queue.poll();
+            log.debug("Queue is closed, and empty. Sending termination message. {}", this);
+            throw new EventQueueClosedException();
         }
         try {
-            Event event = queue.poll(waitMilliSeconds, TimeUnit.MILLISECONDS);
-            return event;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return null;
+            if (waitMilliSeconds <= 0) {
+                Event event = queue.poll();
+                if (event != null) {
+                    // Call toString() since for errors we don't really want the full stacktrace
+                    log.debug("Dequeued event (no wait) {} {}", this, event instanceof Throwable ? event.toString() : event);
+                }
+                return event;
+            }
+            try {
+                Event event = queue.poll(waitMilliSeconds, TimeUnit.MILLISECONDS);
+                if (event != null) {
+                    // Call toString() since for errors we don't really want the full stacktrace
+                    log.debug("Dequeued event (waiting) {} {}", this, event instanceof Throwable ? event.toString() : event);
+                }
+                return event;
+            } catch (InterruptedException e) {
+                log.debug("Interrupted {}", this);
+                Thread.currentThread().interrupt();
+                return null;
+            }
+        } finally {
+            log.debug("Signalling that queue polling started {}", this);
+            getPollingStartedLatch().countDown();
         }
     }
 
@@ -55,11 +87,24 @@ public abstract class EventQueue {
     }
 
     public void close() {
-        queue.drainTo(new ArrayList<>());
+        synchronized (this) {
+            if (closed) {
+                return;
+            }
+            log.debug("Closing {}", this);
+            closed = true;
+        }
+        // Although the Python implementation drains the queue on closing,
+        // here it makes events go missing
+        // TODO do we actually need to drain it? If we do, we need some mechanism to determine that noone is
+        //  polling any longer and drain it asynchronously once it is all done. That could perhaps be done
+        //  via an EnhancedRunnable.DoneCallback.
+        //queue.drainTo(new ArrayList<>());
     }
 
     static class MainQueue extends EventQueue {
         private final List<ChildQueue> children = new CopyOnWriteArrayList<>();
+        private CountDownLatch pollingStartedLatch = new CountDownLatch(1);
 
         EventQueue tap() {
             ChildQueue child = new ChildQueue(this);
@@ -71,6 +116,12 @@ public abstract class EventQueue {
             super.enqueueEvent(event);
             children.forEach(eq -> eq.internalEnqueueEvent(event));
         }
+
+        CountDownLatch getPollingStartedLatch() {
+            return pollingStartedLatch;
+        }
+
+
 
         @Override
         public void close() {
@@ -98,6 +149,11 @@ public abstract class EventQueue {
         @Override
         EventQueue tap() {
             throw new IllegalStateException("Can only tap the main queue");
+        }
+
+        @Override
+        CountDownLatch getPollingStartedLatch() {
+            return parent.getPollingStartedLatch();
         }
     }
 }
