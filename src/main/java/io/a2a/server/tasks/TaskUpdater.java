@@ -24,11 +24,15 @@ public class TaskUpdater {
         this.contextId = contextId;
     }
 
+    public void updateStatus(TaskState taskState) {
+        updateStatus(taskState, null);
+    }
+
     public void updateStatus(TaskState state, Message message) {
         updateStatus(state, message, false);
     }
 
-    private void updateStatus(TaskState state, Message message, boolean isFinal) {
+    public void updateStatus(TaskState state, Message message, boolean isFinal) {
 
         TaskStatusUpdateEvent event = new TaskStatusUpdateEvent.Builder()
                 .taskId(taskId)
@@ -58,21 +62,38 @@ public class TaskUpdater {
         eventQueue.enqueueEvent(event);
     }
 
+    public void complete() {
+        complete(null);
+    }
+
     public void complete(Message message) {
         updateStatus(TaskState.COMPLETED, message, true);
+    }
+
+    public void failed() {
+        failed(null);
     }
 
     public void failed(Message message) {
         updateStatus(TaskState.FAILED, message, true);
     }
 
+    public void submit() {
+        submit(null);
+    }
+
     public void submit(Message message) {
         updateStatus(TaskState.SUBMITTED, message);
+    }
+
+    public void startWork() {
+        startWork(null);
     }
 
     public void startWork(Message message) {
         updateStatus(TaskState.WORKING, message);
     }
+
 
     public Message newAgentMessage(List<Part<?>> parts, Map<String, Object> metadata) {
         return new Message.Builder()
@@ -84,4 +105,5 @@ public class TaskUpdater {
                 .parts(parts)
                 .build();
     }
+
 }
