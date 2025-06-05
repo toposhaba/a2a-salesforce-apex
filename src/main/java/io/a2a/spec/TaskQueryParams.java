@@ -19,6 +19,9 @@ public record TaskQueryParams(String id, Integer historyLength, Map<String, Obje
 
     public TaskQueryParams {
         Assert.checkNotNullParam("id", id);
+        if (historyLength != null && historyLength < 0) {
+            throw new IllegalArgumentException("Invalid history length");
+        }
     }
 
     public TaskQueryParams(String id) {
