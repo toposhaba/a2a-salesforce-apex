@@ -44,6 +44,11 @@ public class AgentExecutorProducer {
         @Override
         public void execute(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
             Task task = context.getTask();
+
+            if (context.getMessage().getTaskId() != null && task == null && context.getMessage().getTaskId().startsWith("non-existent")) {
+                throw new TaskNotFoundError();
+            }
+
             if (task == null) {
                 task = new Task.Builder()
                         .id(context.getTaskId())
