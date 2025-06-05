@@ -332,7 +332,7 @@ public class DefaultRequestHandler implements RequestHandler {
         agentExecutor.execute(requestContext, queue);
         // TODO this is in the Python implementation, but enabling it causes test hangs
         try {
-            queue.getPollingStartedLatch().await(10, TimeUnit.SECONDS);
+            queueManager.signalPollingStarted(queue);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {

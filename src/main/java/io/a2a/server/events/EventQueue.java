@@ -20,7 +20,7 @@ public abstract class EventQueue {
     // TODO decide on a capacity (or more appropriate queue data structures)
     private final BlockingQueue<Event> queue = new ArrayBlockingQueue<Event>(1000);
     private volatile boolean closed = false;
-    private CountDownLatch pollingStartedLatch = new CountDownLatch(1);
+
 
 
     protected EventQueue() {
@@ -36,26 +36,21 @@ public abstract class EventQueue {
         return new MainQueue();
     }
 
+    abstract CountDownLatch getPollingStartedLatch();
+
     public void enqueueEvent(Event event) {
         if (closed) {
             log.warn("Queue is closed. Event will not be enqueued. {} {}", this, event);
             return;
-            //throw new IllegalStateException("EventQueue is closed");
         }
         // Call toString() since for errors we don't really want the full stacktrace
         queue.add(event);
         log.debug("Enqueued event {} {}", event instanceof Throwable ? event.toString() : event, this);
     }
 
-    // TODO This is internal use only, move somewhere else if it works (possibly make package private, and expose via the queue manager)
-    public CountDownLatch getPollingStartedLatch() {
-        return pollingStartedLatch;
-    }
-
     abstract EventQueue tap();
 
     public Event dequeueEvent(int waitMilliSeconds) throws EventQueueClosedException {
-        System.out.println(queue);
         if (closed && queue.isEmpty()) {
             log.debug("Queue is closed, and empty. Sending termination message. {}", this);
             throw new EventQueueClosedException();
@@ -83,7 +78,7 @@ public abstract class EventQueue {
             }
         } finally {
             log.debug("Signalling that queue polling started {}", this);
-            pollingStartedLatch.countDown();
+            getPollingStartedLatch().countDown();
         }
     }
 
@@ -109,6 +104,7 @@ public abstract class EventQueue {
 
     static class MainQueue extends EventQueue {
         private final List<ChildQueue> children = new CopyOnWriteArrayList<>();
+        private CountDownLatch pollingStartedLatch = new CountDownLatch(1);
 
         EventQueue tap() {
             ChildQueue child = new ChildQueue(this);
@@ -120,6 +116,12 @@ public abstract class EventQueue {
             super.enqueueEvent(event);
             children.forEach(eq -> eq.internalEnqueueEvent(event));
         }
+
+        CountDownLatch getPollingStartedLatch() {
+            return pollingStartedLatch;
+        }
+
+
 
         @Override
         public void close() {
@@ -147,6 +149,11 @@ public abstract class EventQueue {
         @Override
         EventQueue tap() {
             throw new IllegalStateException("Can only tap the main queue");
+        }
+
+        @Override
+        CountDownLatch getPollingStartedLatch() {
+            return parent.getPollingStartedLatch();
         }
     }
 }
