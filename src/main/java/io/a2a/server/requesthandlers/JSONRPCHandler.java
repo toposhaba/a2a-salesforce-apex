@@ -67,42 +67,9 @@ public class JSONRPCHandler {
 
         try {
             Flow.Publisher<StreamingEventKind> publisher = requestHandler.onMessageSendStream(request.getParams());
-            // We can't use the normal convertingProcessor since that propagates any errors as an error handled
+            // We can't use the convertingProcessor convenience method since that propagates any errors as an error handled
             // via Subscriber.onError() rather than as part of the SendStreamingResponse payload
-            return ZeroPublisher.create(createTubeConfig(), tube -> {
-                publisher.subscribe(new Flow.Subscriber<StreamingEventKind>() {
-                    Flow.Subscription subscription;
-                    @Override
-                    public void onSubscribe(Flow.Subscription subscription) {
-                        this.subscription = subscription;
-                        subscription.request(1);
-                    }
-
-                    @Override
-                    public void onNext(StreamingEventKind item) {
-                        tube.send(new SendStreamingMessageResponse(request.getId(), item));
-                        subscription.request(1);
-                    }
-
-                    @Override
-                    public void onError(Throwable throwable) {
-                        if (throwable instanceof JSONRPCError jsonrpcError) {
-                            tube.send(new SendStreamingMessageResponse(request.getId(), jsonrpcError));
-                        } else {
-                            tube.send(
-                                    new SendStreamingMessageResponse(
-                                            request.getId(), new
-                                            InternalError(throwable.getMessage())));
-                        }
-                        onComplete();
-                    }
-
-                    @Override
-                    public void onComplete() {
-                        tube.complete();
-                    }
-                });
-            });
+            return convertToSendStreamingMessageResponse(request.getId(), publisher);
         } catch (JSONRPCError e) {
             return ZeroPublisher.fromItems(new SendStreamingMessageResponse(request.getId(), e));
         } catch (Throwable throwable) {
@@ -134,15 +101,9 @@ public class JSONRPCHandler {
 
         try {
             Flow.Publisher<StreamingEventKind> publisher = requestHandler.onResubscribeToTask(request.getParams());
-            return convertingProcessor(publisher, streamingEventType -> {
-                try {
-                    return new SendStreamingMessageResponse(request.getId(), streamingEventType);
-                } catch (JSONRPCError error) {
-                    return new SendStreamingMessageResponse(request.getId(), error);
-                } catch (Throwable t) {
-                    return new SendStreamingMessageResponse(request.getId(), new InternalError(t.getMessage()));
-                }
-            });
+            // We can't use the convertingProcessor convenience method since that propagates any errors as an error handled
+            // via Subscriber.onError() rather than as part of the SendStreamingResponse payload
+            return convertToSendStreamingMessageResponse(request.getId(), publisher);
         } catch (JSONRPCError e) {
             return ZeroPublisher.fromItems(new SendStreamingMessageResponse(request.getId(), e));
         } catch (Throwable throwable) {
@@ -189,5 +150,46 @@ public class JSONRPCHandler {
 
     public AgentCard getAgentCard() {
         return agentCard;
+    }
+
+    private Flow.Publisher<SendStreamingMessageResponse> convertToSendStreamingMessageResponse(
+            Object requestId,
+            Flow.Publisher<StreamingEventKind> publisher) {
+            // We can't use the normal convertingProcessor since that propagates any errors as an error handled
+            // via Subscriber.onError() rather than as part of the SendStreamingResponse payload
+            return ZeroPublisher.create(createTubeConfig(), tube -> {
+                publisher.subscribe(new Flow.Subscriber<StreamingEventKind>() {
+                    Flow.Subscription subscription;
+                    @Override
+                    public void onSubscribe(Flow.Subscription subscription) {
+                        this.subscription = subscription;
+                        subscription.request(1);
+                    }
+
+                    @Override
+                    public void onNext(StreamingEventKind item) {
+                        tube.send(new SendStreamingMessageResponse(requestId, item));
+                        subscription.request(1);
+                    }
+
+                    @Override
+                    public void onError(Throwable throwable) {
+                        if (throwable instanceof JSONRPCError jsonrpcError) {
+                            tube.send(new SendStreamingMessageResponse(requestId, jsonrpcError));
+                        } else {
+                            tube.send(
+                                    new SendStreamingMessageResponse(
+                                            requestId, new
+                                            InternalError(throwable.getMessage())));
+                        }
+                        onComplete();
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        tube.complete();
+                    }
+                });
+            });
     }
 }
