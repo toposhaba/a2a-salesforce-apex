@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
@@ -509,7 +510,7 @@ public class JSONRPCHandlerTest {
             });
         });
 
-        latch.await(1, TimeUnit.SECONDS);
+        assertTrue(latch.await(1, TimeUnit.SECONDS));
         subscriptionRef.get().cancel();
         // The Python implementation has several events emitted since it uses mocks.
         //
@@ -699,7 +700,7 @@ public class JSONRPCHandlerTest {
                 public void onNext(SendStreamingMessageResponse item) {
                     // System.out.println("-> " + item.getResult());
                     results.add(item.getResult());
-                    // System.out.println(results);
+                    System.out.println(results);
                     subscriptionRef.get().request(1);
                     latch.countDown();
                 }
@@ -716,10 +717,10 @@ public class JSONRPCHandlerTest {
             });
         });
 
-        latch.await(2, TimeUnit.SECONDS);
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
         subscriptionRef.get().cancel();
         if (results.size() != 3) {
-                // TODO - this is very strange. The results array is synchronized, and the latch is counted down
+            // TODO - this is very strange. The results array is synchronized, and the latch is counted down
             //  AFTER adding items to the list. Still, I am seeing intermittently, but frequently that
             //  the results list only has two items.
             long end = System.currentTimeMillis() + 5000;
@@ -781,9 +782,6 @@ public class JSONRPCHandlerTest {
 
 
         List<StreamingEventKind> results = new ArrayList<>();
-
-        // TODO - this does not trigger an event. I think because there are now several Publishers taking items
-        //  from the same queue
 
         response.subscribe(new Flow.Subscriber<>() {
             private Flow.Subscription subscription;
