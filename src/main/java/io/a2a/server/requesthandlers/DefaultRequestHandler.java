@@ -11,7 +11,6 @@ import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -44,6 +43,7 @@ import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
 import io.a2a.spec.UnsupportedOperationError;
 import io.a2a.util.TempLoggerWrapper;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -177,7 +177,7 @@ public class DefaultRequestHandler implements RequestHandler {
             log.debug("Was interrupted: {}", interrupted);
 
             EventKind kind = etai.eventType();
-            if (kind instanceof Task taskResult && taskId != taskResult.getId()) {
+            if (kind instanceof Task taskResult && !taskId.equals(taskResult.getId())) {
                 throw new InternalError("Task ID mismatch in agent response");
             }
 
