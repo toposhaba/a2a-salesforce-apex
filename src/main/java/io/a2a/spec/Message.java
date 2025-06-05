@@ -44,6 +44,9 @@ public final class Message implements EventKind, StreamingEventKind {
                    @JsonProperty("kind") String kind) {
         Assert.checkNotNullParam("kind", kind);
         Assert.checkNotNullParam("parts", parts);
+        if (parts.isEmpty()) {
+            throw new IllegalArgumentException("Parts cannot be empty");
+        }
         Assert.checkNotNullParam("role", role);
         if (! kind.equals(MESSAGE)) {
             throw new IllegalArgumentException("Invalid Message");

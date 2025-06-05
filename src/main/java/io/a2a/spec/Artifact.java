@@ -18,6 +18,9 @@ public record Artifact(String artifactId, String name, String description, List<
     public Artifact {
         Assert.checkNotNullParam("artifactId", artifactId);
         Assert.checkNotNullParam("parts", parts);
+        if (parts.isEmpty()) {
+            throw new IllegalArgumentException("Parts cannot be empty");
+        }
     }
 
     public static class Builder {
