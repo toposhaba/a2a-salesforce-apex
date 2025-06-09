@@ -32,7 +32,6 @@ import io.a2a.server.tasks.PushNotifier;
 import io.a2a.server.tasks.ResultAggregator;
 import io.a2a.server.tasks.TaskManager;
 import io.a2a.server.tasks.TaskStore;
-import io.a2a.spec.Artifact;
 import io.a2a.spec.EventKind;
 import io.a2a.spec.InternalError;
 import io.a2a.spec.JSONRPCError;
@@ -47,7 +46,6 @@ import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
 import io.a2a.spec.UnsupportedOperationError;
 import io.a2a.util.TempLoggerWrapper;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
