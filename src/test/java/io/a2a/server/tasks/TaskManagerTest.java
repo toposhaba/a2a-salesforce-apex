@@ -57,9 +57,10 @@ public class TaskManagerTest {
 
     @Test
     public void testSaveTaskEventNewTask() throws A2AServerException {
-        taskManager.saveTaskEvent(minimalTask);
+        Task saved = taskManager.saveTaskEvent(minimalTask);
         Task retrieved = taskManager.getTask();
         assertSame(minimalTask, retrieved);
+        assertSame(retrieved, saved);
     }
 
     @Test
@@ -83,10 +84,11 @@ public class TaskManagerTest {
                 new HashMap<>());
 
 
-        taskManager.saveTaskEvent(event);
+        Task saved = taskManager.saveTaskEvent(event);
         Task updated = taskManager.getTask();
 
         assertNotSame(initialTask, updated);
+        assertSame(updated, saved);
 
         assertEquals(initialTask.getId(), updated.getId());
         assertEquals(initialTask.getContextId(), updated.getContextId());
@@ -108,9 +110,11 @@ public class TaskManagerTest {
                 .contextId(minimalTask.getContextId())
                 .artifact(newArtifact)
                 .build();
-        taskManager.saveTaskEvent(event);
+        Task saved = taskManager.saveTaskEvent(event);
 
         Task updatedTask = taskManager.getTask();
+        assertSame(updatedTask, saved);
+
         assertNotSame(initialTask, updatedTask);
         assertEquals(initialTask.getId(), updatedTask.getId());
         assertEquals(initialTask.getContextId(), updatedTask.getContextId());
@@ -136,7 +140,7 @@ public class TaskManagerTest {
                 .isFinal(false)
                 .build();
 
-        taskManagerWithoutId.saveTaskEvent(event);
+        Task task = taskManagerWithoutId.saveTaskEvent(event);
         assertEquals(event.getTaskId(), taskManagerWithoutId.getTaskId());
         assertEquals(event.getContextId(), taskManagerWithoutId.getContextId());
 
@@ -144,6 +148,7 @@ public class TaskManagerTest {
         assertEquals(event.getTaskId(), newTask.getId());
         assertEquals(event.getContextId(), newTask.getContextId());
         assertEquals(TaskState.SUBMITTED, newTask.getStatus().state());
+        assertSame(newTask, task);
     }
 
     @Test
@@ -155,12 +160,13 @@ public class TaskManagerTest {
                 .status(new TaskStatus(TaskState.WORKING))
                 .build();
 
-        taskManagerWithoutId.saveTaskEvent(task);
+        Task saved = taskManagerWithoutId.saveTaskEvent(task);
         assertEquals(task.getId(), taskManagerWithoutId.getTaskId());
         assertEquals(task.getContextId(), taskManagerWithoutId.getContextId());
 
         Task retrieved = taskManagerWithoutId.getTask();
         assertSame(task, retrieved);
+        assertSame(retrieved, saved);
     }
 
     @Test
