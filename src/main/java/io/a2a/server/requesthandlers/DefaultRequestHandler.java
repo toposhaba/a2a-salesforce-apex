@@ -4,8 +4,10 @@ import static io.a2a.util.AsyncUtils.convertingProcessor;
 import static io.a2a.util.AsyncUtils.createTubeConfig;
 import static io.a2a.util.AsyncUtils.processor;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executor;
@@ -30,9 +32,11 @@ import io.a2a.server.tasks.PushNotifier;
 import io.a2a.server.tasks.ResultAggregator;
 import io.a2a.server.tasks.TaskManager;
 import io.a2a.server.tasks.TaskStore;
+import io.a2a.spec.Artifact;
 import io.a2a.spec.EventKind;
 import io.a2a.spec.InternalError;
 import io.a2a.spec.JSONRPCError;
+import io.a2a.spec.Message;
 import io.a2a.spec.MessageSendParams;
 import io.a2a.spec.PushNotificationConfig;
 import io.a2a.spec.StreamingEventKind;
@@ -85,6 +89,21 @@ public class DefaultRequestHandler implements RequestHandler {
             log.debug("No task found for {}. Throwing TaskNotFoundError", params.id());
             throw new TaskNotFoundError();
         }
+        if (params.historyLength() != null && task.getHistory() != null && params.historyLength() < task.getHistory().size()) {
+            List<Message> history;
+            if (params.historyLength() <= 0) {
+                history = new ArrayList<>();
+            } else {
+                history = task.getHistory().subList(
+                        task.getHistory().size() - params.historyLength(),
+                        task.getHistory().size() - 1);
+            }
+
+            task = new Task.Builder(task)
+                    .history(history)
+                    .build();
+        }
+
         log.debug("Task found {}", task);
         return task;
     }
