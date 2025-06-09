@@ -69,6 +69,8 @@ import io.a2a.spec.TextPart;
 import io.a2a.spec.UnsupportedOperationError;
 import io.a2a.util.Utils;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.RestAssured;
+import io.restassured.specification.RequestSpecification;
 
 import org.junit.jupiter.api.Test;
 
@@ -113,12 +115,24 @@ public class A2AServerResourceTest {
 
     @Test
     public void testGetTaskSuccess() {
+        testGetTask();
+    }
+
+    private void testGetTask() {
+        testGetTask(null);
+    }
+
+    private void testGetTask(String mediaType) {
         taskStore.save(MINIMAL_TASK);
         try {
             GetTaskRequest request = new GetTaskRequest("1", new TaskQueryParams(MINIMAL_TASK.getId()));
-            GetTaskResponse response = given()
+            RequestSpecification requestSpecification = RestAssured.given()
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(request)
+                    .body(request);
+            if (mediaType != null) {
+                requestSpecification = requestSpecification.accept(mediaType);
+            }
+            GetTaskResponse response = requestSpecification
                     .when()
                     .post("/")
                     .then()
@@ -285,34 +299,7 @@ public class A2AServerResourceTest {
 
     @Test
     public void testSendMessageStreamNewMessageSuccess() throws Exception {
-        Message message = new Message.Builder(MESSAGE)
-                .taskId(MINIMAL_TASK.getId())
-                .contextId(MINIMAL_TASK.getContextId())
-                .build();
-        SendStreamingMessageRequest request = new SendStreamingMessageRequest(
-                "1", new MessageSendParams(message, null, null));
-        Client client = ClientBuilder.newClient();
-        WebTarget target = client.target("http://localhost:8081/");
-        Response response = target.request(MediaType.SERVER_SENT_EVENTS).post(Entity.json(request));
-        InputStream inputStream = response.readEntity(InputStream.class);
-        boolean dataRead = false;
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.startsWith("data: ")) {
-                    SendStreamingMessageResponse sendStreamingMessageResponse = Utils.OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
-                    assertNull(sendStreamingMessageResponse.getError());
-                    Message messageResponse =  (Message) sendStreamingMessageResponse.getResult();
-                    assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());
-                    assertEquals(MESSAGE.getRole(), messageResponse.getRole());
-                    Part<?> part = messageResponse.getParts().get(0);
-                    assertEquals(Part.Kind.TEXT, part.getKind());
-                    assertEquals("test message", ((TextPart) part).getText());
-                    dataRead = true;
-                }
-            }
-        }
-        assertTrue(dataRead);
+        testSendStreamingMessage();
     }
 
     @Test
@@ -327,7 +314,7 @@ public class A2AServerResourceTest {
                     "1", new MessageSendParams(message, null, null));
             Client client = ClientBuilder.newClient();
             WebTarget target = client.target("http://localhost:8081/");
-            Response response = target.request(MediaType.SERVER_SENT_EVENTS).post(Entity.json(request));
+            Response response = target.request().post(Entity.json(request));
             InputStream inputStream = response.readEntity(InputStream.class);
             boolean dataRead = false;
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
@@ -445,7 +432,7 @@ public class A2AServerResourceTest {
                 Client client = ClientBuilder.newClient();
                 WebTarget target = client.target("http://localhost:8081/");
                 taskResubscriptionRequestSent.countDown();
-                Response response = target.request(MediaType.SERVER_SENT_EVENTS).post(Entity.json(taskResubscriptionRequest));
+                Response response = target.request().post(Entity.json(taskResubscriptionRequest));
                 InputStream inputStream = response.readEntity(InputStream.class);
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
                     String line;
@@ -532,7 +519,7 @@ public class A2AServerResourceTest {
         TaskResubscriptionRequest request = new TaskResubscriptionRequest("1", new TaskIdParams("non-existent-task"));
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target("http://localhost:8081/");
-        Response response = target.request(MediaType.SERVER_SENT_EVENTS).post(Entity.json(request));
+        Response response = target.request().post(Entity.json(request));
         InputStream inputStream = response.readEntity(InputStream.class);
         boolean dataRead = false;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
@@ -562,7 +549,6 @@ public class A2AServerResourceTest {
                 "1", new MessageSendParams(message, null, null));
         SendMessageResponse response = given()
                 .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
                 .body(request)
                 .when()
                 .post("/")
@@ -728,5 +714,55 @@ public class A2AServerResourceTest {
                 .as(JSONRPCErrorResponse.class);
         assertNotNull(response.getError());
         assertEquals(new MethodNotFoundError().getCode(), response.getError().getCode());
+    }
+
+    @Test
+    public void testNonStreamingMethodWithAcceptHeader() {
+        testGetTask(MediaType.APPLICATION_JSON);
+    }
+
+    @Test
+    public void testStreamingMethodWithAcceptHeader() throws Exception {
+        testSendStreamingMessage(MediaType.SERVER_SENT_EVENTS);
+    }
+
+    private void testSendStreamingMessage() throws Exception {
+        testSendStreamingMessage(null);
+    }
+
+    private void testSendStreamingMessage(String mediaType) throws Exception {
+        Message message = new Message.Builder(MESSAGE)
+                .taskId(MINIMAL_TASK.getId())
+                .contextId(MINIMAL_TASK.getContextId())
+                .build();
+        SendStreamingMessageRequest request = new SendStreamingMessageRequest(
+                "1", new MessageSendParams(message, null, null));
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target("http://localhost:8081/");
+        Response response;
+        if (mediaType != null) {
+            response = target.request(mediaType).post(Entity.json(request));
+        } else {
+            response = target.request().post(Entity.json(request));
+        }
+        InputStream inputStream = response.readEntity(InputStream.class);
+        boolean dataRead = false;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("data: ")) {
+                    SendStreamingMessageResponse sendStreamingMessageResponse = Utils.OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
+                    assertNull(sendStreamingMessageResponse.getError());
+                    Message messageResponse =  (Message) sendStreamingMessageResponse.getResult();
+                    assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());
+                    assertEquals(MESSAGE.getRole(), messageResponse.getRole());
+                    Part<?> part = messageResponse.getParts().get(0);
+                    assertEquals(Part.Kind.TEXT, part.getKind());
+                    assertEquals("test message", ((TextPart) part).getText());
+                    dataRead = true;
+                }
+            }
+        }
+        assertTrue(dataRead);
     }
 }
