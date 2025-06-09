@@ -21,7 +21,7 @@ public abstract class EnhancedRunnable implements Runnable {
         }
     }
 
-    protected void invokeDoneCallbacks() {
+    public void invokeDoneCallbacks() {
         synchronized (doneCallbacks) {
             for (DoneCallback doneCallback : doneCallbacks) {
                 doneCallback.done(this);

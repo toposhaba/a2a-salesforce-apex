@@ -1,15 +1,8 @@
 package io.a2a.examples.helloworld.server;
 
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
+import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
-import jakarta.annotation.PreDestroy;
 
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
@@ -31,16 +24,6 @@ public class AgentExecutorProducer {
     }
     
     private static class FireAndForgetAgentExecutor implements AgentExecutor {
-        // Dedicated thread pool for background task execution
-        private final ExecutorService taskExecutor = Executors.newCachedThreadPool(r -> {
-            Thread t = new Thread(r, "AgentTask-" + System.currentTimeMillis());
-            t.setDaemon(true); // Don't prevent JVM shutdown
-            return t;
-        });
-        
-        // Track running tasks for cancellation - store the future reference
-        private final Map<String, CompletableFuture<Void>> runningTasks = new ConcurrentHashMap<>();
-
         @Override
         public void execute(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
             Task task = context.getTask();
@@ -68,12 +51,12 @@ public class AgentExecutorProducer {
             
             System.out.println("====> task set to WORKING, starting background execution");
 
-            // Fire and forget - start the task but don't wait for it
-            CompletableFuture<Void> taskFuture = CompletableFuture
-                .runAsync(() -> executeTaskInBackground(context, eventQueue), taskExecutor);
+//            // Fire and forget - start the task but don't wait for it
+//            CompletableFuture<Void> taskFuture = CompletableFuture
+//                .runAsync(() -> executeTaskInBackground(context, eventQueue), taskExecutor);
             
-            // Store the future for potential cancellation
-            runningTasks.put(context.getTaskId(), taskFuture);
+//            // Store the future for potential cancellation
+//            runningTasks.put(context.getTaskId(), taskFuture);
             
             // Method returns immediately - task continues in background
             System.out.println("====> execute() method returning immediately, task running in background");
@@ -99,16 +82,6 @@ public class AgentExecutorProducer {
                 throw new TaskNotCancelableError();
             }
 
-            // Cancel the CompletableFuture
-            CompletableFuture<Void> taskFuture = runningTasks.get(task.getId());
-            if (taskFuture != null) {
-                boolean cancelled = taskFuture.cancel(true); // mayInterruptIfRunning = true
-                System.out.println("====> cancellation attempted, success: " + cancelled);
-            }
-            
-            // Remove from running tasks and update status
-            runningTasks.remove(task.getId());
-            
             eventQueue.enqueueEvent(new TaskStatusUpdateEvent.Builder()
                     .taskId(task.getId())
                     .contextId(task.getContextId())
@@ -129,20 +102,8 @@ public class AgentExecutorProducer {
             try {
                 System.out.println("====> background execution started for task: " + taskId);
                 
-                // Check if task was cancelled before we even started
-                if (!runningTasks.containsKey(taskId)) {
-                    System.out.println("====> task was cancelled before background execution started");
-                    return;
-                }
-                
                 // Perform the actual work
                 Object result = performActualWork(context);
-                
-                // Check again if task was cancelled during execution
-                if (!runningTasks.containsKey(taskId)) {
-                    System.out.println("====> task was cancelled during execution");
-                    return;
-                }
                 
                 // Task completed successfully
                 eventQueue.enqueueEvent(new TaskStatusUpdateEvent.Builder()
@@ -159,33 +120,13 @@ public class AgentExecutorProducer {
                 System.out.println("====> background task was interrupted: " + taskId);
                 Thread.currentThread().interrupt();
                 
-                // Only send CANCELED event if task is still tracked (not already cancelled)
-                if (runningTasks.containsKey(taskId)) {
-                    eventQueue.enqueueEvent(new TaskStatusUpdateEvent.Builder()
-                            .taskId(taskId)
-                            .contextId(context.getContextId())
-                            .status(new TaskStatus(TaskState.CANCELED))
-                            .isFinal(true)
-                            .build());
-                }
-                
             } catch (Exception e) {
                 // Task failed
                 System.err.println("====> background task failed: " + taskId);
                 e.printStackTrace();
                 
-                if (runningTasks.containsKey(taskId)) {
-                    eventQueue.enqueueEvent(new TaskStatusUpdateEvent.Builder()
-                            .taskId(taskId)
-                            .contextId(context.getContextId())
-                            .status(new TaskStatus(TaskState.FAILED))
-                            .isFinal(true)
-                            .build());
-                }
-                
             } finally {
-                // Always clean up - remove from running tasks
-                runningTasks.remove(taskId);
+                // Always clean up
                 System.out.println("====> background task cleanup completed: " + taskId);
             }
         }
@@ -220,15 +161,6 @@ public class AgentExecutorProducer {
         @PreDestroy
         public void cleanup() {
             System.out.println("====> shutting down task executor");
-            taskExecutor.shutdown();
-            try {
-                if (!taskExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
-                    taskExecutor.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                taskExecutor.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
-        }
+         }
     }
 }

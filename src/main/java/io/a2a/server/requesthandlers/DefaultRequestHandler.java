@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
@@ -32,7 +33,6 @@ import io.a2a.server.tasks.PushNotifier;
 import io.a2a.server.tasks.ResultAggregator;
 import io.a2a.server.tasks.TaskManager;
 import io.a2a.server.tasks.TaskStore;
-import io.a2a.spec.Artifact;
 import io.a2a.spec.EventKind;
 import io.a2a.spec.InternalError;
 import io.a2a.spec.JSONRPCError;
@@ -47,7 +47,6 @@ import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
 import io.a2a.spec.UnsupportedOperationError;
 import io.a2a.util.TempLoggerWrapper;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,8 +61,7 @@ public class DefaultRequestHandler implements RequestHandler {
     private final PushNotifier pushNotifier;
     private final Supplier<RequestContext.Builder> requestContextBuilder;
 
-    // TODO the value upstream is asyncio.Task. Trying a Runnable
-    private final Map<String, EnhancedRunnable> runningAgents = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, CompletableFuture<Void>> runningAgents = Collections.synchronizedMap(new HashMap<>());
 
     private final Executor executor = Executors.newCachedThreadPool();
 
@@ -134,7 +132,10 @@ public class DefaultRequestHandler implements RequestHandler {
                         .build(),
                 queue);
 
-        // TODO need to cancel the asyncio.Task looked up from runningAgents
+        CompletableFuture<Void> cf = runningAgents.get(task.getId());
+        if (cf != null) {
+            cf.cancel(true);
+        }
 
         EventConsumer consumer = new EventConsumer(queue);
         EventKind type = resultAggregator.consumeAll(consumer);
@@ -203,9 +204,9 @@ public class DefaultRequestHandler implements RequestHandler {
         } finally {
             if (interrupted) {
                 // TODO Make this async
-                cleanupProducer(producerRunnable, taskId);
+                cleanupProducer(taskId);
             } else {
-                cleanupProducer(producerRunnable, taskId);
+                cleanupProducer(taskId);
             }
         }
 
@@ -244,7 +245,8 @@ public class DefaultRequestHandler implements RequestHandler {
         EnhancedRunnable producerRunnable = registerAndExecuteAgentAsync(taskId.get(), requestContext, queue);
 
         EventConsumer consumer = new EventConsumer(queue);
-        // TODO https://github.com/fjuma/a2a-java-sdk/issues/62 Add this callback
+
+        producerRunnable.addDoneCallback(consumer.createAgentRunnableDoneCallback());
 
         try {
             Flow.Publisher<Event> results = resultAggregator.consumeAndEmit(consumer);
@@ -286,7 +288,7 @@ public class DefaultRequestHandler implements RequestHandler {
 
             return convertingProcessor(eventPublisher, event -> (StreamingEventKind) event);
         } finally {
-            cleanupProducer(producerRunnable, taskId.get());
+            cleanupProducer(taskId.get());
         }
     }
 
@@ -347,42 +349,40 @@ public class DefaultRequestHandler implements RequestHandler {
         return pushNotifier != null && params.configuration() != null && params.configuration().pushNotification() != null;
     }
 
-    private void runEventStream(RequestContext requestContext, EventQueue queue)  throws JSONRPCError {
-        agentExecutor.execute(requestContext, queue);
-        // TODO this is in the Python implementation, but enabling it causes test hangs
-        try {
-            queueManager.signalPollingStarted(queue);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } finally {
-            queue.close();
-        }
-    }
-
-    private EnhancedRunnable registerAndExecuteAgentAsync(String taskId, RequestContext requestContext, EventQueue eventQueue) {
+    private EnhancedRunnable registerAndExecuteAgentAsync(String taskId, RequestContext requestContext, EventQueue queue) {
         EnhancedRunnable runnable = new EnhancedRunnable() {
             @Override
             public void run() {
+                agentExecutor.execute(requestContext, queue);
                 try {
-                    runEventStream(requestContext, eventQueue);
-                } catch (Throwable throwable) {
-                    setError(throwable);
-                } finally {
-                    invokeDoneCallbacks();
+                    queueManager.signalPollingStarted(queue);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
-
             }
         };
-        runningAgents.put(taskId, runnable);
-        executor.execute(runnable);
+
+        CompletableFuture<Void> cf = CompletableFuture.runAsync(runnable, executor)
+                .whenComplete((v, err) -> {
+                    if (err != null) {
+                        runnable.setError(err);
+                    }
+                    queue.close();
+                    runnable.invokeDoneCallbacks();
+                });
+        runningAgents.put(taskId, cf);
         return runnable;
     }
 
-    private void cleanupProducer(Runnable producerRunnable, String taskId) {
+    private void cleanupProducer(String taskId) {
         // TODO the Python implementation waits for the producerRunnable
-
-        queueManager.close(taskId);
-        runningAgents.remove(taskId);
+        CompletableFuture<Void> cf = runningAgents.get(taskId);
+        if (cf != null) {
+            cf.whenComplete((v, t) -> {
+                queueManager.close(taskId);
+                runningAgents.remove(taskId);
+            });
+        }
     }
 
 }
