@@ -44,15 +44,19 @@ public class TaskManager {
         if (taskId == null) {
             return null;
         }
-        return taskStore.get(taskId);
+        if (currentTask != null) {
+            return currentTask;
+        }
+        currentTask = taskStore.get(taskId);
+        return currentTask;
     }
 
-    public void saveTaskEvent(Task task) throws A2AServerException {
+    Task saveTaskEvent(Task task) throws A2AServerException {
         checkIdsAndUpdateIfNecessary(task.getId(), task.getContextId());
-        saveTask(task);
+        return saveTask(task);
     }
 
-    public void saveTaskEvent(TaskStatusUpdateEvent event) throws A2AServerException {
+    Task saveTaskEvent(TaskStatusUpdateEvent event) throws A2AServerException {
         checkIdsAndUpdateIfNecessary(event.getTaskId(), event.getContextId());
         Task task = ensureTask(event.getTaskId(), event.getContextId());
 
@@ -67,10 +71,10 @@ public class TaskManager {
         }
 
         task = builder.build();
-        saveTask(task);
+        return saveTask(task);
     }
 
-    public void saveTaskEvent(TaskArtifactUpdateEvent event) throws A2AServerException {
+    Task saveTaskEvent(TaskArtifactUpdateEvent event) throws A2AServerException {
         checkIdsAndUpdateIfNecessary(event.getTaskId(), event.getContextId());
         Task task = ensureTask(event.getTaskId(), event.getContextId());
 
@@ -122,7 +126,7 @@ public class TaskManager {
                 .artifacts(artifacts)
                 .build();
 
-        saveTask(task);
+        return saveTask(task);
     }
 
     public Event process(Event event) throws A2AServerException {
@@ -145,7 +149,7 @@ public class TaskManager {
         task = new Task.Builder(task)
                 .history(history)
                 .build();
-        currentTask = task;
+        saveTask(task);
         return task;
     }
 
@@ -164,7 +168,11 @@ public class TaskManager {
     }
 
     private Task ensureTask(String eventTaskId, String eventContextId) {
-        Task task = taskStore.get(taskId);
+        Task task = currentTask;
+        if (task != null) {
+            return task;
+        }
+        task = taskStore.get(taskId);
         if (task == null) {
             task = createTask(eventTaskId, eventContextId);
             saveTask(task);
@@ -182,11 +190,13 @@ public class TaskManager {
                 .build();
     }
 
-    private void saveTask(Task task) {
+    private Task saveTask(Task task) {
         taskStore.save(task);
         if (taskId == null) {
             taskId = task.getId();
             contextId = task.getContextId();
         }
+        currentTask = task;
+        return currentTask;
     }
 }
