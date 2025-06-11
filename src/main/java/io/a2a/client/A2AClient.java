@@ -13,11 +13,16 @@ import static io.a2a.util.Utils.unmarshalFrom;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.a2a.client.sse.SSEEventListener;
+import io.a2a.http.A2AHttpClient;
+import io.a2a.http.A2AHttpResponse;
+import io.a2a.http.JdkA2AHttpClient;
 import io.a2a.spec.A2A;
 import io.a2a.spec.A2AServerException;
 import io.a2a.spec.AgentCard;
@@ -40,12 +45,6 @@ import io.a2a.spec.StreamingEventKind;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import okhttp3.sse.EventSources;
 
 /**
  * An A2A client.
@@ -57,8 +56,7 @@ public class A2AClient {
     private static final TypeReference<CancelTaskResponse> CANCEL_TASK_RESPONSE_REFERENCE = new TypeReference<>() {};
     private static final TypeReference<GetTaskPushNotificationConfigResponse> GET_TASK_PUSH_NOTIFICATION_CONFIG_RESPONSE_REFERENCE = new TypeReference<>() {};
     private static final TypeReference<SetTaskPushNotificationConfigResponse> SET_TASK_PUSH_NOTIFICATION_CONFIG_RESPONSE_REFERENCE = new TypeReference<>() {};
-    private static final MediaType JSON_MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
-    private final OkHttpClient httpClient;
+    private final A2AHttpClient httpClient;
     private final String agentUrl;
     private AgentCard agentCard;
 
@@ -72,7 +70,7 @@ public class A2AClient {
         checkNotNullParam("agentCard", agentCard);
         this.agentCard = agentCard;
         this.agentUrl = agentCard.url();
-        this.httpClient = new OkHttpClient();
+        this.httpClient = new JdkA2AHttpClient();
     }
 
     /**
@@ -83,7 +81,7 @@ public class A2AClient {
     public A2AClient(String agentUrl) {
         checkNotNullParam("agentUrl", agentUrl);
         this.agentUrl = agentUrl;
-        this.httpClient = new OkHttpClient();
+        this.httpClient = new JdkA2AHttpClient();
     }
 
     /**
@@ -352,20 +350,6 @@ public class A2AClient {
     /**
      * Send a streaming message to the remote agent.
      *
-     * @param messageSendParams the parameters for the message to be sent
-     * @param eventHandler a consumer that will be invoked for each event received from the remote agent
-     * @param errorHandler a consumer that will be invoked if the remote agent returns an error
-     * @param failureHandler a consumer that will be invoked if a failure occurs when processing events
-     * @throws A2AServerException if sending the streaming message fails for any reason
-     */
-    public void sendStreamingMessage(MessageSendParams messageSendParams, Consumer<StreamingEventKind> eventHandler,
-                                     Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
-        sendStreamingMessage(null, messageSendParams, eventHandler, errorHandler, failureHandler);
-    }
-
-    /**
-     * Send a streaming message to the remote agent.
-     *
      * @param requestId the request ID to use
      * @param messageSendParams the parameters for the message to be sent
      * @param eventHandler a consumer that will be invoked for each event received from the remote agent
@@ -374,7 +358,7 @@ public class A2AClient {
      * @throws A2AServerException if sending the streaming message fails for any reason
      */
     public void sendStreamingMessage(String requestId, MessageSendParams messageSendParams, Consumer<StreamingEventKind> eventHandler,
-                                     Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
+                                       Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
         checkNotNullParam("messageSendParams", messageSendParams);
         checkNotNullParam("eventHandler", eventHandler);
         checkNotNullParam("errorHandler", errorHandler);
@@ -389,52 +373,41 @@ public class A2AClient {
             sendStreamingMessageRequestBuilder.id(requestId);
         }
 
+        AtomicReference<CompletableFuture<Void>> ref = new AtomicReference<>();
+        SSEEventListener sseEventListener = new SSEEventListener(eventHandler, errorHandler, failureHandler);
         SendStreamingMessageRequest sendStreamingMessageRequest = sendStreamingMessageRequestBuilder.build();
-        SSEEventListener sseEventListener = new SSEEventListener.Builder()
-                .eventHandler(eventHandler)
-                .errorHandler(errorHandler)
-                .failureHandler(failureHandler)
-                .build();
         try {
-            EventSources.createFactory(httpClient)
-                    .newEventSource(createPostRequest(sendStreamingMessageRequest,
-                            true), sseEventListener);
+            A2AHttpClient.PostBuilder builder = createPostBuilder(sendStreamingMessageRequest);
+            ref.set(builder.postAsyncSSE(
+                    msg -> sseEventListener.onMessage(msg, ref.get()),
+                    throwable -> sseEventListener.onError(throwable, ref.get()),
+                    () -> {
+                        // We don't need to do anything special on completion
+                    }));
+
         } catch (IOException e) {
             throw new A2AServerException("Failed to send streaming message request: " + e);
+        } catch (InterruptedException e) {
+            throw new A2AServerException("Send streaming message request timed out: " + e);
         }
     }
 
-    private String sendPostRequest(Object value) throws IOException, InterruptedException{
-        return sendPostRequest(value, false);
-    }
-
-
-    private String sendPostRequest(Object value, boolean addEventStreamHeader) throws IOException, InterruptedException{
-        Request okRequest = createPostRequest(value, addEventStreamHeader);
-        try (Response response = httpClient.newCall(okRequest).execute()) {
-            if (! response.isSuccessful()) {
-                throw new IOException("Request failed " + response.code());
-            }
-            return response.body().string();
+    private String sendPostRequest(Object value) throws IOException, InterruptedException {
+        A2AHttpClient.PostBuilder builder = createPostBuilder(value);
+        A2AHttpResponse response = builder.post();
+        if (!response.success()) {
+            throw new IOException("Request failed " + response.status());
         }
-
+        return response.body();
     }
 
-    private Request createPostRequest(Object value) throws IOException {
-        return createPostRequest(value, false);
-    }
-
-    private Request createPostRequest(Object value, boolean addEventStreamHeader) throws IOException {
-        Request.Builder builder = new Request.Builder()
+    private A2AHttpClient.PostBuilder createPostBuilder(Object value) throws JsonProcessingException {
+        return httpClient.createPost()
                 .url(agentUrl)
                 .addHeader("Content-Type", "application/json")
-                .post(RequestBody.create(OBJECT_MAPPER.writeValueAsString(value), JSON_MEDIA_TYPE));
-        if (addEventStreamHeader) {
-            builder.addHeader("Accept", "text/event-stream");
-        }
-        return builder.build();
-    }
+                .body(OBJECT_MAPPER.writeValueAsString(value));
 
+    }
 
     private <T extends JSONRPCResponse> T unmarshalResponse(String response, TypeReference<T> typeReference)
             throws A2AServerException, JsonProcessingException {
