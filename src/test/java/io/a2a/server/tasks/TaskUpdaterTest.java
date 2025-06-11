@@ -6,11 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Map;
 
+import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.events.Event;
 import io.a2a.server.events.EventQueue;
 import io.a2a.spec.Message;
@@ -20,9 +20,7 @@ import io.a2a.spec.TaskState;
 import io.a2a.spec.TaskStatusUpdateEvent;
 import io.a2a.spec.TextPart;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 public class TaskUpdaterTest {
     public static final String TEST_TASK_ID = "test-task-id";
@@ -45,31 +43,11 @@ public class TaskUpdaterTest {
     @BeforeEach
     public void init() {
         eventQueue = EventQueue.create();
-        taskUpdater = new TaskUpdater(eventQueue, TEST_TASK_ID, TEST_TASK_CONTEXT_ID);
-    }
-
-    //@Test
-    //public void testInit() {
-    //    // Python has a unit test testing that the constructor works. Not really relevant
-    //}
-
-    @Test
-    public void testUpdateStatusWithoutMessage() throws Exception {
-        taskUpdater.updateStatus(TaskState.WORKING);
-        checkTaskStatusUpdateEventOnQueue(false, TaskState.WORKING, null);
-
-    }
-
-    @Test
-    public void testUpdateStatusWithMessage() throws Exception {
-        taskUpdater.updateStatus(TaskState.WORKING, SAMPLE_MESSAGE);
-        checkTaskStatusUpdateEventOnQueue(false, TaskState.WORKING, SAMPLE_MESSAGE);
-    }
-
-    @Test
-    public void testUpdateStatusFinal() throws Exception {
-        taskUpdater.updateStatus(TaskState.COMPLETED, null, true);
-        checkTaskStatusUpdateEventOnQueue(true, TaskState.COMPLETED, null);
+        RequestContext context = new RequestContext.Builder()
+                .setTaskId(TEST_TASK_ID)
+                .setContextId(TEST_TASK_CONTEXT_ID)
+                .build();
+        taskUpdater = new TaskUpdater(context, eventQueue);
     }
 
     @Test
@@ -128,14 +106,26 @@ public class TaskUpdaterTest {
 
     @Test
     public void testFailedWithoutMessage() throws Exception {
-        taskUpdater.failed();
+        taskUpdater.fail();
         checkTaskStatusUpdateEventOnQueue(true, TaskState.FAILED, null);
     }
 
     @Test
     public void testFailedWithMessage() throws Exception {
-        taskUpdater.failed(SAMPLE_MESSAGE);
+        taskUpdater.fail(SAMPLE_MESSAGE);
         checkTaskStatusUpdateEventOnQueue(true, TaskState.FAILED, SAMPLE_MESSAGE);
+    }
+
+    @Test
+    public void testCanceledWithoutMessage() throws Exception {
+        taskUpdater.cancel();
+        checkTaskStatusUpdateEventOnQueue(true, TaskState.CANCELED, null);
+    }
+
+    @Test
+    public void testCanceledWithMessage() throws Exception {
+        taskUpdater.cancel(SAMPLE_MESSAGE);
+        checkTaskStatusUpdateEventOnQueue(true, TaskState.CANCELED, SAMPLE_MESSAGE);
     }
 
     @Test

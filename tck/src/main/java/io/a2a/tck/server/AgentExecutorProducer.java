@@ -7,6 +7,7 @@ import jakarta.enterprise.inject.Produces;
 import io.a2a.server.agentexecution.AgentExecutor;
 import io.a2a.server.agentexecution.RequestContext;
 import io.a2a.server.events.EventQueue;
+import io.a2a.server.tasks.TaskUpdater;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskNotCancelableError;
@@ -42,22 +43,12 @@ public class AgentExecutorProducer {
                 eventQueue.enqueueEvent(task);
             }
 
+            TaskUpdater updater = new TaskUpdater(context, eventQueue);
+
             // Immediately set to WORKING state
-            eventQueue.enqueueEvent(new TaskStatusUpdateEvent.Builder()
-                    .taskId(context.getTaskId())
-                    .contextId(context.getContextId())
-                    .status(new TaskStatus(TaskState.WORKING))
-                    .build());
-            
+            updater.startWork();
             System.out.println("====> task set to WORKING, starting background execution");
 
-//            // Fire and forget - start the task but don't wait for it
-//            CompletableFuture<Void> taskFuture = CompletableFuture
-//                .runAsync(() -> executeTaskInBackground(context, eventQueue), taskExecutor);
-            
-//            // Store the future for potential cancellation
-//            runningTasks.put(context.getTaskId(), taskFuture);
-            
             // Method returns immediately - task continues in background
             System.out.println("====> execute() method returning immediately, task running in background");
         }
@@ -66,12 +57,7 @@ public class AgentExecutorProducer {
         public void cancel(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
             System.out.println("====> task cancel request received");
             Task task = context.getTask();
-            
-            if (task == null) {
-                System.out.println("====> task not found");
-                throw new TaskNotFoundError();
-            }
-            
+
             if (task.getStatus().state() == TaskState.CANCELED) {
                 System.out.println("====> task already canceled");
                 throw new TaskNotCancelableError();
@@ -82,6 +68,8 @@ public class AgentExecutorProducer {
                 throw new TaskNotCancelableError();
             }
 
+            TaskUpdater updater = new TaskUpdater(context, eventQueue);
+            updater.cancel();
             eventQueue.enqueueEvent(new TaskStatusUpdateEvent.Builder()
                     .taskId(task.getId())
                     .contextId(task.getContextId())
@@ -90,69 +78,6 @@ public class AgentExecutorProducer {
                     .build());
             
             System.out.println("====> task canceled");
-        }
-
-        /**
-         * This method runs completely in the background.
-         * The main execute() method has already returned.
-         */
-        private void executeTaskInBackground(RequestContext context, EventQueue eventQueue) {
-            String taskId = context.getTaskId();
-            
-            try {
-                System.out.println("====> background execution started for task: " + taskId);
-                
-                // Perform the actual work
-                Object result = performActualWork(context);
-                
-                // Task completed successfully
-                eventQueue.enqueueEvent(new TaskStatusUpdateEvent.Builder()
-                        .taskId(taskId)
-                        .contextId(context.getContextId())
-                        .status(new TaskStatus(TaskState.COMPLETED))
-                        .isFinal(true)
-                        .build());
-                
-                System.out.println("====> background task completed successfully: " + taskId);
-                
-            } catch (InterruptedException e) {
-                // Task was interrupted (cancelled)
-                System.out.println("====> background task was interrupted: " + taskId);
-                Thread.currentThread().interrupt();
-                
-            } catch (Exception e) {
-                // Task failed
-                System.err.println("====> background task failed: " + taskId);
-                e.printStackTrace();
-                
-            } finally {
-                // Always clean up
-                System.out.println("====> background task cleanup completed: " + taskId);
-            }
-        }
-
-        /**
-         * This method represents the actual work that needs to be done.
-         * Replace this with your real business logic.
-         */
-        private Object performActualWork(RequestContext context) throws InterruptedException {
-            
-            
-            System.out.println("====> starting actual work for task: " + context.getTaskId());
-            
-            // Simulate work that can be interrupted
-            for (int i = 0; i < 10; i++) {
-                // Check for interruption regularly during long-running work
-                if (Thread.currentThread().isInterrupted()) {
-                    throw new InterruptedException("Task was cancelled during execution");
-                }
-                
-                Thread.sleep(200); // Simulate work chunks
-                System.out.println("====> work progress for task " + context.getTaskId() + ": " + ((i + 1) * 10) + "%");
-            }
-            
-            System.out.println("====> finished actual work for task: " + context.getTaskId());
-            return "Task completed successfully";
         }
 
         /**
