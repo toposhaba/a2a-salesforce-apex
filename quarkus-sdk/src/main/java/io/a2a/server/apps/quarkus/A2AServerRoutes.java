@@ -88,13 +88,11 @@ public class A2AServerRoutes {
             error = new JSONRPCErrorResponse(new InternalError(t.getMessage()));
         } finally {
             if (error != null) {
-                if (streaming) {
-                    streamingResponse = Multi.createFrom().item(error);
-                } else {
-                    nonStreamingResponse = error;
-                }
-            }
-            if (streaming) {
+                rc.response()
+                        .setStatusCode(200)
+                        .putHeader(CONTENT_TYPE, APPLICATION_JSON)
+                        .end(Json.encodeToBuffer(error));
+            } else if (streaming) {
                 MultiSseSupport.subscribeObject(streamingResponse.map(i -> (Object)i), rc);
             } else {
                 rc.response()
