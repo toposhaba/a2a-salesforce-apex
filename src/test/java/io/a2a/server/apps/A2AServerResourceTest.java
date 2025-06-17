@@ -539,7 +539,7 @@ public class A2AServerResourceTest {
         }
         assertTrue(dataRead);
     }
-    
+
     @Test
     public void testError() {
         Message message = new Message.Builder(MESSAGE)
