@@ -4,9 +4,13 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.a2a.sdk</groupId>
+    <parent>
+        <groupId>io.a2a.sdk</groupId>
+        <artifactId>a2a-java-sdk-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
     <artifactId>a2a-java-sdk-examples</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
 
     <name>Java SDK A2A Examples</name>
     <description>Examples for the Java SDK for the Agent2Agent Protocol (A2A)</description>
@@ -33,7 +37,7 @@
     <dependencies>
         <dependency>
             <groupId>io.a2a.sdk</groupId>
-            <artifactId>a2a-java-sdk</artifactId>
+            <artifactId>a2a-java-sdk-quarkus</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
