@@ -12,6 +12,8 @@ import static io.vertx.core.http.HttpHeaders.CONTENT_TYPE;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
@@ -48,10 +50,15 @@ import io.a2a.spec.StreamingJSONRPCRequest;
 import io.a2a.spec.TaskResubscriptionRequest;
 import io.a2a.spec.UnsupportedOperationError;
 import io.quarkus.vertx.web.Body;
+import io.quarkus.vertx.web.ReactiveRoutes;
 import io.quarkus.vertx.web.Route;
 import io.quarkus.vertx.web.RoutingExchange;
-import io.quarkus.vertx.web.runtime.MultiSseSupport;
 import io.smallrye.mutiny.Multi;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.Json;
 import io.vertx.ext.web.RoutingContext;
 
@@ -211,6 +218,93 @@ public class A2AServerRoutes {
                 requestBody.contains(SEND_MESSAGE_METHOD) ||
                 requestBody.contains(SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD) ||
                 requestBody.contains(GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD);
+    }
+
+    // Port of import io.quarkus.vertx.web.runtime.MultiSseSupport, which is considered internal API
+    private static class MultiSseSupport {
+
+        private MultiSseSupport() {
+            // Avoid direct instantiation.
+        }
+
+        private static void initialize(HttpServerResponse response) {
+            if (response.bytesWritten() == 0) {
+                MultiMap headers = response.headers();
+                if (headers.get("content-type") == null) {
+                    headers.set("content-type", "text/event-stream");
+                }
+                response.setChunked(true);
+            }
+        }
+
+        private static void onWriteDone(Flow.Subscription subscription, AsyncResult<Void> ar, RoutingContext rc) {
+            if (ar.failed()) {
+                rc.fail(ar.cause());
+            } else {
+                subscription.request(1);
+            }
+        }
+
+        public static void write(Multi<Buffer> multi, RoutingContext rc) {
+            HttpServerResponse response = rc.response();
+            multi.subscribe().withSubscriber(new Flow.Subscriber<Buffer>() {
+                Flow.Subscription upstream;
+
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    this.upstream = subscription;
+                    this.upstream.request(1);
+                }
+
+                @Override
+                public void onNext(Buffer item) {
+                    initialize(response);
+                    response.write(item, new Handler<AsyncResult<Void>>() {
+                        @Override
+                        public void handle(AsyncResult<Void> ar) {
+                            onWriteDone(upstream, ar, rc);
+                        }
+                    });
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    rc.fail(throwable);
+                }
+
+                @Override
+                public void onComplete() {
+                    endOfStream(response);
+                }
+            });
+        }
+
+        public static void subscribeObject(Multi<Object> multi, RoutingContext rc) {
+            AtomicLong count = new AtomicLong();
+            write(multi.map(new Function<Object, Buffer>() {
+                @Override
+                public Buffer apply(Object o) {
+                    if (o instanceof ReactiveRoutes.ServerSentEvent) {
+                        ReactiveRoutes.ServerSentEvent<?> ev = (ReactiveRoutes.ServerSentEvent<?>) o;
+                        long id = ev.id() != -1 ? ev.id() : count.getAndIncrement();
+                        String e = ev.event() == null ? "" : "event: " + ev.event() + "\n";
+                        return Buffer.buffer(e + "data: " + Json.encodeToBuffer(ev.data()) + "\nid: " + id + "\n\n");
+                    } else {
+                        return Buffer.buffer("data: " + Json.encodeToBuffer(o) + "\nid: " + count.getAndIncrement() + "\n\n");
+                    }
+                }
+            }), rc);
+        }
+
+        private static void endOfStream(HttpServerResponse response) {
+            if (response.bytesWritten() == 0) { // No item
+                MultiMap headers = response.headers();
+                if (headers.get("content-type") == null) {
+                    headers.set("content-type", "text/event-stream");
+                }
+            }
+            response.end();
+        }
     }
 
 }
