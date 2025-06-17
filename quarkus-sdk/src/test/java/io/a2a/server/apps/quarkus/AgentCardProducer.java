@@ -1,4 +1,4 @@
-package io.a2a.server.apps;
+package io.a2a.server.apps.quarkus;
 
 import java.util.ArrayList;
 import java.util.Collections;
