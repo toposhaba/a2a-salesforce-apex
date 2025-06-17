@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.io.JsonEOFException;
 import io.a2a.server.requesthandlers.JSONRPCHandler;
+import io.a2a.spec.A2A;
 import io.a2a.spec.AgentCard;
 import io.a2a.spec.CancelTaskRequest;
 import io.a2a.spec.ExtendedAgentCard;
@@ -49,6 +50,7 @@ import io.a2a.spec.SetTaskPushNotificationConfigRequest;
 import io.a2a.spec.StreamingJSONRPCRequest;
 import io.a2a.spec.TaskResubscriptionRequest;
 import io.a2a.spec.UnsupportedOperationError;
+import io.a2a.util.Utils;
 import io.quarkus.vertx.web.Body;
 import io.quarkus.vertx.web.ReactiveRoutes;
 import io.quarkus.vertx.web.Route;
@@ -82,10 +84,10 @@ public class A2AServerRoutes {
         try {
             if (isStreamingRequest(body)) {
                 streaming = true;
-                StreamingJSONRPCRequest<?> request = OBJECT_MAPPER.readValue(body, StreamingJSONRPCRequest.class);
+                StreamingJSONRPCRequest<?> request = Utils.OBJECT_MAPPER.readValue(body, StreamingJSONRPCRequest.class);
                 streamingResponse = processStreamingRequest(request);
             } else {
-                NonStreamingJSONRPCRequest<?> request = OBJECT_MAPPER.readValue(body, NonStreamingJSONRPCRequest.class);
+                NonStreamingJSONRPCRequest<?> request = Utils.OBJECT_MAPPER.readValue(body, NonStreamingJSONRPCRequest.class);
                 nonStreamingResponse = processNonStreamingRequest(request);
             }
         } catch (JsonProcessingException e) {
@@ -159,17 +161,17 @@ public class A2AServerRoutes {
             if (! jsonRpcHandler.getAgentCard().supportsAuthenticatedExtendedCard()) {
                 JSONErrorResponse errorResponse = new JSONErrorResponse("Extended agent card not supported or not enabled.");
                 re.response().setStatusCode(Response.Status.NOT_FOUND.getStatusCode())
-                        .end(OBJECT_MAPPER.writeValueAsString(errorResponse));
+                        .end(Utils.OBJECT_MAPPER.writeValueAsString(errorResponse));
                 return;
             }
             if (! extendedAgentCard.isResolvable()) {
                 JSONErrorResponse errorResponse = new JSONErrorResponse("Authenticated extended agent card is supported but not configured on the server.");
                 re.response().setStatusCode(Response.Status.NOT_FOUND.getStatusCode())
-                        .end(OBJECT_MAPPER.writeValueAsString(errorResponse));
+                        .end(Utils.OBJECT_MAPPER.writeValueAsString(errorResponse));
                 return;
             }
 
-            re.response().end(OBJECT_MAPPER.writeValueAsString(extendedAgentCard.get()));
+            re.response().end(Utils.OBJECT_MAPPER.writeValueAsString(extendedAgentCard.get()));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -208,16 +210,16 @@ public class A2AServerRoutes {
     }
 
     private static boolean isStreamingRequest(String requestBody) {
-        return requestBody.contains(SEND_STREAMING_MESSAGE_METHOD) ||
-                requestBody.contains(SEND_TASK_RESUBSCRIPTION_METHOD);
+        return requestBody.contains(A2A.SEND_STREAMING_MESSAGE_METHOD) ||
+                requestBody.contains(A2A.SEND_TASK_RESUBSCRIPTION_METHOD);
     }
 
     private static boolean isNonStreamingRequest(String requestBody) {
-        return requestBody.contains(GET_TASK_METHOD) ||
-                requestBody.contains(CANCEL_TASK_METHOD) ||
-                requestBody.contains(SEND_MESSAGE_METHOD) ||
-                requestBody.contains(SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD) ||
-                requestBody.contains(GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD);
+        return requestBody.contains(A2A.GET_TASK_METHOD) ||
+                requestBody.contains(A2A.CANCEL_TASK_METHOD) ||
+                requestBody.contains(A2A.SEND_MESSAGE_METHOD) ||
+                requestBody.contains(A2A.SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD) ||
+                requestBody.contains(A2A.GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD);
     }
 
     // Port of import io.quarkus.vertx.web.runtime.MultiSseSupport, which is considered internal API

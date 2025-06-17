@@ -157,5 +157,6 @@
 
     <modules>
         <module>core</module>
+        <module>sdk</module>
     </modules>
 </project>
