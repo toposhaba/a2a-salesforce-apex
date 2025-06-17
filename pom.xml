@@ -158,5 +158,6 @@
     <modules>
         <module>core</module>
         <module>sdk</module>
+        <module>quarkus-sdk</module>
     </modules>
 </project>

@@ -1,13 +1,5 @@
-package io.a2a.server.apps;
+package io.a2a.server.apps.quarkus;
 
-import static io.a2a.spec.A2A.CANCEL_TASK_METHOD;
-import static io.a2a.spec.A2A.GET_TASK_METHOD;
-import static io.a2a.spec.A2A.GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD;
-import static io.a2a.spec.A2A.SEND_MESSAGE_METHOD;
-import static io.a2a.spec.A2A.SEND_STREAMING_MESSAGE_METHOD;
-import static io.a2a.spec.A2A.SEND_TASK_RESUBSCRIPTION_METHOD;
-import static io.a2a.spec.A2A.SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD;
-import static io.a2a.util.Utils.OBJECT_MAPPER;
 import static io.vertx.core.http.HttpHeaders.CONTENT_TYPE;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
