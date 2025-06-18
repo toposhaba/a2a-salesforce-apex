@@ -355,7 +355,7 @@ public class DefaultRequestHandler implements RequestHandler {
             public void run() {
                 agentExecutor.execute(requestContext, queue);
                 try {
-                    queueManager.signalPollingStarted(queue);
+                    queueManager.awaitQueuePollerStart(queue);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
