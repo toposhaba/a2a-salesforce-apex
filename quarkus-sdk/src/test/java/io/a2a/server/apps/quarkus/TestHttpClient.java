@@ -9,15 +9,15 @@ import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
 import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.inject.Alternative;
 
 import io.a2a.http.A2AHttpClient;
 import io.a2a.http.A2AHttpResponse;
 import io.a2a.spec.Task;
 import io.a2a.util.Utils;
-import io.quarkus.arc.profile.IfBuildProfile;
 
 @Dependent
-@IfBuildProfile("test")
+@Alternative
 public class TestHttpClient implements A2AHttpClient {
     final List<Task> tasks = Collections.synchronizedList(new ArrayList<>());
     volatile CountDownLatch latch;

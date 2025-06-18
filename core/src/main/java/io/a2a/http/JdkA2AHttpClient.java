@@ -14,6 +14,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.function.Consumer;
 
+import jakarta.enterprise.context.ApplicationScoped;
+
+@ApplicationScoped
 public class JdkA2AHttpClient implements A2AHttpClient {
 
     private final HttpClient httpClient;
