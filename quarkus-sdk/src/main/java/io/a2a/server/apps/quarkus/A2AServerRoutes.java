@@ -3,6 +3,8 @@ package io.a2a.server.apps.quarkus;
 import static io.vertx.core.http.HttpHeaders.CONTENT_TYPE;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -66,6 +68,8 @@ public class A2AServerRoutes {
     @ExtendedAgentCard
     Instance<AgentCard> extendedAgentCard;
 
+    private final Executor executor = Executors.newCachedThreadPool();
+
     @Route(path = "/", methods = {Route.HttpMethod.POST}, consumes = {APPLICATION_JSON}, type = Route.HandlerType.BLOCKING)
     public void invokeJSONRPCHandler(@Body String body, RoutingContext rc) {
         boolean streaming = false;
@@ -93,7 +97,12 @@ public class A2AServerRoutes {
                         .putHeader(CONTENT_TYPE, APPLICATION_JSON)
                         .end(Json.encodeToBuffer(error));
             } else if (streaming) {
-                MultiSseSupport.subscribeObject(streamingResponse.map(i -> (Object)i), rc);
+                final Multi<? extends JSONRPCResponse<?>> finalStreamingResponse = streamingResponse;
+                executor.execute(() -> {
+                        MultiSseSupport.subscribeObject(
+                                finalStreamingResponse.map(i -> (Object)i), rc);
+                });
+
             } else {
                 rc.response()
                         .setStatusCode(200)
