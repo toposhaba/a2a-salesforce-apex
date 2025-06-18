@@ -87,7 +87,9 @@ public abstract class EventQueue {
         // TODO Not sure if needed yet. BlockingQueue.poll()/.take() remove the events.
     }
 
-    public void close() {
+    public abstract void close();
+
+    public void doClose() {
         synchronized (this) {
             if (closed) {
                 return;
@@ -138,8 +140,8 @@ public abstract class EventQueue {
 
         @Override
         public void close() {
-            super.close();
-            children.forEach(EventQueue::close);
+            doClose();
+            children.forEach(EventQueue::doClose);
         }
     }
 
@@ -172,6 +174,11 @@ public abstract class EventQueue {
         @Override
         void signalQueuePollerStarted() {
             parent.signalQueuePollerStarted();
+        }
+
+        @Override
+        public void close() {
+            parent.close();
         }
     }
 }
