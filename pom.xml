@@ -177,5 +177,6 @@
         <module>sdk-quarkus</module>
         <module>tck</module>
         <module>examples</module>
+        <module>tests/server-common</module>
     </modules>
 </project>
