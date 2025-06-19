@@ -18,7 +18,7 @@
     <dependencies>
         <dependency>
             <groupId>io.a2a.sdk</groupId>
-            <artifactId>a2a-java-sdk-quarkus</artifactId>
+            <artifactId>a2a-java-sdk-server-quarkus</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
