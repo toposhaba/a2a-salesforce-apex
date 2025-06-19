@@ -29,11 +29,14 @@ The A2A Java SDK provides a Java server implementation of the [Agent2Agent (A2A)
 
 ### 1. Add the A2A Java SDK Core Maven dependency to your project
 
+> **Note**: The A2A Java SDK isn't available yet in Maven Central but will be soon. For now, be
+> sure to check out the latest tag (you can see the tags [here](https://github.com/fjuma/a2a-java-sdk/tags)), build from the tag, and reference that version below. For example, if the latest tag is `0.2.3`, you can use the following dependency.
+
 ```xml
 <dependency>
     <groupId>io.a2a.sdk</groupId>
     <artifactId>a2a-java-sdk-core</artifactId>
-    <version>${io.a2a.sdk.version}</version>
+    <version>0.2.3</version>
 </dependency>
 ```
 
@@ -221,6 +224,9 @@ public class WeatherAgentExecutorProducer {
 ```
 
 ### 4. Add an A2A Java SDK Server Maven dependency to your project
+
+> **Note**: The A2A Java SDK isn't available yet in Maven Central but will be soon. For now, be
+> sure to check out the latest tag (you can see the tags [here](https://github.com/fjuma/a2a-java-sdk/tags)), build from the tag, and reference that version below. For example, if the latest tag is `0.2.3`, you can use the following dependency.
 
 Adding a dependency on an A2A Java SDK Server will allow you to run your agentic Java application as an A2A server.
 
