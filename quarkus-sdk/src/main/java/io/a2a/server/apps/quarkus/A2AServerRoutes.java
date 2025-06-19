@@ -68,6 +68,9 @@ public class A2AServerRoutes {
     @ExtendedAgentCard
     Instance<AgentCard> extendedAgentCard;
 
+    // Hook so testing can wait until the MultiSseSupport is subscribes.
+    private static volatile Runnable streamingMultiSseSupportSubscribedRunnable;
+
     private final Executor executor = Executors.newCachedThreadPool();
 
     @Route(path = "/", methods = {Route.HttpMethod.POST}, consumes = {APPLICATION_JSON}, type = Route.HandlerType.BLOCKING)
@@ -221,6 +224,10 @@ public class A2AServerRoutes {
                 requestBody.contains(A2A.GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD);
     }
 
+    static void setStreamingMultiSseSupportSubscribedRunnable(Runnable runnable) {
+        streamingMultiSseSupportSubscribedRunnable = runnable;
+    }
+
     // Port of import io.quarkus.vertx.web.runtime.MultiSseSupport, which is considered internal API
     private static class MultiSseSupport {
 
@@ -255,6 +262,12 @@ public class A2AServerRoutes {
                 public void onSubscribe(Flow.Subscription subscription) {
                     this.upstream = subscription;
                     this.upstream.request(1);
+
+                    // Notify tests that we are subscribed
+                    Runnable runnable = streamingMultiSseSupportSubscribedRunnable;
+                    if (runnable != null) {
+                        runnable.run();
+                    }
                 }
 
                 @Override

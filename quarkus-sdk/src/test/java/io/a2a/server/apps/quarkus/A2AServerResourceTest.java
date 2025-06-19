@@ -623,13 +623,15 @@ public class A2AServerResourceTest {
             // resubscribe to the task, requires the task and its queue to still be active
             TaskResubscriptionRequest taskResubscriptionRequest = new TaskResubscriptionRequest("1", new TaskIdParams(MINIMAL_TASK.getId()));
 
+            // Count down the latch when the MultiSseSupport on the server has started subscribing
+            A2AServerRoutes.setStreamingMultiSseSupportSubscribedRunnable(taskResubscriptionRequestSent::countDown);
+
             CompletableFuture<HttpResponse<Stream<String>>> responseFuture = initialiseStreamingRequest(taskResubscriptionRequest, null);
 
-            //CountDownLatch latch = new CountDownLatch(1);
             AtomicReference<Throwable> errorRef = new AtomicReference<>();
-            taskResubscriptionRequestSent.countDown();
 
             responseFuture.thenAccept(response -> {
+
                 if (response.statusCode() != 200) {
                     //errorRef.set(new IllegalStateException("Status code was " + response.statusCode()));
                     throw new IllegalStateException("Status code was " + response.statusCode());
@@ -660,14 +662,11 @@ public class A2AServerResourceTest {
                 if (!isStreamClosedError(t)) {
                     errorRef.set(t);
                 }
-                //latch.countDown();
                 return null;
             });
 
             try {
                 taskResubscriptionRequestSent.await();
-                // sleep to ensure that the events are sent after the client request is made
-                Thread.sleep(1000);
                 List<Event> events = List.of(
                         new TaskArtifactUpdateEvent.Builder()
                                 .taskId(MINIMAL_TASK.getId())
@@ -713,6 +712,7 @@ public class A2AServerResourceTest {
             assertEquals(TaskState.COMPLETED, taskStatusUpdateEvent.getStatus().state());
             assertNotNull(taskStatusUpdateEvent.getStatus().timestamp());
         } finally {
+            A2AServerRoutes.setStreamingMultiSseSupportSubscribedRunnable(null);
             taskStore.delete(MINIMAL_TASK.getId());
             executorService.shutdown();
             if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
