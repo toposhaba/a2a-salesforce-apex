@@ -1,4 +1,4 @@
-package io.a2a.server.apps;
+package io.a2a.server.apps.common;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
