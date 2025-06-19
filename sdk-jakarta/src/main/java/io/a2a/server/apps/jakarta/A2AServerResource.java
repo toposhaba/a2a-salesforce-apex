@@ -1,4 +1,4 @@
-package io.a2a.server.apps;
+package io.a2a.server.apps.jakarta;
 
 import java.util.concurrent.Flow;
 
