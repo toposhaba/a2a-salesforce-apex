@@ -878,25 +878,4 @@ public class A2AServerResourceTest {
     private static class BreakException extends RuntimeException {
 
     }
-
-    public static void main(String[] args) {
-        List<String> l = List.of("A", "B", "C", "D", "E");
-
-        System.out.println("== For loop");
-        for (String s : l) {
-            System.out.println(s);
-            if (s.equals("C")) {
-                break;
-            }
-        }
-
-        System.out.println("== ForEach");
-        Stream<String> str = l.stream();
-        str.forEach(s -> {
-            System.out.println(s);
-            if (s.equals("C")) {
-                throw new RuntimeException();
-            }
-        });
-    }
 }

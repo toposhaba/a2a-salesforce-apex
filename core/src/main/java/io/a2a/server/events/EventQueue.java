@@ -123,7 +123,7 @@ public abstract class EventQueue {
 
         @Override
         public void awaitQueuePollerStart() throws InterruptedException {
-            log.debug("Waiting for queue poller to start om {}", this);
+            log.debug("Waiting for queue poller to start on {}", this);
             pollingStartedLatch.await(10, TimeUnit.SECONDS);
             log.debug("Queue poller started on {}", this);
         }
