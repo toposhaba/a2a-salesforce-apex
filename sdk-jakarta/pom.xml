@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.a2a.sdk</groupId>
         <artifactId>a2a-java-sdk-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>0.2.3-SNAPSHOT</version>
     </parent>
     <artifactId>a2a-java-sdk-server-jakarta</artifactId>
 
