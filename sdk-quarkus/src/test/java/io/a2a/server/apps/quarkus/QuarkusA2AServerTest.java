@@ -8,7 +8,7 @@ import io.a2a.server.tasks.TaskStore;
 import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest
-public class A2AServerResourceTest extends AbstractA2AServerTest {
+public class QuarkusA2AServerTest extends AbstractA2AServerTest {
 
     @Inject
     TaskStore taskStore;
