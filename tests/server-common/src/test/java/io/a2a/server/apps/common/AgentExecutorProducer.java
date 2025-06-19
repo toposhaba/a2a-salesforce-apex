@@ -1,4 +1,4 @@
-package io.a2a.server.apps.quarkus;
+package io.a2a.server.apps.common;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
