@@ -299,6 +299,23 @@ Runnable failureHandler = () -> {...};
 client.sendStreamingMessage(params, eventHandler, errorHandler, failureHandler);
 ```
 
+#### Resubscribe to a task
+
+```java
+// Create a handler that will be invoked for Task, Message, TaskStatusUpdateEvent, and TaskArtifactUpdateEvent
+Consumer<StreamingEventKind> eventHandler = event -> {...};
+
+// Create a handler that will be invoked if an error is received
+Consumer<JSONRPCError> errorHandler = error -> {...};
+
+// Create a handler that will be invoked in the event of a failure
+Runnable failureHandler = () -> {...};
+
+// Resubscribe to an ongoing task with id "task-1234"
+TaskIdParams taskIdParams = new TaskIdParams("task-1234");
+client.resubscribeToTask("request-1234", taskIdParams, eventHandler, errorHandler, failureHandler);
+```
+
 #### Retrieve details about the server agent that this client agent is communicating with
 ```java
 AgentCard serverAgentCard = client.getAgentCard();
@@ -322,6 +339,13 @@ A complete example of an A2A client communicating with a Python A2A server is av
 
 The example includes detailed instructions on how to run both the Python server and the Java client using JBang. Check out the [example's README](src/main/java/io/a2a/examples/helloworld/README.md) for more information.
 
+## License
+
+This project is licensed under the terms of the [Apache 2.0 License](LICENSE).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 
 
 
