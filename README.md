@@ -139,18 +139,6 @@ public class WeatherAgentExecutorProducer {
             updater.complete();
         }
 
-        private String extractTextFromMessage(Message message) {
-            StringBuilder textBuilder = new StringBuilder();
-            if (message.getParts() != null) {
-                for (Part part : message.getParts()) {
-                    if (part instanceof TextPart textPart) {
-                        textBuilder.append(textPart.getText());
-                    }
-                }
-            }
-            return textBuilder.toString();
-        }
-
         @Override
         public void cancel(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
             Task task = context.getTask();
@@ -168,6 +156,18 @@ public class WeatherAgentExecutorProducer {
             // cancel the task
             TaskUpdater updater = new TaskUpdater(context, eventQueue);
             updater.cancel();
+        }
+
+        private String extractTextFromMessage(Message message) {
+            StringBuilder textBuilder = new StringBuilder();
+            if (message.getParts() != null) {
+                for (Part part : message.getParts()) {
+                    if (part instanceof TextPart textPart) {
+                        textBuilder.append(textPart.getText());
+                    }
+                }
+            }
+            return textBuilder.toString();
         }
     }
 }
@@ -202,26 +202,25 @@ OR
 </dependency>
 ```
 
-## Client
+## A2A Client
 
-An *initial* [A2AClient](https://github.com/fjuma/a2a-java-sdk/blob/main/src/main/java/io/a2a/client/A2AClient.java) class has been added. This is very much work in progress, we are working on implementing the methods required by the client side of the protocol.
+The A2A Java SDK provides a Java client implementation of the [Agent2Agent (A2A) Protocol](https://google-a2a.github.io/A2A), allowing communication with A2A servers.
 
 ### Sample Usage
 
-#### Create a client
+#### Create an A2A client
 
 ```java
-// Create an A2AClient (the URL specified is the server agent's URL)
+// Create an A2AClient (the URL specified is the server agent's URL, be sure to replace it with the actual URL of the A2A server you want to connect to)
 A2AClient client = new A2AClient("http://localhost:1234");
 ```
 
-#### Send a message
+#### Send a message to the A2A server agent
 
 ```java
-// Send a text message to the server agent
+// Send a text message to the A2A server agent
 Message message = A2A.toUserMessage("tell me a joke"); // the message ID will be automatically generated for you
 MessageSendParams params = new MessageSendParams.Builder()
-        .id("task-1234") // id is optional
         .message(message)
         .build();
 SendMessageResponse response = client.sendMessage(params);        
@@ -234,7 +233,7 @@ if you don't specify it. You can also explicitly specify a message ID like this:
 Message message = A2A.toUserMessage("tell me a joke", "message-1234"); // messageId is message-1234
 ```
 
-#### Get a task
+#### Get the current state of a task
 
 ```java
 // Retrieve the task with id "task-1234"
@@ -245,7 +244,7 @@ GetTaskResponse response = client.getTask("task-1234");
 GetTaskResponse response = client.getTask(new TaskQueryParams("task-1234", 10));
 ```
 
-#### Cancel a task
+#### Cancel an ongoing task
 
 ```java
 // Cancel the task we previously submitted with id "task-1234"
@@ -259,12 +258,12 @@ CancelTaskResponse response = client.cancelTask(new TaskIdParams("task-1234", me
 #### Get the push notification configuration for a task
 
 ```java
-// Get task push notification
-GetTaskPushNotificationResponse response = client.getTaskPushNotificationConfig("task-1234");
+// Get task push notification configuration
+GetTaskPushNotificationConfigResponse response = client.getTaskPushNotificationConfig("task-1234");
 
 // You can also specify additional properties using a map
 Map<String, Object> metadata = ...
-GetTaskPushNotificationResponse response = client.getTaskPushNotificationConfig(new TaskIdParams("task-1234", metadata));
+GetTaskPushNotificationConfigResponse response = client.getTaskPushNotificationConfig(new TaskIdParams("task-1234", metadata));
 ```
 
 #### Set the push notification configuration for a task
@@ -274,7 +273,7 @@ GetTaskPushNotificationResponse response = client.getTaskPushNotificationConfig(
 PushNotificationConfig pushNotificationConfig = new PushNotificationConfig.Builder()
         .url("https://example.com/callback")
         .authenticationInfo(new AuthenticationInfo(Collections.singletonList("jwt"), null))
-        .build());
+        .build();
 SetTaskPushNotificationResponse response = client.setTaskPushNotificationConfig("task-1234", pushNotificationConfig);
 ```
 
@@ -284,12 +283,11 @@ SetTaskPushNotificationResponse response = client.setTaskPushNotificationConfig(
 // Send a text message to the remote agent
 Message message = A2A.toUserMessage("tell me some jokes"); // the message ID will be automatically generated for you
 MessageSendParams params = new MessageSendParams.Builder()
-        .id("task-1234") // id is optional
         .message(message)
         .build();
 
 // Create a handler that will be invoked for Task, Message, TaskStatusUpdateEvent, and TaskArtifactUpdateEvent
-Consumer<StreamingEventType> eventHandler = event -> {...};
+Consumer<StreamingEventKind> eventHandler = event -> {...};
 
 // Create a handler that will be invoked if an error is received
 Consumer<JSONRPCError> errorHandler = error -> {...};
@@ -312,7 +310,7 @@ An agent card can also be retrieved using the `A2A#getAgentCard` method:
 AgentCard agentCard = A2A.getAgentCard("http://localhost:1234");
 ```
 
-## Examples
+## Additional Examples
 
 ### Hello World Example
 
@@ -324,9 +322,6 @@ A complete example of an A2A client communicating with a Python A2A server is av
 
 The example includes detailed instructions on how to run both the Python server and the Java client using JBang. Check out the [example's README](src/main/java/io/a2a/examples/helloworld/README.md) for more information.
 
-## Server
-
-TODO
 
 
 

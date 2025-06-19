@@ -350,6 +350,20 @@ public class A2AClient {
     /**
      * Send a streaming message to the remote agent.
      *
+     * @param messageSendParams the parameters for the message to be sent
+     * @param eventHandler a consumer that will be invoked for each event received from the remote agent
+     * @param errorHandler a consumer that will be invoked if the remote agent returns an error
+     * @param failureHandler a consumer that will be invoked if a failure occurs when processing events
+     * @throws A2AServerException if sending the streaming message fails for any reason
+     */
+    public void sendStreamingMessage(MessageSendParams messageSendParams, Consumer<StreamingEventKind> eventHandler,
+                                     Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
+        sendStreamingMessage(null, messageSendParams, eventHandler, errorHandler, failureHandler);
+    }
+
+    /**
+     * Send a streaming message to the remote agent.
+     *
      * @param requestId the request ID to use
      * @param messageSendParams the parameters for the message to be sent
      * @param eventHandler a consumer that will be invoked for each event received from the remote agent
