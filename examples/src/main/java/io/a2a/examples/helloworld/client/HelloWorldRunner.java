@@ -1,6 +1,6 @@
 ///usr/bin/env jbang "$0" "$@" ; exit $?
 //REPOS file://~/.m2/repository/
-//DEPS io.a2a.sdk:a2a-java-sdk:1.0.0-SNAPSHOT
+//DEPS io.a2a.sdk:a2a-java-sdk:0.2.3-SNAPSHOT
 //SOURCES HelloWorldClient.java
 
 /**
