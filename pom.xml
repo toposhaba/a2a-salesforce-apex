@@ -157,8 +157,8 @@
 
     <modules>
         <module>core</module>
-        <module>sdk</module>
-        <module>quarkus-sdk</module>
+        <module>sdk-jakarta</module>
+        <module>sdk-quarkus</module>
         <module>tck</module>
         <module>examples</module>
     </modules>
