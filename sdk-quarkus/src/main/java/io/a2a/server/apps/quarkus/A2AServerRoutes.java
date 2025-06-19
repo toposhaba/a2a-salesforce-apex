@@ -68,7 +68,7 @@ public class A2AServerRoutes {
     @ExtendedAgentCard
     Instance<AgentCard> extendedAgentCard;
 
-    // Hook so testing can wait until the MultiSseSupport is subscribes.
+    // Hook so testing can wait until the MultiSseSupport is subscribed.
     private static volatile Runnable streamingMultiSseSupportSubscribedRunnable;
 
     private final Executor executor = Executors.newCachedThreadPool();

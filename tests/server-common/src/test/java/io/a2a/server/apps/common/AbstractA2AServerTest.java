@@ -1,4 +1,4 @@
-package io.a2a.server.apps.quarkus;
+package io.a2a.server.apps.common;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -22,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
-import jakarta.inject.Inject;
 import jakarta.ws.rs.core.MediaType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -67,20 +66,12 @@ import io.a2a.spec.TaskStatusUpdateEvent;
 import io.a2a.spec.TextPart;
 import io.a2a.spec.UnsupportedOperationError;
 import io.a2a.util.Utils;
-import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.specification.RequestSpecification;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@QuarkusTest
-public class A2AServerResourceTest {
-
-    @Inject
-    TaskStore taskStore;
-
-    @Inject
-    InMemoryQueueManager queueManager;
+public abstract class AbstractA2AServerTest {
 
     private static final Task MINIMAL_TASK = new Task.Builder()
             .id("task-123")
@@ -122,7 +113,7 @@ public class A2AServerResourceTest {
     }
 
     private void testGetTask(String mediaType) {
-        taskStore.save(MINIMAL_TASK);
+        getTaskStore().save(MINIMAL_TASK);
         try {
             GetTaskRequest request = new GetTaskRequest("1", new TaskQueryParams(MINIMAL_TASK.getId()));
             RequestSpecification requestSpecification = RestAssured.given()
@@ -145,13 +136,13 @@ public class A2AServerResourceTest {
             assertNull(response.getError());
         } catch (Exception e) {
         } finally {
-            taskStore.delete(MINIMAL_TASK.getId());
+            getTaskStore().delete(MINIMAL_TASK.getId());
         }
     }
 
     @Test
     public void testGetTaskNotFound() {
-        assertTrue(taskStore.get("non-existent-task") == null);
+        assertTrue(getTaskStore().get("non-existent-task") == null);
         GetTaskRequest request = new GetTaskRequest("1", new TaskQueryParams("non-existent-task"));
         GetTaskResponse response = given()
                 .contentType(MediaType.APPLICATION_JSON)
@@ -171,7 +162,7 @@ public class A2AServerResourceTest {
 
     @Test
     public void testCancelTaskSuccess() {
-        taskStore.save(CANCEL_TASK);
+        getTaskStore().save(CANCEL_TASK);
         try {
             CancelTaskRequest request = new CancelTaskRequest("1", new TaskIdParams(CANCEL_TASK.getId()));
             CancelTaskResponse response = given()
@@ -191,13 +182,13 @@ public class A2AServerResourceTest {
             assertEquals(TaskState.CANCELED, task.getStatus().state());
         } catch (Exception e) {
         } finally {
-            taskStore.delete(CANCEL_TASK.getId());
+            getTaskStore().delete(CANCEL_TASK.getId());
         }
     }
 
     @Test
     public void testCancelTaskNotSupported() {
-        taskStore.save(CANCEL_TASK_NOT_SUPPORTED);
+        getTaskStore().save(CANCEL_TASK_NOT_SUPPORTED);
         try {
             CancelTaskRequest request = new CancelTaskRequest("1", new TaskIdParams(CANCEL_TASK_NOT_SUPPORTED.getId()));
             CancelTaskResponse response = given()
@@ -216,7 +207,7 @@ public class A2AServerResourceTest {
             assertEquals(new UnsupportedOperationError().getCode(), response.getError().getCode());
         } catch (Exception e) {
         } finally {
-            taskStore.delete(CANCEL_TASK_NOT_SUPPORTED.getId());
+            getTaskStore().delete(CANCEL_TASK_NOT_SUPPORTED.getId());
         }
     }
 
@@ -241,7 +232,7 @@ public class A2AServerResourceTest {
 
     @Test
     public void testSendMessageNewMessageSuccess() {
-        assertTrue(taskStore.get(MINIMAL_TASK.getId()) == null);
+        assertTrue(getTaskStore().get(MINIMAL_TASK.getId()) == null);
         Message message = new Message.Builder(MESSAGE)
                 .taskId(MINIMAL_TASK.getId())
                 .contextId(MINIMAL_TASK.getContextId())
@@ -267,7 +258,7 @@ public class A2AServerResourceTest {
 
     @Test
     public void testSendMessageExistingTaskSuccess() {
-        taskStore.save(MINIMAL_TASK);
+        getTaskStore().save(MINIMAL_TASK);
         try {
             Message message = new Message.Builder(MESSAGE)
                     .taskId(MINIMAL_TASK.getId())
@@ -292,13 +283,13 @@ public class A2AServerResourceTest {
             assertEquals("test message", ((TextPart) part).getText());
         } catch (Exception e) {
         } finally {
-            taskStore.delete(MINIMAL_TASK.getId());
+            getTaskStore().delete(MINIMAL_TASK.getId());
         }
     }
 
     @Test
     public void testSetPushNotificationSuccess() {
-        taskStore.save(MINIMAL_TASK);
+        getTaskStore().save(MINIMAL_TASK);
         try {
             TaskPushNotificationConfig taskPushConfig =
                     new TaskPushNotificationConfig(
@@ -320,13 +311,13 @@ public class A2AServerResourceTest {
             assertEquals("http://example.com", config.pushNotificationConfig().url());
         } catch (Exception e) {
         } finally {
-            taskStore.delete(MINIMAL_TASK.getId());
+            getTaskStore().delete(MINIMAL_TASK.getId());
         }
     }
 
     @Test
     public void testGetPushNotificationSuccess() {
-        taskStore.save(MINIMAL_TASK);
+        getTaskStore().save(MINIMAL_TASK);
         try {
             TaskPushNotificationConfig taskPushConfig =
                     new TaskPushNotificationConfig(
@@ -362,7 +353,7 @@ public class A2AServerResourceTest {
             assertEquals("http://example.com", config.pushNotificationConfig().url());
         } catch (Exception e) {
         } finally {
-            taskStore.delete(MINIMAL_TASK.getId());
+            getTaskStore().delete(MINIMAL_TASK.getId());
         }
     }
 
@@ -551,7 +542,7 @@ public class A2AServerResourceTest {
 
     @Test
     public void testSendMessageStreamExistingTaskSuccess() {
-        taskStore.save(MINIMAL_TASK);
+        getTaskStore().save(MINIMAL_TASK);
         try {
             Message message = new Message.Builder(MESSAGE)
                     .taskId(MINIMAL_TASK.getId())
@@ -600,20 +591,20 @@ public class A2AServerResourceTest {
             Assertions.assertNull(errorRef.get());
         } catch (Exception e) {
         } finally {
-            taskStore.delete(MINIMAL_TASK.getId());
+            getTaskStore().delete(MINIMAL_TASK.getId());
         }
     }
 
     @Test
     public void testResubscribeExistingTaskSuccess() throws Exception {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
-        taskStore.save(MINIMAL_TASK);
+        getTaskStore().save(MINIMAL_TASK);
 
         try {
             // attempting to send a streaming message instead of explicitly calling queueManager#createOrTap
             // does not work because after the message is sent, the queue becomes null but task resubscription
             // requires the queue to still be active
-            queueManager.createOrTap(MINIMAL_TASK.getId());
+            getQueueManager().createOrTap(MINIMAL_TASK.getId());
 
             CountDownLatch taskResubscriptionRequestSent = new CountDownLatch(1);
             CountDownLatch taskResubscriptionResponseReceived = new CountDownLatch(2);
@@ -624,7 +615,7 @@ public class A2AServerResourceTest {
             TaskResubscriptionRequest taskResubscriptionRequest = new TaskResubscriptionRequest("1", new TaskIdParams(MINIMAL_TASK.getId()));
 
             // Count down the latch when the MultiSseSupport on the server has started subscribing
-            A2AServerRoutes.setStreamingMultiSseSupportSubscribedRunnable(taskResubscriptionRequestSent::countDown);
+            setStreamingSubscribedRunnable(taskResubscriptionRequestSent::countDown);
 
             CompletableFuture<HttpResponse<Stream<String>>> responseFuture = initialiseStreamingRequest(taskResubscriptionRequest, null);
 
@@ -684,7 +675,7 @@ public class A2AServerResourceTest {
                                 .build());
 
                 for (Event event : events) {
-                    queueManager.get(MINIMAL_TASK.getId()).enqueueEvent(event);
+                    getQueueManager().get(MINIMAL_TASK.getId()).enqueueEvent(event);
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -712,8 +703,8 @@ public class A2AServerResourceTest {
             assertEquals(TaskState.COMPLETED, taskStatusUpdateEvent.getStatus().state());
             assertNotNull(taskStatusUpdateEvent.getStatus().timestamp());
         } finally {
-            A2AServerRoutes.setStreamingMultiSseSupportSubscribedRunnable(null);
-            taskStore.delete(MINIMAL_TASK.getId());
+            setStreamingSubscribedRunnable(null);
+            getTaskStore().delete(MINIMAL_TASK.getId());
             executorService.shutdown();
             if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
                 executorService.shutdownNow();
@@ -874,6 +865,12 @@ public class A2AServerResourceTest {
         // Send request async and return the CompletableFuture
         return client.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofLines());
     }
+
+    protected abstract TaskStore getTaskStore();
+
+    protected abstract InMemoryQueueManager getQueueManager();
+
+    protected abstract void setStreamingSubscribedRunnable(Runnable runnable);
 
     private static class BreakException extends RuntimeException {
 

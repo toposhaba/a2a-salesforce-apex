@@ -1,4 +1,4 @@
-package io.a2a.server.apps;
+package io.a2a.server.apps.jakarta;
 
 import static io.a2a.spec.A2A.CANCEL_TASK_METHOD;
 import static io.a2a.spec.A2A.GET_TASK_METHOD;

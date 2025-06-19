@@ -1,5 +1,7 @@
-package io.a2a.server.apps;
+package io.a2a.server.apps.jakarta;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 
 import jakarta.enterprise.inject.Instance;
@@ -56,6 +58,12 @@ public class A2AServerResource {
     @ExtendedAgentCard
     Instance<AgentCard> extendedAgentCard;
 
+    // Hook so testing can wait until the async Subscription is subscribed.
+    private static volatile Runnable streamingIsSubscribedRunnable;
+
+
+    private final Executor executor = Executors.newCachedThreadPool();
+
     /**
      * Handles incoming POST requests to the main A2A endpoint. Dispatches the
      * request to the appropriate JSON-RPC handler method and returns the response.
@@ -78,7 +86,9 @@ public class A2AServerResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.SERVER_SENT_EVENTS)
     public void handleStreamingRequests(StreamingJSONRPCRequest<?> request, @Context SseEventSink sseEventSink, @Context Sse sse) {
-        processStreamingRequest(request, sseEventSink, sse);
+        System.out.println("=====> Streaming");
+        executor.execute(() -> processStreamingRequest(request, sseEventSink, sse));
+        System.out.println("=====> Streaming - done");
     }
 
     /**
@@ -156,10 +166,17 @@ public class A2AServerResource {
             public void onSubscribe(Flow.Subscription subscription) {
                 this.subscription = subscription;
                 subscription.request(Long.MAX_VALUE);
+                System.out.println("SUBSCRIBING!");
+                // Notify tests that we are subscribed
+                Runnable runnable = streamingIsSubscribedRunnable;
+                if (runnable != null) {
+                    runnable.run();
+                }
             }
 
             @Override
             public void onNext(JSONRPCResponse<?> item) {
+
                 sseEventSink.send(sse.newEventBuilder()
                         .mediaType(MediaType.APPLICATION_JSON_TYPE)
                         .data(item)
@@ -181,6 +198,10 @@ public class A2AServerResource {
 
     private JSONRPCResponse<?> generateErrorResponse(JSONRPCRequest<?> request, JSONRPCError error) {
         return new JSONRPCErrorResponse(request.getId(), error);
+    }
+
+    static void setStreamingIsSubscribedRunnable(Runnable streamingIsSubscribedRunnable) {
+        A2AServerResource.streamingIsSubscribedRunnable = streamingIsSubscribedRunnable;
     }
 
     @Provider
