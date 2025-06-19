@@ -2,7 +2,10 @@ package io.a2a.client;
 
 import static io.a2a.client.JsonStreamingMessages.SEND_MESSAGE_STREAMING_TEST_REQUEST;
 import static io.a2a.client.JsonStreamingMessages.SEND_MESSAGE_STREAMING_TEST_RESPONSE;
+import static io.a2a.client.JsonStreamingMessages.TASK_RESUBSCRIPTION_REQUEST_TEST_RESPONSE;
+import static io.a2a.client.JsonStreamingMessages.TASK_RESUBSCRIPTION_TEST_REQUEST;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockserver.model.HttpRequest.request;
@@ -15,12 +18,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+import io.a2a.spec.Artifact;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Message;
 import io.a2a.spec.MessageSendConfiguration;
 import io.a2a.spec.MessageSendParams;
+import io.a2a.spec.Part;
 import io.a2a.spec.StreamingEventKind;
+import io.a2a.spec.Task;
+import io.a2a.spec.TaskIdParams;
+import io.a2a.spec.TaskState;
 import io.a2a.spec.TextPart;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -115,5 +124,54 @@ public class A2AClientStreamingTest {
         boolean eventReceived = latch.await(10, TimeUnit.SECONDS);
         assertTrue(eventReceived);
         assertNotNull(receivedEvent.get());
+    }
+
+    @Test
+    public void testA2AClientResubscribeToTask() throws Exception {
+        this.server.when(
+                        request()
+                                .withMethod("POST")
+                                .withPath("/")
+                                .withBody(JsonBody.json(TASK_RESUBSCRIPTION_TEST_REQUEST, MatchType.STRICT))
+
+                )
+                .respond(
+                        response()
+                                .withStatusCode(200)
+                                .withHeader("Content-Type", "text/event-stream")
+                                .withBody(TASK_RESUBSCRIPTION_REQUEST_TEST_RESPONSE)
+                );
+
+        A2AClient client = new A2AClient("http://localhost:4001");
+        TaskIdParams taskIdParams = new TaskIdParams("task-1234");
+
+        AtomicReference<StreamingEventKind> receivedEvent = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+        Consumer<StreamingEventKind> eventHandler = event -> {
+            receivedEvent.set(event);
+            latch.countDown();
+        };
+        Consumer<JSONRPCError> errorHandler = error -> {};
+        Runnable failureHandler = () -> {};
+        client.resubscribeToTask("request-1234", taskIdParams, eventHandler, errorHandler, failureHandler);
+
+        boolean eventReceived = latch.await(10, TimeUnit.SECONDS);
+        assertTrue(eventReceived);
+
+        StreamingEventKind eventKind = receivedEvent.get();;
+        assertNotNull(eventKind);
+        assertInstanceOf(Task.class, eventKind);
+        Task task = (Task) eventKind;
+        assertEquals("2", task.getId());
+        assertEquals("context-1234", task.getContextId());
+        assertEquals(TaskState.COMPLETED, task.getStatus().state());
+        List<Artifact> artifacts = task.getArtifacts();
+        assertEquals(1, artifacts.size());
+        Artifact artifact = artifacts.get(0);
+        assertEquals("artifact-1", artifact.artifactId());
+        assertEquals("joke", artifact.name());
+        Part<?> part = artifact.parts().get(0);
+        assertEquals(Part.Kind.TEXT, part.getKind());
+        assertEquals("Why did the chicken cross the road? To get to the other side!", ((TextPart) part).getText());
     }
 } 

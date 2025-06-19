@@ -4,6 +4,8 @@ import static io.a2a.spec.A2A.JSONRPC_VERSION;
 import static io.a2a.spec.A2A.SEND_STREAMING_MESSAGE_METHOD;
 import static io.a2a.util.Utils.defaultIfNull;
 
+import java.util.UUID;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -67,6 +69,9 @@ public final class SendStreamingMessageRequest extends StreamingJSONRPCRequest<M
             }
 
             public SendStreamingMessageRequest build() {
+                if (id == null) {
+                    id = UUID.randomUUID().toString();
+                }
                 return new SendStreamingMessageRequest(jsonrpc, id, method, params);
             }
         }

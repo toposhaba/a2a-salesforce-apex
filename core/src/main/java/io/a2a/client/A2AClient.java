@@ -6,6 +6,7 @@ import static io.a2a.spec.A2A.GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD;
 import static io.a2a.spec.A2A.JSONRPC_VERSION;
 import static io.a2a.spec.A2A.SEND_MESSAGE_METHOD;
 import static io.a2a.spec.A2A.SEND_STREAMING_MESSAGE_METHOD;
+import static io.a2a.spec.A2A.SEND_TASK_RESUBSCRIPTION_METHOD;
 import static io.a2a.spec.A2A.SET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD;
 import static io.a2a.util.Assert.checkNotNullParam;
 import static io.a2a.util.Utils.OBJECT_MAPPER;
@@ -45,6 +46,7 @@ import io.a2a.spec.StreamingEventKind;
 import io.a2a.spec.TaskIdParams;
 import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
+import io.a2a.spec.TaskResubscriptionRequest;
 
 /**
  * An A2A client.
@@ -350,6 +352,20 @@ public class A2AClient {
     /**
      * Send a streaming message to the remote agent.
      *
+     * @param messageSendParams the parameters for the message to be sent
+     * @param eventHandler a consumer that will be invoked for each event received from the remote agent
+     * @param errorHandler a consumer that will be invoked if the remote agent returns an error
+     * @param failureHandler a consumer that will be invoked if a failure occurs when processing events
+     * @throws A2AServerException if sending the streaming message fails for any reason
+     */
+    public void sendStreamingMessage(MessageSendParams messageSendParams, Consumer<StreamingEventKind> eventHandler,
+                                     Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
+        sendStreamingMessage(null, messageSendParams, eventHandler, errorHandler, failureHandler);
+    }
+
+    /**
+     * Send a streaming message to the remote agent.
+     *
      * @param requestId the request ID to use
      * @param messageSendParams the parameters for the message to be sent
      * @param eventHandler a consumer that will be invoked for each event received from the remote agent
@@ -389,6 +405,65 @@ public class A2AClient {
             throw new A2AServerException("Failed to send streaming message request: " + e);
         } catch (InterruptedException e) {
             throw new A2AServerException("Send streaming message request timed out: " + e);
+        }
+    }
+
+    /**
+     * Resubscribe to an ongoing task.
+     *
+     * @param taskIdParams the params for the task to resubscribe to
+     * @param eventHandler a consumer that will be invoked for each event received from the remote agent
+     * @param errorHandler a consumer that will be invoked if the remote agent returns an error
+     * @param failureHandler a consumer that will be invoked if a failure occurs when processing events
+     * @throws A2AServerException if resubscribing to the task fails for any reason
+     */
+    public void resubscribeToTask(TaskIdParams taskIdParams, Consumer<StreamingEventKind> eventHandler,
+                                  Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
+        resubscribeToTask(null, taskIdParams, eventHandler, errorHandler, failureHandler);
+    }
+
+    /**
+     * Resubscribe to an ongoing task.
+     *
+     * @param requestId the request ID to use
+     * @param taskIdParams the params for the task to resubscribe to
+     * @param eventHandler a consumer that will be invoked for each event received from the remote agent
+     * @param errorHandler a consumer that will be invoked if the remote agent returns an error
+     * @param failureHandler a consumer that will be invoked if a failure occurs when processing events
+     * @throws A2AServerException if resubscribing to the task fails for any reason
+     */
+    public void resubscribeToTask(String requestId, TaskIdParams taskIdParams, Consumer<StreamingEventKind> eventHandler,
+                                  Consumer<JSONRPCError> errorHandler, Runnable failureHandler) throws A2AServerException {
+        checkNotNullParam("taskIdParams", taskIdParams);
+        checkNotNullParam("eventHandler", eventHandler);
+        checkNotNullParam("errorHandler", errorHandler);
+        checkNotNullParam("failureHandler", failureHandler);
+
+        TaskResubscriptionRequest.Builder taskResubscriptionRequestBuilder = new TaskResubscriptionRequest.Builder()
+                .jsonrpc(JSONRPC_VERSION)
+                .method(SEND_TASK_RESUBSCRIPTION_METHOD)
+                .params(taskIdParams);
+
+        if (requestId != null) {
+            taskResubscriptionRequestBuilder.id(requestId);
+        }
+
+        AtomicReference<CompletableFuture<Void>> ref = new AtomicReference<>();
+        SSEEventListener sseEventListener = new SSEEventListener(eventHandler, errorHandler, failureHandler);
+        TaskResubscriptionRequest taskResubscriptionRequest = taskResubscriptionRequestBuilder.build();
+        try {
+            A2AHttpClient.PostBuilder builder = createPostBuilder(taskResubscriptionRequest);
+            ref.set(builder.postAsyncSSE(
+                    msg -> sseEventListener.onMessage(msg, ref.get()),
+                    throwable -> sseEventListener.onError(throwable, ref.get()),
+                    () -> {
+                        // We don't need to do anything special on completion
+                    }));
+
+        } catch (IOException e) {
+            throw new A2AServerException("Failed to send task resubscription request: " + e);
+        } catch (InterruptedException e) {
+            throw new A2AServerException("Task resubscription request timed out: " + e);
         }
     }
 

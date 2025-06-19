@@ -40,4 +40,38 @@ public final class TaskResubscriptionRequest extends StreamingJSONRPCRequest<Tas
     public TaskResubscriptionRequest(Object id, TaskIdParams params) {
         this(null, id, SEND_TASK_RESUBSCRIPTION_METHOD, params);
     }
+
+    public static class Builder {
+        private String jsonrpc;
+        private Object id;
+        private String method = SEND_TASK_RESUBSCRIPTION_METHOD;
+        private TaskIdParams params;
+
+        public TaskResubscriptionRequest.Builder jsonrpc(String jsonrpc) {
+            this.jsonrpc = jsonrpc;
+            return this;
+        }
+
+        public TaskResubscriptionRequest.Builder id(Object id) {
+            this.id = id;
+            return this;
+        }
+
+        public TaskResubscriptionRequest.Builder method(String method) {
+            this.method = method;
+            return this;
+        }
+
+        public TaskResubscriptionRequest.Builder params(TaskIdParams params) {
+            this.params = params;
+            return this;
+        }
+
+        public TaskResubscriptionRequest build() {
+            if (id == null) {
+                id = UUID.randomUUID().toString();
+            }
+            return new TaskResubscriptionRequest(jsonrpc, id, method, params);
+        }
+    }
 }
