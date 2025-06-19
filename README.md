@@ -89,6 +89,9 @@ import io.a2a.server.tasks.TaskUpdater;
 import io.a2a.spec.JSONRPCError;
 import io.a2a.spec.Message;
 import io.a2a.spec.Part;
+import io.a2a.spec.Task;
+import io.a2a.spec.TaskNotCancelableError;
+import io.a2a.spec.TaskState;
 import io.a2a.spec.TextPart;
 ...
 
@@ -98,99 +101,46 @@ public class WeatherAgentExecutorProducer {
     @Inject
     WeatherAgent weatherAgent;
 
-    // Thread pool for background execution
-    private final Executor taskExecutor = Executors.newCachedThreadPool();
-    
-    // Track active sessions for potential cancellation
-    private final ConcurrentHashMap<String, CompletableFuture<Void>> activeSessions = new ConcurrentHashMap<>();
-
     @Produces
     public AgentExecutor agentExecutor() {
-        return new WeatherAgentExecutor(weatherAgent, taskExecutor, activeSessions);
+        return new WeatherAgentExecutor(weatherAgent);
     }
 
     private static class WeatherAgentExecutor implements AgentExecutor {
 
         private final WeatherAgent weatherAgent;
-        private final Executor taskExecutor;
-        private final ConcurrentHashMap<String, CompletableFuture<Void>> activeSessions;
 
-        public WeatherAgentExecutor(WeatherAgent weatherAgent, Executor taskExecutor, 
-                                  ConcurrentHashMap<String, CompletableFuture<Void>> activeSessions) {
+        public WeatherAgentExecutor(WeatherAgent weatherAgent) {
             this.weatherAgent = weatherAgent;
-            this.taskExecutor = taskExecutor;
-            this.activeSessions = activeSessions;
         }
 
         @Override
         public void execute(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
             TaskUpdater updater = new TaskUpdater(context, eventQueue);
 
-            // Immediately notify that the task is submitted
+            // mark the task as submitted and start working on it
             if (context.getTask() == null) {
                 updater.submit();
             }
             updater.startWork();
 
-            CompletableFuture<Void> taskFuture = CompletableFuture.runAsync(() -> {
-                try {
-                    processRequest(context, updater);
-                } catch (Exception e) {
-                    System.err.println("Weather agent execution failed: " + e.getMessage());
-                    e.printStackTrace();
-                }
-            }, taskExecutor);
+            // extract the text from the message
+            String userMessage = extractTextFromMessage(context.getMessage());
 
-            // Track the active session
-            activeSessions.put(context.getContextId(), taskFuture);
-            taskFuture.join();
-        }
+            // call the weather agent with the user's message
+            String response = weatherAgent.chat(userMessage);
 
-        private void processRequest(RequestContext context, TaskUpdater updater) {
-            String contextId = context.getContextId();
-            
-            try {
-                // Check for interruption before starting work
-                if (Thread.currentThread().isInterrupted()) {
-                    return;
-                }
-                
-                // Extract text from message parts
-                String userMessage = extractTextFromMessage(context.getMessage());
-                
-                // Call the weather agent with the user's message
-                String response = weatherAgent.chat(userMessage);
-                
-                // Check for interruption after agent call
-                if (Thread.currentThread().isInterrupted()) {
-                    return;
-                }
-                
-                // Create response part
-                TextPart responsePart = new TextPart(response, null);
-                List<Part<?>> parts = List.of(responsePart);
-                
-                // Add response as artifact and complete the task
-                updater.addArtifact(parts, null, null, null);
-                updater.complete();
-                
-            } catch (Exception e) {
-                // Task failed
-                System.err.println("Weather agent task failed: " + contextId);
-                e.printStackTrace();
-                
-                // Mark task as failed using TaskUpdater
-                updater.fail();
-                
-            } finally {
-                // Clean up active session
-                activeSessions.remove(contextId);
-            }
+            // create the response part
+            TextPart responsePart = new TextPart(response, null);
+            List<Part<?>> parts = List.of(responsePart);
+
+            // add the response as an artifact and complete the task
+            updater.addArtifact(parts, null, null, null);
+            updater.complete();
         }
 
         private String extractTextFromMessage(Message message) {
             StringBuilder textBuilder = new StringBuilder();
-            
             if (message.getParts() != null) {
                 for (Part part : message.getParts()) {
                     if (part instanceof TextPart textPart) {
@@ -198,26 +148,26 @@ public class WeatherAgentExecutorProducer {
                     }
                 }
             }
-            
             return textBuilder.toString();
         }
 
         @Override
         public void cancel(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
-            String contextId = context.getContextId();
-            CompletableFuture<Void> taskFuture = activeSessions.get(contextId);
-            
-            if (taskFuture != null) {
-                // Cancel the future
-                taskFuture.cancel(true);
-                activeSessions.remove(contextId);
-                
-                // Update task status to cancelled using TaskUpdater
-                TaskUpdater updater = new TaskUpdater(context, eventQueue);
-                updater.cancel();
-            } else {
-                System.out.println("Cancellation requested for inactive weather session: " + contextId);
+            Task task = context.getTask();
+
+            if (task.getStatus().state() == TaskState.CANCELED) {
+                // task already cancelled
+                throw new TaskNotCancelableError();
             }
+
+            if (task.getStatus().state() == TaskState.COMPLETED) {
+                // task already completed
+                throw new TaskNotCancelableError();
+            }
+
+            // cancel the task
+            TaskUpdater updater = new TaskUpdater(context, eventQueue);
+            updater.cancel();
         }
     }
 }
