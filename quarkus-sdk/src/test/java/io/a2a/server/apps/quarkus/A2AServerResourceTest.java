@@ -8,10 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.wildfly.common.Assert.assertNotNull;
 import static org.wildfly.common.Assert.assertTrue;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
+import java.io.EOFException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -19,15 +20,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 import jakarta.inject.Inject;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.a2a.server.events.Event;
 import io.a2a.server.events.InMemoryQueueManager;
 import io.a2a.server.tasks.TaskStore;
@@ -55,6 +53,7 @@ import io.a2a.spec.SendStreamingMessageRequest;
 import io.a2a.spec.SendStreamingMessageResponse;
 import io.a2a.spec.SetTaskPushNotificationConfigRequest;
 import io.a2a.spec.SetTaskPushNotificationConfigResponse;
+import io.a2a.spec.StreamingJSONRPCRequest;
 import io.a2a.spec.Task;
 import io.a2a.spec.TaskArtifactUpdateEvent;
 import io.a2a.spec.TaskIdParams;
@@ -71,7 +70,7 @@ import io.a2a.util.Utils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.specification.RequestSpecification;
-
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
@@ -298,49 +297,6 @@ public class A2AServerResourceTest {
     }
 
     @Test
-    public void testSendMessageStreamNewMessageSuccess() throws Exception {
-        testSendStreamingMessage();
-    }
-
-    @Test
-    public void testSendMessageStreamExistingTaskSuccess() {
-        taskStore.save(MINIMAL_TASK);
-        try {
-            Message message = new Message.Builder(MESSAGE)
-                    .taskId(MINIMAL_TASK.getId())
-                    .contextId(MINIMAL_TASK.getContextId())
-                    .build();
-            SendStreamingMessageRequest request = new SendStreamingMessageRequest(
-                    "1", new MessageSendParams(message, null, null));
-            Client client = ClientBuilder.newClient();
-            WebTarget target = client.target("http://localhost:8081/");
-            Response response = target.request().post(Entity.json(request));
-            InputStream inputStream = response.readEntity(InputStream.class);
-            boolean dataRead = false;
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (line.startsWith("data: ")) {
-                        SendStreamingMessageResponse sendStreamingMessageResponse = Utils.OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
-                        assertNull(sendStreamingMessageResponse.getError());
-                        Message messageResponse = (Message) sendStreamingMessageResponse.getResult();
-                        assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());
-                        assertEquals(MESSAGE.getRole(), messageResponse.getRole());
-                        Part<?> part = messageResponse.getParts().get(0);
-                        assertEquals(Part.Kind.TEXT, part.getKind());
-                        assertEquals("test message", ((TextPart) part).getText());
-                        dataRead = true;
-                    }
-                }
-            }
-            assertTrue(dataRead);
-        } catch (Exception e) {
-        } finally {
-            taskStore.delete(MINIMAL_TASK.getId());
-        }
-    }
-
-    @Test
     public void testSetPushNotificationSuccess() {
         taskStore.save(MINIMAL_TASK);
         try {
@@ -408,135 +364,6 @@ public class A2AServerResourceTest {
         } finally {
             taskStore.delete(MINIMAL_TASK.getId());
         }
-    }
-
-    @Test
-    public void testResubscribeExistingTaskSuccess() throws Exception {
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        taskStore.save(MINIMAL_TASK);
-
-        try {
-            // attempting to send a streaming message instead of explicitly calling queueManager#createOrTap
-            // does not work because after the message is sent, the queue becomes null but task resubscription
-            // requires the queue to still be active
-            queueManager.createOrTap(MINIMAL_TASK.getId());
-
-            CountDownLatch taskResubscriptionRequestSent = new CountDownLatch(1);
-            CountDownLatch taskResubscriptionResponseReceived = new CountDownLatch(2);
-            AtomicReference<SendStreamingMessageResponse> firstResponse = new AtomicReference<>();
-            AtomicReference<SendStreamingMessageResponse> secondResponse = new AtomicReference<>();
-
-            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                // resubscribe to the task, requires the task and its queue to still be active
-                TaskResubscriptionRequest taskResubscriptionRequest = new TaskResubscriptionRequest("1", new TaskIdParams(MINIMAL_TASK.getId()));
-                Client client = ClientBuilder.newClient();
-                WebTarget target = client.target("http://localhost:8081/");
-                taskResubscriptionRequestSent.countDown();
-                Response response = target.request().post(Entity.json(taskResubscriptionRequest));
-                InputStream inputStream = response.readEntity(InputStream.class);
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        if (line.startsWith("data: ")) {
-                            SendStreamingMessageResponse sendStreamingMessageResponse = Utils.OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
-                            if (taskResubscriptionResponseReceived.getCount() == 2) {
-                                firstResponse.set(sendStreamingMessageResponse);
-                            } else {
-                                secondResponse.set(sendStreamingMessageResponse);
-                            }
-                            taskResubscriptionResponseReceived.countDown();
-                            if (taskResubscriptionResponseReceived.getCount() == 0) {
-                                break;
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                } finally {
-                    response.close();
-                    client.close();
-                }
-            }, executorService);
-
-            try {
-                taskResubscriptionRequestSent.await();
-                // sleep to ensure that the events are sent after the client request is made
-                Thread.sleep(1000);
-                List<Event> events = List.of(
-                        new TaskArtifactUpdateEvent.Builder()
-                                .taskId(MINIMAL_TASK.getId())
-                                .contextId(MINIMAL_TASK.getContextId())
-                                .artifact(new Artifact.Builder()
-                                        .artifactId("11")
-                                        .parts(new TextPart("text"))
-                                        .build())
-                                .build(),
-                        new TaskStatusUpdateEvent.Builder()
-                                .taskId(MINIMAL_TASK.getId())
-                                .contextId(MINIMAL_TASK.getContextId())
-                                .status(new TaskStatus(TaskState.COMPLETED))
-                                .isFinal(true)
-                                .build());
-
-                for (Event event : events) {
-                    queueManager.get(MINIMAL_TASK.getId()).enqueueEvent(event);
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-
-            // wait for the client to receive the responses
-            taskResubscriptionResponseReceived.await();
-
-            assertNotNull(firstResponse.get());
-            SendStreamingMessageResponse sendStreamingMessageResponse = firstResponse.get();
-            assertNull(sendStreamingMessageResponse.getError());
-            TaskArtifactUpdateEvent taskArtifactUpdateEvent = (TaskArtifactUpdateEvent) sendStreamingMessageResponse.getResult();
-            assertEquals(MINIMAL_TASK.getId(), taskArtifactUpdateEvent.getTaskId());
-            assertEquals(MINIMAL_TASK.getContextId(), taskArtifactUpdateEvent.getContextId());
-            Part<?> part = taskArtifactUpdateEvent.getArtifact().parts().get(0);
-            assertEquals(Part.Kind.TEXT, part.getKind());
-            assertEquals("text", ((TextPart) part).getText());
-
-            assertNotNull(secondResponse.get());
-            sendStreamingMessageResponse = secondResponse.get();
-            assertNull(sendStreamingMessageResponse.getError());
-            TaskStatusUpdateEvent taskStatusUpdateEvent = (TaskStatusUpdateEvent) sendStreamingMessageResponse.getResult();
-            assertEquals(MINIMAL_TASK.getId(), taskStatusUpdateEvent.getTaskId());
-            assertEquals(MINIMAL_TASK.getContextId(), taskStatusUpdateEvent.getContextId());
-            assertEquals(TaskState.COMPLETED, taskStatusUpdateEvent.getStatus().state());
-            assertNotNull(taskStatusUpdateEvent.getStatus().timestamp());
-        } finally {
-            taskStore.delete(MINIMAL_TASK.getId());
-            executorService.shutdown();
-            if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
-                executorService.shutdownNow();
-            }
-        }
-    }
-
-    @Test
-    public void testResubscribeNoExistingTaskError() throws Exception {
-        TaskResubscriptionRequest request = new TaskResubscriptionRequest("1", new TaskIdParams("non-existent-task"));
-        Client client = ClientBuilder.newClient();
-        WebTarget target = client.target("http://localhost:8081/");
-        Response response = target.request().post(Entity.json(request));
-        InputStream inputStream = response.readEntity(InputStream.class);
-        boolean dataRead = false;
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.startsWith("data: ")) {
-                    SendStreamingMessageResponse sendStreamingMessageResponse = Utils.OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
-                    assertEquals(request.getId(), sendStreamingMessageResponse.getId());
-                    assertNull(sendStreamingMessageResponse.getResult());
-                    // this should be an instance of TaskNotFoundError, see https://github.com/fjuma/a2a-java-sdk/issues/23
-                    assertInstanceOf(JSONRPCError.class, sendStreamingMessageResponse.getError());
-                    assertEquals(new TaskNotFoundError().getCode(), sendStreamingMessageResponse.getError().getCode());
-                    dataRead = true;
-                }
-            }
-        }
-        assertTrue(dataRead);
     }
 
     @Test
@@ -721,12 +548,228 @@ public class A2AServerResourceTest {
         testGetTask(MediaType.APPLICATION_JSON);
     }
 
+
+    @Test
+    public void testSendMessageStreamExistingTaskSuccess() {
+        taskStore.save(MINIMAL_TASK);
+        try {
+            Message message = new Message.Builder(MESSAGE)
+                    .taskId(MINIMAL_TASK.getId())
+                    .contextId(MINIMAL_TASK.getContextId())
+                    .build();
+            SendStreamingMessageRequest request = new SendStreamingMessageRequest(
+                    "1", new MessageSendParams(message, null, null));
+
+            CompletableFuture<HttpResponse<Stream<String>>> responseFuture = initialiseStreamingRequest(request, null);
+
+            CountDownLatch latch = new CountDownLatch(1);
+            AtomicReference<Throwable> errorRef = new AtomicReference<>();
+
+            responseFuture.thenAccept(response -> {
+                if (response.statusCode() != 200) {
+                    //errorRef.set(new IllegalStateException("Status code was " + response.statusCode()));
+                    throw new IllegalStateException("Status code was " + response.statusCode());
+                }
+                response.body().forEach(line -> {
+                    try {
+                        SendStreamingMessageResponse jsonResponse = extractJsonResponseFromSseLine(line);
+                        if (jsonResponse != null) {
+                            assertNull(jsonResponse.getError());
+                            Message messageResponse = (Message) jsonResponse.getResult();
+                            assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());
+                            assertEquals(MESSAGE.getRole(), messageResponse.getRole());
+                            Part<?> part = messageResponse.getParts().get(0);
+                            assertEquals(Part.Kind.TEXT, part.getKind());
+                            assertEquals("test message", ((TextPart) part).getText());
+                            latch.countDown();
+                        }
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }).exceptionally(t -> {
+                if (!isStreamClosedError(t)) {
+                    errorRef.set(t);
+                }
+                latch.countDown();
+                return null;
+            });
+
+            boolean dataRead = latch.await(20, TimeUnit.SECONDS);
+            Assertions.assertTrue(dataRead);
+            Assertions.assertNull(errorRef.get());
+        } catch (Exception e) {
+        } finally {
+            taskStore.delete(MINIMAL_TASK.getId());
+        }
+    }
+
+    @Test
+    public void testResubscribeExistingTaskSuccess() throws Exception {
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        taskStore.save(MINIMAL_TASK);
+
+        try {
+            // attempting to send a streaming message instead of explicitly calling queueManager#createOrTap
+            // does not work because after the message is sent, the queue becomes null but task resubscription
+            // requires the queue to still be active
+            queueManager.createOrTap(MINIMAL_TASK.getId());
+
+            CountDownLatch taskResubscriptionRequestSent = new CountDownLatch(1);
+            CountDownLatch taskResubscriptionResponseReceived = new CountDownLatch(2);
+            AtomicReference<SendStreamingMessageResponse> firstResponse = new AtomicReference<>();
+            AtomicReference<SendStreamingMessageResponse> secondResponse = new AtomicReference<>();
+
+            // resubscribe to the task, requires the task and its queue to still be active
+            TaskResubscriptionRequest taskResubscriptionRequest = new TaskResubscriptionRequest("1", new TaskIdParams(MINIMAL_TASK.getId()));
+
+            // Count down the latch when the MultiSseSupport on the server has started subscribing
+            A2AServerRoutes.setStreamingMultiSseSupportSubscribedRunnable(taskResubscriptionRequestSent::countDown);
+
+            CompletableFuture<HttpResponse<Stream<String>>> responseFuture = initialiseStreamingRequest(taskResubscriptionRequest, null);
+
+            AtomicReference<Throwable> errorRef = new AtomicReference<>();
+
+            responseFuture.thenAccept(response -> {
+
+                if (response.statusCode() != 200) {
+                    //errorRef.set(new IllegalStateException("Status code was " + response.statusCode()));
+                    throw new IllegalStateException("Status code was " + response.statusCode());
+                }
+                try {
+                    response.body().forEach(line -> {
+                        try {
+                            SendStreamingMessageResponse jsonResponse = extractJsonResponseFromSseLine(line);
+                            if (jsonResponse != null) {
+                                SendStreamingMessageResponse sendStreamingMessageResponse = Utils.OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
+                                if (taskResubscriptionResponseReceived.getCount() == 2) {
+                                    firstResponse.set(sendStreamingMessageResponse);
+                                } else {
+                                    secondResponse.set(sendStreamingMessageResponse);
+                                }
+                                taskResubscriptionResponseReceived.countDown();
+                                if (taskResubscriptionResponseReceived.getCount() == 0) {
+                                    throw new BreakException();
+                                }
+                            }
+                        } catch (JsonProcessingException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                } catch (BreakException e) {
+                }
+            }).exceptionally(t -> {
+                if (!isStreamClosedError(t)) {
+                    errorRef.set(t);
+                }
+                return null;
+            });
+
+            try {
+                taskResubscriptionRequestSent.await();
+                List<Event> events = List.of(
+                        new TaskArtifactUpdateEvent.Builder()
+                                .taskId(MINIMAL_TASK.getId())
+                                .contextId(MINIMAL_TASK.getContextId())
+                                .artifact(new Artifact.Builder()
+                                        .artifactId("11")
+                                        .parts(new TextPart("text"))
+                                        .build())
+                                .build(),
+                        new TaskStatusUpdateEvent.Builder()
+                                .taskId(MINIMAL_TASK.getId())
+                                .contextId(MINIMAL_TASK.getContextId())
+                                .status(new TaskStatus(TaskState.COMPLETED))
+                                .isFinal(true)
+                                .build());
+
+                for (Event event : events) {
+                    queueManager.get(MINIMAL_TASK.getId()).enqueueEvent(event);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            // wait for the client to receive the responses
+            taskResubscriptionResponseReceived.await();
+
+            assertNotNull(firstResponse.get());
+            SendStreamingMessageResponse sendStreamingMessageResponse = firstResponse.get();
+            assertNull(sendStreamingMessageResponse.getError());
+            TaskArtifactUpdateEvent taskArtifactUpdateEvent = (TaskArtifactUpdateEvent) sendStreamingMessageResponse.getResult();
+            assertEquals(MINIMAL_TASK.getId(), taskArtifactUpdateEvent.getTaskId());
+            assertEquals(MINIMAL_TASK.getContextId(), taskArtifactUpdateEvent.getContextId());
+            Part<?> part = taskArtifactUpdateEvent.getArtifact().parts().get(0);
+            assertEquals(Part.Kind.TEXT, part.getKind());
+            assertEquals("text", ((TextPart) part).getText());
+
+            assertNotNull(secondResponse.get());
+            sendStreamingMessageResponse = secondResponse.get();
+            assertNull(sendStreamingMessageResponse.getError());
+            TaskStatusUpdateEvent taskStatusUpdateEvent = (TaskStatusUpdateEvent) sendStreamingMessageResponse.getResult();
+            assertEquals(MINIMAL_TASK.getId(), taskStatusUpdateEvent.getTaskId());
+            assertEquals(MINIMAL_TASK.getContextId(), taskStatusUpdateEvent.getContextId());
+            assertEquals(TaskState.COMPLETED, taskStatusUpdateEvent.getStatus().state());
+            assertNotNull(taskStatusUpdateEvent.getStatus().timestamp());
+        } finally {
+            A2AServerRoutes.setStreamingMultiSseSupportSubscribedRunnable(null);
+            taskStore.delete(MINIMAL_TASK.getId());
+            executorService.shutdown();
+            if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+            }
+        }
+    }
+
+    @Test
+    public void testResubscribeNoExistingTaskError() throws Exception {
+        TaskResubscriptionRequest request = new TaskResubscriptionRequest("1", new TaskIdParams("non-existent-task"));
+
+        CompletableFuture<HttpResponse<Stream<String>>> responseFuture = initialiseStreamingRequest(request, null);
+
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<Throwable> errorRef = new AtomicReference<>();
+
+        responseFuture.thenAccept(response -> {
+            if (response.statusCode() != 200) {
+                //errorRef.set(new IllegalStateException("Status code was " + response.statusCode()));
+                throw new IllegalStateException("Status code was " + response.statusCode());
+            }
+            response.body().forEach(line -> {
+                try {
+                    SendStreamingMessageResponse jsonResponse = extractJsonResponseFromSseLine(line);
+                    if (jsonResponse != null) {
+                        assertEquals(request.getId(), jsonResponse.getId());
+                        assertNull(jsonResponse.getResult());
+                        // this should be an instance of TaskNotFoundError, see https://github.com/fjuma/a2a-java-sdk/issues/23
+                        assertInstanceOf(JSONRPCError.class, jsonResponse.getError());
+                        assertEquals(new TaskNotFoundError().getCode(), jsonResponse.getError().getCode());
+                        latch.countDown();
+                    }
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }).exceptionally(t -> {
+            if (!isStreamClosedError(t)) {
+                errorRef.set(t);
+            }
+            latch.countDown();
+            return null;
+        });
+
+        boolean dataRead = latch.await(20, TimeUnit.SECONDS);
+        Assertions.assertTrue(dataRead);
+        Assertions.assertNull(errorRef.get());
+    }
+
     @Test
     public void testStreamingMethodWithAcceptHeader() throws Exception {
         testSendStreamingMessage(MediaType.SERVER_SENT_EVENTS);
     }
 
-    private void testSendStreamingMessage() throws Exception {
+    @Test
+    public void testSendMessageStreamNewMessageSuccess() throws Exception {
         testSendStreamingMessage(null);
     }
 
@@ -737,32 +780,102 @@ public class A2AServerResourceTest {
                 .build();
         SendStreamingMessageRequest request = new SendStreamingMessageRequest(
                 "1", new MessageSendParams(message, null, null));
-        Client client = ClientBuilder.newClient();
-        WebTarget target = client.target("http://localhost:8081/");
-        Response response;
-        if (mediaType != null) {
-            response = target.request(mediaType).post(Entity.json(request));
-        } else {
-            response = target.request().post(Entity.json(request));
-        }
-        InputStream inputStream = response.readEntity(InputStream.class);
-        boolean dataRead = false;
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.startsWith("data: ")) {
-                    SendStreamingMessageResponse sendStreamingMessageResponse = Utils.OBJECT_MAPPER.readValue(line.substring("data: ".length()).trim(), SendStreamingMessageResponse.class);
-                    assertNull(sendStreamingMessageResponse.getError());
-                    Message messageResponse =  (Message) sendStreamingMessageResponse.getResult();
-                    assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());
-                    assertEquals(MESSAGE.getRole(), messageResponse.getRole());
-                    Part<?> part = messageResponse.getParts().get(0);
-                    assertEquals(Part.Kind.TEXT, part.getKind());
-                    assertEquals("test message", ((TextPart) part).getText());
-                    dataRead = true;
-                }
+
+        CompletableFuture<HttpResponse<Stream<String>>> responseFuture = initialiseStreamingRequest(request, mediaType);
+
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<Throwable> errorRef = new AtomicReference<>();
+
+        responseFuture.thenAccept(response -> {
+            if (response.statusCode() != 200) {
+                //errorRef.set(new IllegalStateException("Status code was " + response.statusCode()));
+                throw new IllegalStateException("Status code was " + response.statusCode());
             }
+            response.body().forEach(line -> {
+                try {
+                    SendStreamingMessageResponse jsonResponse = extractJsonResponseFromSseLine(line);
+                    if (jsonResponse != null) {
+                        assertNull(jsonResponse.getError());
+                        Message messageResponse =  (Message) jsonResponse.getResult();
+                        assertEquals(MESSAGE.getMessageId(), messageResponse.getMessageId());
+                        assertEquals(MESSAGE.getRole(), messageResponse.getRole());
+                        Part<?> part = messageResponse.getParts().get(0);
+                        assertEquals(Part.Kind.TEXT, part.getKind());
+                        assertEquals("test message", ((TextPart) part).getText());
+                        latch.countDown();
+                    }
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }).exceptionally(t -> {
+            if (!isStreamClosedError(t)) {
+                errorRef.set(t);
+            }
+            latch.countDown();
+            return null;
+        });
+
+
+        boolean dataRead = latch.await(20, TimeUnit.SECONDS);
+        Assertions.assertTrue(dataRead);
+        Assertions.assertNull(errorRef.get());
+
+    }
+
+    private SendStreamingMessageResponse extractJsonResponseFromSseLine(String line) throws JsonProcessingException {
+        line = extractSseData(line);
+        if (line != null) {
+            return Utils.OBJECT_MAPPER.readValue(line, SendStreamingMessageResponse.class);
         }
-        assertTrue(dataRead);
+        return null;
+    }
+
+    private static String extractSseData(String line) {
+        if (line.startsWith("data:")) {
+            line =  line.substring(5).trim();
+            return line;
+        }
+        return null;
+    }
+
+    private boolean isStreamClosedError(Throwable throwable) {
+        // Unwrap the CompletionException
+        Throwable cause = throwable;
+
+        while (cause != null) {
+            if (cause instanceof EOFException) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
+    }
+
+    private CompletableFuture<HttpResponse<Stream<String>>> initialiseStreamingRequest(
+            StreamingJSONRPCRequest<?> request, String mediaType) throws Exception {
+
+        // Create the client
+        HttpClient client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .build();
+
+        // Create the request
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8081/"))
+                .POST(HttpRequest.BodyPublishers.ofString(Utils.OBJECT_MAPPER.writeValueAsString(request)))
+                .header("Content-Type", "application/json");
+        if (mediaType != null) {
+            builder.header("Accept", mediaType);
+        }
+        HttpRequest httpRequest = builder.build();
+
+
+        // Send request async and return the CompletableFuture
+        return client.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofLines());
+    }
+
+    private static class BreakException extends RuntimeException {
+
     }
 }

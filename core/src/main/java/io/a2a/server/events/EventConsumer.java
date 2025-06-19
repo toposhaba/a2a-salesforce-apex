@@ -16,8 +16,6 @@ import mutiny.zero.ZeroPublisher;
 public class EventConsumer {
     private final EventQueue queue;
     private Throwable error;
-    private final Executor executor = Executors.newCachedThreadPool();
-
 
     private static final String ERROR_MSG = "Agent did not return any response";
     private static final int NO_WAIT = -1;

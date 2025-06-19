@@ -11,5 +11,5 @@ public interface QueueManager {
 
     EventQueue createOrTap(String taskId);
 
-    void signalPollingStarted(EventQueue eventQueue) throws InterruptedException;
+    void awaitQueuePollerStart(EventQueue eventQueue) throws InterruptedException;
 }

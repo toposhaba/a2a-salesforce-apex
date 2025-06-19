@@ -6,6 +6,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.a2a.util.TempLoggerWrapper;
 import org.slf4j.Logger;
@@ -35,7 +36,9 @@ public abstract class EventQueue {
         return new MainQueue();
     }
 
-    abstract CountDownLatch getPollingStartedLatch();
+    public abstract void awaitQueuePollerStart() throws InterruptedException ;
+
+    abstract void signalQueuePollerStarted();
 
     public void enqueueEvent(Event event) {
         if (closed) {
@@ -71,13 +74,12 @@ public abstract class EventQueue {
                 }
                 return event;
             } catch (InterruptedException e) {
-                log.debug("Interrupted {}", this);
+                log.debug("Interrupted dequeue (waiting) {}", this);
                 Thread.currentThread().interrupt();
                 return null;
             }
         } finally {
-            log.debug("Signalling that queue polling started {}", this);
-            getPollingStartedLatch().countDown();
+            signalQueuePollerStarted();
         }
     }
 
@@ -85,7 +87,9 @@ public abstract class EventQueue {
         // TODO Not sure if needed yet. BlockingQueue.poll()/.take() remove the events.
     }
 
-    public void close() {
+    public abstract void close();
+
+    public void doClose() {
         synchronized (this) {
             if (closed) {
                 return;
@@ -103,7 +107,8 @@ public abstract class EventQueue {
 
     static class MainQueue extends EventQueue {
         private final List<ChildQueue> children = new CopyOnWriteArrayList<>();
-        private CountDownLatch pollingStartedLatch = new CountDownLatch(1);
+        private final CountDownLatch pollingStartedLatch = new CountDownLatch(1);
+        private final AtomicBoolean pollingStarted = new AtomicBoolean(false);
 
         EventQueue tap() {
             ChildQueue child = new ChildQueue(this);
@@ -116,16 +121,27 @@ public abstract class EventQueue {
             children.forEach(eq -> eq.internalEnqueueEvent(event));
         }
 
-        CountDownLatch getPollingStartedLatch() {
-            return pollingStartedLatch;
+        @Override
+        public void awaitQueuePollerStart() throws InterruptedException {
+            log.debug("Waiting for queue poller to start on {}", this);
+            pollingStartedLatch.await(10, TimeUnit.SECONDS);
+            log.debug("Queue poller started on {}", this);
         }
 
-
+        @Override
+        void signalQueuePollerStarted() {
+            if (pollingStarted.get()) {
+                return;
+            }
+            log.debug("Signalling that queue polling started {}", this);
+            pollingStartedLatch.countDown();
+            pollingStarted.set(true);
+          }
 
         @Override
         public void close() {
-            super.close();
-            children.forEach(EventQueue::close);
+            doClose();
+            children.forEach(EventQueue::doClose);
         }
     }
 
@@ -151,8 +167,18 @@ public abstract class EventQueue {
         }
 
         @Override
-        CountDownLatch getPollingStartedLatch() {
-            return parent.getPollingStartedLatch();
+        public void awaitQueuePollerStart() throws InterruptedException {
+            parent.awaitQueuePollerStart();
+        }
+
+        @Override
+        void signalQueuePollerStarted() {
+            parent.signalQueuePollerStarted();
+        }
+
+        @Override
+        public void close() {
+            parent.close();
         }
     }
 }

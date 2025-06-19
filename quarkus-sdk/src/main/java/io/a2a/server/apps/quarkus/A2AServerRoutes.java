@@ -3,6 +3,8 @@ package io.a2a.server.apps.quarkus;
 import static io.vertx.core.http.HttpHeaders.CONTENT_TYPE;
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -66,6 +68,11 @@ public class A2AServerRoutes {
     @ExtendedAgentCard
     Instance<AgentCard> extendedAgentCard;
 
+    // Hook so testing can wait until the MultiSseSupport is subscribes.
+    private static volatile Runnable streamingMultiSseSupportSubscribedRunnable;
+
+    private final Executor executor = Executors.newCachedThreadPool();
+
     @Route(path = "/", methods = {Route.HttpMethod.POST}, consumes = {APPLICATION_JSON}, type = Route.HandlerType.BLOCKING)
     public void invokeJSONRPCHandler(@Body String body, RoutingContext rc) {
         boolean streaming = false;
@@ -93,7 +100,12 @@ public class A2AServerRoutes {
                         .putHeader(CONTENT_TYPE, APPLICATION_JSON)
                         .end(Json.encodeToBuffer(error));
             } else if (streaming) {
-                MultiSseSupport.subscribeObject(streamingResponse.map(i -> (Object)i), rc);
+                final Multi<? extends JSONRPCResponse<?>> finalStreamingResponse = streamingResponse;
+                executor.execute(() -> {
+                        MultiSseSupport.subscribeObject(
+                                finalStreamingResponse.map(i -> (Object)i), rc);
+                });
+
             } else {
                 rc.response()
                         .setStatusCode(200)
@@ -212,6 +224,10 @@ public class A2AServerRoutes {
                 requestBody.contains(A2A.GET_TASK_PUSH_NOTIFICATION_CONFIG_METHOD);
     }
 
+    static void setStreamingMultiSseSupportSubscribedRunnable(Runnable runnable) {
+        streamingMultiSseSupportSubscribedRunnable = runnable;
+    }
+
     // Port of import io.quarkus.vertx.web.runtime.MultiSseSupport, which is considered internal API
     private static class MultiSseSupport {
 
@@ -246,6 +262,12 @@ public class A2AServerRoutes {
                 public void onSubscribe(Flow.Subscription subscription) {
                     this.upstream = subscription;
                     this.upstream.request(1);
+
+                    // Notify tests that we are subscribed
+                    Runnable runnable = streamingMultiSseSupportSubscribedRunnable;
+                    if (runnable != null) {
+                        runnable.run();
+                    }
                 }
 
                 @Override

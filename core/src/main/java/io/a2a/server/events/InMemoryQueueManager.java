@@ -7,10 +7,12 @@ import java.util.concurrent.TimeUnit;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
+import io.a2a.util.TempLoggerWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @ApplicationScoped
 public class InMemoryQueueManager implements QueueManager {
-
-
     private final Map<String, EventQueue> queues = Collections.synchronizedMap(new HashMap<>());
 
     @Override
@@ -63,7 +65,7 @@ public class InMemoryQueueManager implements QueueManager {
     }
 
     @Override
-    public void signalPollingStarted(EventQueue eventQueue) throws InterruptedException {
-        eventQueue.getPollingStartedLatch().await(10, TimeUnit.SECONDS);
+    public void awaitQueuePollerStart(EventQueue eventQueue) throws InterruptedException {
+        eventQueue.awaitQueuePollerStart();
     }
 }
