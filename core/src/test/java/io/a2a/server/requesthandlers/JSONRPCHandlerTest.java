@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
@@ -104,6 +105,8 @@ public class JSONRPCHandlerTest {
     private InMemoryQueueManager queueManager;
     private TestHttpClient httpClient;
 
+    private final Executor internalExecutor = Executors.newCachedThreadPool();
+
 
     @BeforeEach
     public void init() {
@@ -128,7 +131,7 @@ public class JSONRPCHandlerTest {
         httpClient = new TestHttpClient();
         PushNotifier pushNotifier = new InMemoryPushNotifier(httpClient);
 
-        requestHandler = new DefaultRequestHandler(executor, taskStore, queueManager, pushNotifier);
+        requestHandler = new DefaultRequestHandler(executor, taskStore, queueManager, pushNotifier, internalExecutor);
     }
 
     @AfterEach
@@ -1050,7 +1053,8 @@ public class JSONRPCHandlerTest {
     @Test
     public void testOnGetPushNotificationNoPushNotifier() {
         // Create request handler without a push notifier
-        DefaultRequestHandler requestHandler = new DefaultRequestHandler(executor, taskStore, queueManager, null);
+        DefaultRequestHandler requestHandler =
+                new DefaultRequestHandler(executor, taskStore, queueManager, null, internalExecutor);
         AgentCard card = createAgentCard(false, true, false);
         JSONRPCHandler handler = new JSONRPCHandler(card, requestHandler);
 
@@ -1068,7 +1072,8 @@ public class JSONRPCHandlerTest {
     @Test
     public void testOnSetPushNotificationNoPushNotifier() {
         // Create request handler without a push notifier
-        DefaultRequestHandler requestHandler = new DefaultRequestHandler(executor, taskStore, queueManager, null);
+        DefaultRequestHandler requestHandler =
+                new DefaultRequestHandler(executor, taskStore, queueManager, null, internalExecutor);
         AgentCard card = createAgentCard(false, true, false);
         JSONRPCHandler handler = new JSONRPCHandler(card, requestHandler);
 
@@ -1157,7 +1162,8 @@ public class JSONRPCHandlerTest {
 
     @Test
     public void testOnMessageSendErrorHandling() {
-        DefaultRequestHandler requestHandler = new DefaultRequestHandler(executor, taskStore, queueManager, null);
+        DefaultRequestHandler requestHandler =
+                new DefaultRequestHandler(executor, taskStore, queueManager, null, internalExecutor);
         AgentCard card = createAgentCard(false, true, false);
         JSONRPCHandler handler = new JSONRPCHandler(card, requestHandler);
 

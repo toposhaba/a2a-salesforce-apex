@@ -1,6 +1,6 @@
 package io.a2a.server.requesthandlers;
 
-import static io.a2a.util.AsyncUtils.createTubeConfig;
+import static io.a2a.util.async.AsyncUtils.createTubeConfig;
 
 import java.util.concurrent.Flow;
 

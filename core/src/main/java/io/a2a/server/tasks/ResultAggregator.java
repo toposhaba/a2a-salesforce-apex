@@ -1,8 +1,8 @@
 package io.a2a.server.tasks;
 
-import static io.a2a.util.AsyncUtils.consumer;
-import static io.a2a.util.AsyncUtils.createTubeConfig;
-import static io.a2a.util.AsyncUtils.processor;
+import static io.a2a.util.async.AsyncUtils.consumer;
+import static io.a2a.util.async.AsyncUtils.createTubeConfig;
+import static io.a2a.util.async.AsyncUtils.processor;
 
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;

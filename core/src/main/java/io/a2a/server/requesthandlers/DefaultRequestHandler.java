@@ -1,8 +1,8 @@
 package io.a2a.server.requesthandlers;
 
-import static io.a2a.util.AsyncUtils.convertingProcessor;
-import static io.a2a.util.AsyncUtils.createTubeConfig;
-import static io.a2a.util.AsyncUtils.processor;
+import static io.a2a.util.async.AsyncUtils.convertingProcessor;
+import static io.a2a.util.async.AsyncUtils.createTubeConfig;
+import static io.a2a.util.async.AsyncUtils.processor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -47,6 +46,7 @@ import io.a2a.spec.TaskPushNotificationConfig;
 import io.a2a.spec.TaskQueryParams;
 import io.a2a.spec.UnsupportedOperationError;
 import io.a2a.util.TempLoggerWrapper;
+import io.a2a.util.async.Internal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,15 +63,16 @@ public class DefaultRequestHandler implements RequestHandler {
 
     private final Map<String, CompletableFuture<Void>> runningAgents = Collections.synchronizedMap(new HashMap<>());
 
-    private final Executor executor = Executors.newCachedThreadPool();
+    private final Executor executor;
 
     @Inject
     public DefaultRequestHandler(AgentExecutor agentExecutor, TaskStore taskStore,
-                                 QueueManager queueManager, PushNotifier pushNotifier) {
+                                 QueueManager queueManager, PushNotifier pushNotifier, @Internal Executor executor) {
         this.agentExecutor = agentExecutor;
         this.taskStore = taskStore;
         this.queueManager = queueManager;
         this.pushNotifier = pushNotifier;
+        this.executor = executor;
         // TODO In Python this is also a constructor parameter defaulting to this SimpleRequestContextBuilder
         //  implementation if the parameter is null. Skip that for now, since otherwise I get CDI errors, and
         //  I am unsure about the correct scope.

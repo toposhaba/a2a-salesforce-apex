@@ -1,9 +1,9 @@
 package io.a2a.util;
 
-import static io.a2a.util.AsyncUtils.consumer;
-import static io.a2a.util.AsyncUtils.convertingProcessor;
-import static io.a2a.util.AsyncUtils.createTubeConfig;
-import static io.a2a.util.AsyncUtils.processor;
+import static io.a2a.util.async.AsyncUtils.consumer;
+import static io.a2a.util.async.AsyncUtils.convertingProcessor;
+import static io.a2a.util.async.AsyncUtils.createTubeConfig;
+import static io.a2a.util.async.AsyncUtils.processor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -13,8 +13,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;

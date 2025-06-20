@@ -47,6 +47,7 @@ import io.a2a.spec.SetTaskPushNotificationConfigRequest;
 import io.a2a.spec.StreamingJSONRPCRequest;
 import io.a2a.spec.TaskResubscriptionRequest;
 import io.a2a.spec.UnsupportedOperationError;
+import io.a2a.util.async.Internal;
 
 @Path("/")
 public class A2AServerResource {
@@ -61,8 +62,9 @@ public class A2AServerResource {
     // Hook so testing can wait until the async Subscription is subscribed.
     private static volatile Runnable streamingIsSubscribedRunnable;
 
-
-    private final Executor executor = Executors.newCachedThreadPool();
+    @Inject
+    @Internal
+    Executor executor;
 
     /**
      * Handles incoming POST requests to the main A2A endpoint. Dispatches the

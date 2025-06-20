@@ -45,6 +45,7 @@ import io.a2a.spec.StreamingJSONRPCRequest;
 import io.a2a.spec.TaskResubscriptionRequest;
 import io.a2a.spec.UnsupportedOperationError;
 import io.a2a.util.Utils;
+import io.a2a.util.async.Internal;
 import io.quarkus.vertx.web.Body;
 import io.quarkus.vertx.web.ReactiveRoutes;
 import io.quarkus.vertx.web.Route;
@@ -71,7 +72,9 @@ public class A2AServerRoutes {
     // Hook so testing can wait until the MultiSseSupport is subscribed.
     private static volatile Runnable streamingMultiSseSupportSubscribedRunnable;
 
-    private final Executor executor = Executors.newCachedThreadPool();
+    @Inject
+    @Internal
+    Executor executor;
 
     @Route(path = "/", methods = {Route.HttpMethod.POST}, consumes = {APPLICATION_JSON}, type = Route.HandlerType.BLOCKING)
     public void invokeJSONRPCHandler(@Body String body, RoutingContext rc) {
