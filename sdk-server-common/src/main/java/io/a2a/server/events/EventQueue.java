@@ -10,14 +10,13 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.a2a.server.util.TempLoggerWrapper;
 import io.a2a.spec.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class EventQueue implements AutoCloseable {
 
-    private static final Logger log = new TempLoggerWrapper(LoggerFactory.getLogger(EventQueue.class));
+    private static final Logger log = LoggerFactory.getLogger(EventQueue.class);
 
     // TODO decide on a capacity
     private static final int queueSize = 1000;
