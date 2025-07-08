@@ -42,10 +42,13 @@ The A2A Java SDK provides two A2A server endpoint implementations, one based on 
 
 Add **one** of the following dependencies to your project:
 
+> *⚠️ The `io.github.a2asdk` `groupId` below is temporary and will likely change for future releases.*
+
 ```xml
 <dependency>
-    <groupId>io.a2a.sdk</groupId>
+    <groupId>io.github.a2asdk</groupId>
     <artifactId>a2a-java-sdk-server-jakarta</artifactId>
+    <!-- Use a released version from https://github.com/a2aproject/a2a-java/releases --> 
     <version>${io.a2a.sdk.version}</version>
 </dependency>
 ```
@@ -54,8 +57,9 @@ OR
 
 ```xml
 <dependency>
-    <groupId>io.a2a.sdk</groupId>
+    <groupId>io.github.a2asdk</groupId>
     <artifactId>a2a-java-sdk-server-quarkus</artifactId>
+    <!-- Use a released version from https://github.com/a2aproject/a2a-java/releases --> 
     <version>${io.a2a.sdk.version}</version>
 </dependency>
 ```
@@ -198,10 +202,15 @@ public class WeatherAgentExecutorProducer {
 The A2A Java SDK provides a Java client implementation of the [Agent2Agent (A2A) Protocol](https://google-a2a.github.io/A2A), allowing communication with A2A servers.
 To make use of the Java `A2AClient`, simply add the following dependency:
 
+----
+> *⚠️ The `io.github.a2asdk` `groupId` below is temporary and will likely change for future releases.*
+----
+
 ```xml
 <dependency>
-    <groupId>io.a2a.sdk</groupId>
+    <groupId>io.github.a2asdk</groupId>
     <artifactId>a2a-java-sdk-client</artifactId>
+    <!-- Use a released version from https://github.com/a2aproject/a2a-java/releases -->
     <version>${io.a2a.sdk.version}</version>
 </dependency>
 ```
