@@ -1,11 +1,11 @@
 package io.a2a.spec;
 
+import java.io.IOException;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
-
-import java.io.IOException;
 
 public class NonStreamingJSONRPCRequestDeserializer extends JSONRPCRequestDeserializerBase<NonStreamingJSONRPCRequest<?>> {
 
@@ -38,10 +38,16 @@ public class NonStreamingJSONRPCRequestDeserializer extends JSONRPCRequestDeseri
                         getAndValidateParams(paramsNode, jsonParser, treeNode, TaskPushNotificationConfig.class));
             case GetTaskPushNotificationConfigRequest.METHOD:
                 return new GetTaskPushNotificationConfigRequest(jsonrpc, id, method,
-                        getAndValidateParams(paramsNode, jsonParser, treeNode, TaskIdParams.class));
+                        getAndValidateParams(paramsNode, jsonParser, treeNode, GetTaskPushNotificationConfigParams.class));
             case SendMessageRequest.METHOD:
                 return new SendMessageRequest(jsonrpc, id, method,
                         getAndValidateParams(paramsNode, jsonParser, treeNode, MessageSendParams.class));
+            case ListTaskPushNotificationConfigRequest.METHOD:
+                return new ListTaskPushNotificationConfigRequest(jsonrpc, id, method,
+                        getAndValidateParams(paramsNode, jsonParser, treeNode, ListTaskPushNotificationConfigParams.class));
+            case DeleteTaskPushNotificationConfigRequest.METHOD:
+                return new DeleteTaskPushNotificationConfigRequest(jsonrpc, id, method,
+                        getAndValidateParams(paramsNode, jsonParser, treeNode, DeleteTaskPushNotificationConfigParams.class));
             default:
                 throw new MethodNotFoundJsonMappingException("Invalid method", getIdIfPossible(treeNode, jsonParser));
         }

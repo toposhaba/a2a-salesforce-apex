@@ -17,7 +17,8 @@ public record AgentCard(String name, String description, String url, AgentProvid
                         String version, String documentationUrl, AgentCapabilities capabilities,
                         List<String> defaultInputModes, List<String> defaultOutputModes, List<AgentSkill> skills,
                         boolean supportsAuthenticatedExtendedCard, Map<String, SecurityScheme> securitySchemes,
-                        List<Map<String, List<String>>> security, String iconUrl) {
+                        List<Map<String, List<String>>> security, String iconUrl, List<AgentInterface> additionalInterfaces,
+                        String preferredTransport, String protocolVersion) {
 
     private static final String TEXT_MODE = "text";
 
@@ -30,6 +31,7 @@ public record AgentCard(String name, String description, String url, AgentProvid
         Assert.checkNotNullParam("skills", skills);
         Assert.checkNotNullParam("url", url);
         Assert.checkNotNullParam("version", version);
+        Assert.checkNotNullParam("protocolVersion", protocolVersion);
     }
 
     public static class Builder {
@@ -47,6 +49,9 @@ public record AgentCard(String name, String description, String url, AgentProvid
         private Map<String, SecurityScheme> securitySchemes;
         private List<Map<String, List<String>>> security;
         private String iconUrl;
+        private List<AgentInterface> additionalInterfaces;
+        String preferredTransport;
+        String protocolVersion;
 
         public Builder name(String name) {
             this.name = name;
@@ -118,10 +123,26 @@ public record AgentCard(String name, String description, String url, AgentProvid
             return this;
         }
 
+        public Builder additionalInterfaces(List<AgentInterface> additionalInterfaces) {
+            this.additionalInterfaces = additionalInterfaces;
+            return this;
+        }
+
+        public Builder preferredTransport(String preferredTransport) {
+            this.preferredTransport = preferredTransport;
+            return this;
+        }
+
+        public Builder protocolVersion(String protocolVersion) {
+            this.protocolVersion = protocolVersion;
+            return this;
+        }
+
         public AgentCard build() {
             return new AgentCard(name, description, url, provider, version, documentationUrl,
                     capabilities, defaultInputModes, defaultOutputModes, skills,
-                    supportsAuthenticatedExtendedCard, securitySchemes, security, iconUrl);
+                    supportsAuthenticatedExtendedCard, securitySchemes, security, iconUrl,
+                    additionalInterfaces, preferredTransport, protocolVersion);
         }
     }
 }
