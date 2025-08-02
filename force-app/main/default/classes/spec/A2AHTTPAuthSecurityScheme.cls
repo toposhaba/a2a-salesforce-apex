@@ -1,29 +1,92 @@
 /**
- * Placeholder for HTTP Auth Security Scheme
- * TODO: Implement based on Java io.a2a.spec.HTTPAuthSecurityScheme
+ * Represents an HTTP authentication security scheme.
+ * Converted from Java: io.a2a.spec.HTTPAuthSecurityScheme
  */
 public class A2AHTTPAuthSecurityScheme extends A2ASecurityScheme {
-    public String scheme { get; set; }
-    public String bearerFormat { get; set; }
+    public static final String HTTP = 'http';
     
-    public A2AHTTPAuthSecurityScheme() {
-        super(TYPE_HTTP);
+    public String bearerFormat { get; set; }
+    public String scheme { get; set; }
+    
+    /**
+     * Constructor with bearer format, scheme, and description
+     */
+    public A2AHTTPAuthSecurityScheme(String bearerFormat, String scheme, String description) {
+        this(bearerFormat, scheme, description, HTTP);
     }
     
+    /**
+     * Constructor with all parameters
+     */
+    public A2AHTTPAuthSecurityScheme(String bearerFormat, String scheme, String description, String type) {
+        A2AAssert.checkNotNullParam('scheme', scheme);
+        
+        if (!HTTP.equals(type)) {
+            throw new A2AException('Invalid type for HTTPAuthSecurityScheme: ' + type);
+        }
+        
+        this.bearerFormat = bearerFormat;
+        this.scheme = scheme;
+        this.description = description;
+        this.type = type;
+    }
+    
+    /**
+     * Get the scheme type
+     */
+    public override String getSchemeType() {
+        return 'HTTP';
+    }
+    
+    /**
+     * Serialize to Map
+     */
     public override Map<String, Object> serialize() {
-        Map<String, Object> result = new Map<String, Object>();
-        result.put('type', type);
-        if (scheme != null) result.put('scheme', scheme);
+        Map<String, Object> result = super.serialize();
+        
         if (bearerFormat != null) result.put('bearerFormat', bearerFormat);
-        if (description != null) result.put('description', description);
+        if (scheme != null) result.put('scheme', scheme);
+        
         return result;
     }
     
+    /**
+     * Deserialize from Map
+     */
     public static A2AHTTPAuthSecurityScheme deserialize(Map<String, Object> jsonMap) {
-        A2AHTTPAuthSecurityScheme scheme = new A2AHTTPAuthSecurityScheme();
-        scheme.scheme = (String) jsonMap.get('scheme');
-        scheme.bearerFormat = (String) jsonMap.get('bearerFormat');
-        scheme.description = (String) jsonMap.get('description');
-        return scheme;
+        String bearerFormat = (String) jsonMap.get('bearerFormat');
+        String scheme = (String) jsonMap.get('scheme');
+        String description = (String) jsonMap.get('description');
+        String type = (String) jsonMap.get('type');
+        
+        return new A2AHTTPAuthSecurityScheme(bearerFormat, scheme, description, type != null ? type : HTTP);
+    }
+    
+    /**
+     * Builder class for fluent API
+     */
+    public class Builder {
+        private String bearerFormat;
+        private String scheme;
+        private String description;
+        
+        public Builder withBearerFormat(String bearerFormat) {
+            this.bearerFormat = bearerFormat;
+            return this;
+        }
+        
+        public Builder withScheme(String scheme) {
+            this.scheme = scheme;
+            return this;
+        }
+        
+        public Builder withDescription(String description) {
+            this.description = description;
+            return this;
+        }
+        
+        public A2AHTTPAuthSecurityScheme build() {
+            return new A2AHTTPAuthSecurityScheme(bearerFormat, scheme, description);
+        }
     }
 }

@@ -1,0 +1,104 @@
+<template>
+    <lightning-card title={cardTitle} icon-name="custom:custom19">
+        <lightning-button-icon 
+            icon-name="utility:refresh" 
+            variant="border-filled" 
+            onclick={handleRefresh} 
+            slot="actions"
+            alternative-text="Refresh">
+        </lightning-button-icon>
+        
+        <div class="slds-p-horizontal_medium">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+            </template>
+            
+            <template if:false={isLoading}>
+                <template if:true={hasError}>
+                    <div class="slds-text-color_error slds-p-vertical_medium">
+                        <p>{errorMessage}</p>
+                    </div>
+                </template>
+                
+                <template if:true={agentCard}>
+                    <div class="slds-grid slds-wrap">
+                        <div class="slds-col slds-size_1-of-1">
+                            <p class="slds-text-heading_small">{agentCard.name}</p>
+                            <p class="slds-text-body_regular slds-p-top_x-small">{agentCard.description}</p>
+                        </div>
+                        
+                        <div class="slds-col slds-size_1-of-1 slds-p-top_medium">
+                            <p class="slds-text-title">URL</p>
+                            <p class="slds-truncate">
+                                <a href={agentCard.url} target="_blank">{agentCard.url}</a>
+                            </p>
+                        </div>
+                        
+                        <template if:true={hasCapabilities}>
+                            <div class="slds-col slds-size_1-of-1 slds-p-top_medium">
+                                <p class="slds-text-title">Capabilities</p>
+                                <div class="slds-p-top_x-small">
+                                    <lightning-badge 
+                                        label="Streaming" 
+                                        variant={streamingVariant}>
+                                    </lightning-badge>
+                                    <lightning-badge 
+                                        label="Push Notifications" 
+                                        variant={pushNotificationVariant}
+                                        class="slds-m-left_x-small">
+                                    </lightning-badge>
+                                </div>
+                            </div>
+                        </template>
+                        
+                        <template if:true={hasSkills}>
+                            <div class="slds-col slds-size_1-of-1 slds-p-top_medium">
+                                <p class="slds-text-title">Skills</p>
+                                <div class="slds-p-top_x-small">
+                                    <template for:each={agentCard.skills} for:item="skill">
+                                        <lightning-badge 
+                                            key={skill.name}
+                                            label={skill.name}
+                                            class="slds-m-right_x-small slds-m-bottom_x-small">
+                                        </lightning-badge>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                        
+                        <template if:true={hasInterfaces}>
+                            <div class="slds-col slds-size_1-of-1 slds-p-top_medium">
+                                <p class="slds-text-title">Interfaces</p>
+                                <ul class="slds-list_dotted slds-p-top_x-small">
+                                    <template for:each={agentCard.interfaces} for:item="interface">
+                                        <li key={interface.name}>
+                                            <strong>{interface.name}</strong>
+                                            <template if:true={interface.description}>
+                                                - {interface.description}
+                                            </template>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </template>
+        </div>
+        
+        <div slot="footer">
+            <lightning-button 
+                label="Send Message" 
+                variant="brand" 
+                onclick={handleSendMessage}
+                disabled={disableSendMessage}>
+            </lightning-button>
+            <lightning-button 
+                label="View Tasks" 
+                variant="neutral" 
+                onclick={handleViewTasks}
+                class="slds-m-left_x-small">
+            </lightning-button>
+        </div>
+    </lightning-card>
+</template>

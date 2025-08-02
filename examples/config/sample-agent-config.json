@@ -1,0 +1,50 @@
+{
+  "agent": {
+    "name": "Sample A2A Agent",
+    "description": "Example A2A agent configuration for Salesforce",
+    "version": "1.0.0",
+    "url": "https://your-org.my.salesforce.com/services/apexrest/a2a/v1"
+  },
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": true,
+    "stateTransitionHistory": true
+  },
+  "skills": [
+    {
+      "id": "account_lookup",
+      "name": "Account Lookup",
+      "description": "Search and retrieve Salesforce account information",
+      "tags": ["salesforce", "account", "search"],
+      "examples": [
+        "Find account Acme Corp",
+        "Show me details for account 001234567890ABC"
+      ]
+    },
+    {
+      "id": "opportunity_management",
+      "name": "Opportunity Management",
+      "description": "Create and manage sales opportunities",
+      "tags": ["salesforce", "opportunity", "sales"],
+      "examples": [
+        "Create new opportunity for Acme Corp",
+        "Update opportunity stage to Closed Won"
+      ]
+    }
+  ],
+  "authentication": {
+    "type": "bearer",
+    "description": "Salesforce session ID or OAuth token required"
+  },
+  "rateLimit": {
+    "requestsPerMinute": 60,
+    "burstLimit": 100
+  },
+  "interfaces": [
+    {
+      "name": "rest",
+      "description": "RESTful API endpoint",
+      "endpoint": "/services/apexrest/a2a/v1/rpc"
+    }
+  ]
+}
