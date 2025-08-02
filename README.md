@@ -1,399 +1,409 @@
-# A2A Java SDK
+# A2A Apex SDK for Salesforce
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+A comprehensive Salesforce Apex implementation of the Agent-to-Agent (A2A) Protocol, enabling seamless integration of AI agents with Salesforce applications.
 
-<!-- markdownlint-disable no-inline-html -->
+## Overview
 
-<html>
-   <h2 align="center">
-   <img src="https://raw.githubusercontent.com/google-a2a/A2A/refs/heads/main/docs/assets/a2a-logo-black.svg" width="256" alt="A2A Logo"/>
-   </h2>
-   <h3 align="center">A Java library that helps run agentic applications as A2AServers following the <a href="https://google-a2a.github.io/A2A">Agent2Agent (A2A) Protocol</a>.</h3>
-</html>
+The A2A Apex SDK provides a complete framework for building and integrating A2A-compliant agents within the Salesforce platform. It includes client libraries, server implementations, UI components, and enterprise features like authentication, logging, and batch processing.
+
+## Features
+
+### Core Protocol Support
+- **Full A2A Protocol Implementation**: Complete support for all A2A message types and operations
+- **JSON-RPC Support**: Native JSON-RPC 2.0 implementation for agent communication
+- **Message Types**: Text, Data, and File parts with full serialization/deserialization
+- **Agent Cards**: Complete agent capability discovery and metadata support
+
+### Client Features
+- **A2A Client**: Full-featured client for communicating with A2A agents
+- **Card Resolution**: Automatic agent card discovery and caching
+- **Error Handling**: Comprehensive error categorization and recovery strategies
+- **Retry Logic**: Built-in retry mechanisms with exponential backoff
+
+### Server Features
+- **REST API Endpoint**: Expose Salesforce functionality as A2A agents
+- **Request Handlers**: Extensible framework for handling agent requests
+- **Task Management**: Complete task lifecycle management with persistence
+- **Platform Events**: Real-time task updates and notifications
+
+### Enterprise Features
+- **Authentication**: Multiple auth providers (Bearer Token, API Key, OAuth2)
+- **Credential Management**: Secure storage using Custom Metadata and Protected Settings
+- **Logging Framework**: Structured logging with multiple levels and persistence
+- **Error Handling**: Comprehensive error categorization and recovery strategies
+- **Batch Processing**: Process large volumes of tasks asynchronously
+- **Queueable Operations**: Chain multiple operations with retry logic
+
+### UI Components
+- **Lightning Web Components**: Modern UI for agent interaction
+  - Agent Card Display
+  - Task Monitor with real-time updates
+  - Message Composer
+- **Flow Integration**: Declarative tools for no-code integration
+  - Send A2A Message action
+  - Get Task Status action
+  - Monitor Task action
+
+### Security
+- **Permission Sets**: Granular access control
+  - A2A Administrator: Full access
+  - A2A User: Read-only access
+- **Field-Level Security**: Proper FLS enforcement
+- **CRUD Permissions**: Respects object and field permissions
 
 ## Installation
 
-You can build the A2A Java SDK using `mvn`:
+### Prerequisites
+- Salesforce DX CLI
+- Salesforce org with API enabled
+- VS Code with Salesforce extensions (recommended)
 
+### Deploy to Org
+
+1. Clone the repository:
 ```bash
-mvn clean install
+git clone https://github.com/your-org/a2a-apex-sdk.git
+cd a2a-apex-sdk
 ```
 
-## Examples
-
-You can find an example of how to use the A2A Java SDK in the [a2a-samples repository](https://github.com/a2aproject/a2a-samples/tree/main/samples/multi_language/python_and_java_multiagent/weather_agent).
-
-More examples will be added soon.
-
-## A2A Server
-
-The A2A Java SDK provides a Java server implementation of the [Agent2Agent (A2A) Protocol](https://google-a2a.github.io/A2A). To run your agentic Java application as an A2A server, simply follow the steps below.
-
-- [Add an A2A Java SDK Server Maven dependency to your project](#1-add-an-a2a-java-sdk-server-maven-dependency-to-your-project)
-- [Add a class that creates an A2A Agent Card](#2-add-a-class-that-creates-an-a2a-agent-card)
-- [Add a class that creates an A2A Agent Executor](#3-add-a-class-that-creates-an-a2a-agent-executor)
-
-### 1. Add the A2A Java SDK Server Maven dependency to your project
-
-Adding a dependency on an A2A Java SDK Server will provide access to the core classes that make up the A2A specification
-and allow you to run your agentic Java application as an A2A server agent.
-
-The A2A Java SDK provides a [reference A2A server implementation](reference-impl/README.md) based on [Quarkus](https://quarkus.io) for use with our tests and examples. However, the project is designed in such a way that it is trivial to integrate with various Java runtimes.
-
-[Server Integrations](#server-integrations) contains a list of community contributed integrations of the server with various runtimes. You might be able to use one of these for your target runtime, or you can use them as inspiration to create your own.
-
-To use the reference implementation add the following dependency to your project:
-
-> *⚠️ The `io.github.a2asdk` `groupId` below is temporary and will likely change for future releases.*
-
-```xml
-<dependency>
-    <groupId>io.github.a2asdk</groupId>
-    <artifactId>a2a-java-reference-server</artifactId>
-    <!-- Use a released version from https://github.com/a2aproject/a2a-java/releases --> 
-    <version>${io.a2a.sdk.version}</version>
-</dependency>
+2. Authorize your org:
+```bash
+sfdx force:auth:web:login -a myorg
 ```
 
-### 2. Add a class that creates an A2A Agent Card
+3. Deploy the source:
+```bash
+sfdx force:source:deploy -p force-app -u myorg
+```
 
-```java
-import io.a2a.server.PublicAgentCard;
-import io.a2a.spec.AgentCapabilities;
-import io.a2a.spec.AgentCard;
-import io.a2a.spec.AgentSkill;
-...
+4. Assign permission sets:
+```bash
+# For administrators
+sfdx force:user:permset:assign -n A2A_Administrator -u myorg
 
-@ApplicationScoped
-public class WeatherAgentCardProducer {
+# For regular users
+sfdx force:user:permset:assign -n A2A_User -u myorg
+```
+
+## Quick Start
+
+### Client Usage
+
+#### Basic Message Sending
+```apex
+// Create a client
+A2AClient client = new A2AClient('https://api.example.com/agent');
+
+// Build a message
+A2AMessage message = new A2AMessage.Builder()
+    .withRole('user')
+    .withTextPart('Hello, agent!')
+    .build();
+
+// Send the message
+A2AClient.A2AMessageSendParams params = new A2AClient.A2AMessageSendParams(message);
+A2AClient.A2ASendMessageResponse response = client.sendMessage(params);
+
+// Check the response
+if (response.error != null) {
+    System.debug('Error: ' + response.error.message);
+} else {
+    Map<String, Object> result = (Map<String, Object>) response.result.data;
+    String taskId = (String) result.get('id');
+    System.debug('Task created: ' + taskId);
+}
+```
+
+#### Using Authentication
+```apex
+// API Key authentication
+A2AAuthProvider auth = new A2AApiKeyAuth('your-api-key');
+A2AHttpClient httpClient = new A2AHttpClient.Builder()
+    .withAuthProvider(auth)
+    .build();
+
+A2AClient client = new A2AClient(httpClient, 'https://api.example.com/agent');
+```
+
+#### Using Credential Store
+```apex
+// Get credentials from secure storage
+A2AAuthProvider auth = A2ACredentialStore.getCredential('MyAgentCredential');
+A2AHttpClient httpClient = new A2AHttpClient.Builder()
+    .withAuthProvider(auth)
+    .build();
+
+A2AClient client = new A2AClient(httpClient, 'https://api.example.com/agent');
+```
+
+### Server Usage
+
+#### Creating a Custom Request Handler
+```apex
+public class MyAgentHandler implements A2ARequestHandler {
     
-    @Produces
-    @PublicAgentCard
-    public AgentCard agentCard() {
-        return new AgentCard.Builder()
-                .name("Weather Agent")
-                .description("Helps with weather")
-                .url("http://localhost:10001")
-                .version("1.0.0")
-                .capabilities(new AgentCapabilities.Builder()
-                        .streaming(true)
-                        .pushNotifications(false)
-                        .stateTransitionHistory(false)
-                        .build())
-                .defaultInputModes(Collections.singletonList("text"))
-                .defaultOutputModes(Collections.singletonList("text"))
-                .skills(Collections.singletonList(new AgentSkill.Builder()
-                        .id("weather_search")
-                        .name("Search weather")
-                        .description("Helps with weather in city, or states")
-                        .tags(Collections.singletonList("weather"))
-                        .examples(List.of("weather in LA, CA"))
-                        .build()))
-                .protocolVersion("0.2.5")
-                .build();
+    public A2AEventKind onMessageSend(A2AMessageSendParams params, A2AServerCallContext context) {
+        // Process the incoming message
+        A2AMessage message = params.message;
+        
+        // Extract text content
+        String userQuery = '';
+        for (A2APart part : message.parts) {
+            if (part instanceof A2ATextPart) {
+                userQuery = ((A2ATextPart) part).text;
+                break;
+            }
+        }
+        
+        // Create a task
+        String taskId = A2AUtils.generateTaskId();
+        
+        // Process asynchronously
+        System.enqueueJob(new ProcessAgentRequest(taskId, userQuery));
+        
+        // Return task reference
+        A2AEventKind result = new A2AEventKind();
+        result.type = 'task';
+        result.data = new Map<String, Object>{
+            'id' => taskId,
+            'status' => 'RUNNING'
+        };
+        
+        return result;
     }
+    
+    // Implement other required methods...
 }
 ```
 
-### 3. Add a class that creates an A2A Agent Executor
+### Lightning Web Component Usage
 
-```java
-import io.a2a.server.agentexecution.AgentExecutor;
-import io.a2a.server.agentexecution.RequestContext;
-import io.a2a.server.events.EventQueue;
-import io.a2a.server.tasks.TaskUpdater;
-import io.a2a.spec.JSONRPCError;
-import io.a2a.spec.Message;
-import io.a2a.spec.Part;
-import io.a2a.spec.Task;
-import io.a2a.spec.TaskNotCancelableError;
-import io.a2a.spec.TaskState;
-import io.a2a.spec.TextPart;
-...
-
-@ApplicationScoped
-public class WeatherAgentExecutorProducer {
-
-    @Inject
-    WeatherAgent weatherAgent;
-
-    @Produces
-    public AgentExecutor agentExecutor() {
-        return new WeatherAgentExecutor(weatherAgent);
-    }
-
-    private static class WeatherAgentExecutor implements AgentExecutor {
-
-        private final WeatherAgent weatherAgent;
-
-        public WeatherAgentExecutor(WeatherAgent weatherAgent) {
-            this.weatherAgent = weatherAgent;
-        }
-
-        @Override
-        public void execute(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
-            TaskUpdater updater = new TaskUpdater(context, eventQueue);
-
-            // mark the task as submitted and start working on it
-            if (context.getTask() == null) {
-                updater.submit();
-            }
-            updater.startWork();
-
-            // extract the text from the message
-            String userMessage = extractTextFromMessage(context.getMessage());
-
-            // call the weather agent with the user's message
-            String response = weatherAgent.chat(userMessage);
-
-            // create the response part
-            TextPart responsePart = new TextPart(response, null);
-            List<Part<?>> parts = List.of(responsePart);
-
-            // add the response as an artifact and complete the task
-            updater.addArtifact(parts, null, null, null);
-            updater.complete();
-        }
-
-        @Override
-        public void cancel(RequestContext context, EventQueue eventQueue) throws JSONRPCError {
-            Task task = context.getTask();
-
-            if (task.getStatus().state() == TaskState.CANCELED) {
-                // task already cancelled
-                throw new TaskNotCancelableError();
-            }
-
-            if (task.getStatus().state() == TaskState.COMPLETED) {
-                // task already completed
-                throw new TaskNotCancelableError();
-            }
-
-            // cancel the task
-            TaskUpdater updater = new TaskUpdater(context, eventQueue);
-            updater.cancel();
-        }
-
-        private String extractTextFromMessage(Message message) {
-            StringBuilder textBuilder = new StringBuilder();
-            if (message.getParts() != null) {
-                for (Part part : message.getParts()) {
-                    if (part instanceof TextPart textPart) {
-                        textBuilder.append(textPart.getText());
-                    }
-                }
-            }
-            return textBuilder.toString();
-        }
-    }
-}
-```
-
-## A2A Client
-
-The A2A Java SDK provides a Java client implementation of the [Agent2Agent (A2A) Protocol](https://google-a2a.github.io/A2A), allowing communication with A2A servers.
-To make use of the Java `A2AClient`, simply add the following dependency:
-
-----
-> *⚠️ The `io.github.a2asdk` `groupId` below is temporary and will likely change for future releases.*
-----
+Add the Agent Card component to your Lightning page:
 
 ```xml
-<dependency>
-    <groupId>io.github.a2asdk</groupId>
-    <artifactId>a2a-java-sdk-client</artifactId>
-    <!-- Use a released version from https://github.com/a2aproject/a2a-java/releases -->
-    <version>${io.a2a.sdk.version}</version>
-</dependency>
+<template>
+    <c-a2a-agent-card 
+        agent-url="https://api.example.com/agent"
+        card-title="My AI Assistant">
+    </c-a2a-agent-card>
+</template>
 ```
 
-### Sample Usage
+### Flow Integration
 
-#### Create an A2A client
+1. Create a new Flow
+2. Add an Action element
+3. Search for "Send A2A Message"
+4. Configure the action:
+   - Agent URL: Your agent endpoint
+   - Message Text: The message to send
+   - Role: 'user' (default)
+5. Use the output Task ID for monitoring
 
-```java
-// Create an A2AClient (the URL specified is the server agent's URL, be sure to replace it with the actual URL of the A2A server you want to connect to)
-A2AClient client = new A2AClient("http://localhost:1234");
+## Architecture
+
+### Directory Structure
+```
+force-app/main/default/
+├── classes/
+│   ├── spec/           # A2A protocol specifications
+│   ├── client/         # Client implementations
+│   ├── server/         # Server implementations
+│   ├── http/           # HTTP utilities
+│   ├── auth/           # Authentication providers
+│   ├── batch/          # Batch and async processing
+│   ├── common/         # Utilities and helpers
+│   └── tests/          # Test classes
+├── lwc/                # Lightning Web Components
+│   ├── a2aAgentCard/
+│   └── a2aTaskMonitor/
+├── objects/            # Custom objects
+│   ├── A2A_Task__c/
+│   └── A2A_Log__c/
+└── permissionsets/     # Permission sets
 ```
 
-#### Send a message to the A2A server agent
+### Key Components
 
-```java
-// Send a text message to the A2A server agent
-Message message = A2A.toUserMessage("tell me a joke"); // the message ID will be automatically generated for you
-MessageSendParams params = new MessageSendParams.Builder()
-        .message(message)
+#### Protocol Layer
+- `A2AMessage`: Core message structure with parts
+- `A2APart`: Base class for message parts (Text, Data, File)
+- `A2AAgentCard`: Agent metadata and capabilities
+- `A2ASecurityScheme`: Authentication schemes
+
+#### Client Layer
+- `A2AClient`: Main client for agent communication
+- `A2ACardResolver`: Agent card discovery
+- `A2AHttpClient`: HTTP communication with retry logic
+
+#### Server Layer
+- `A2AServerREST`: REST API endpoint
+- `A2ARequestHandler`: Interface for handling requests
+- `A2ATaskManager`: Task lifecycle management
+- `A2AJSONRPCHandler`: JSON-RPC request processing
+
+#### Storage Layer
+- `A2ATaskStore`: Interface for task persistence
+- `A2ACustomObjectTaskStore`: Database persistence
+- `A2AInMemoryTaskStore`: Memory storage for testing
+
+## Advanced Features
+
+### Batch Processing
+```apex
+// Process multiple tasks in batch
+A2ATaskProcessorBatch.A2ATaskProcessorConfig config = 
+    new A2ATaskProcessorBatch.A2ATaskProcessorConfig();
+config.taskStatus = 'SUBMITTED';
+config.notificationEmail = 'admin@example.com';
+
+A2ATaskProcessorBatch batch = new A2ATaskProcessorBatch(agentUrl, config);
+Database.executeBatch(batch, 50);
+```
+
+### Queueable Chaining
+```apex
+// Send multiple messages with chaining
+List<A2AMessageQueueable.MessageRequest> requests = 
+    new List<A2AMessageQueueable.MessageRequest>();
+
+for (String query : queries) {
+    A2AMessage msg = new A2AMessage.Builder()
+        .withTextPart(query)
         .build();
-SendMessageResponse response = client.sendMessage(params);        
+    requests.add(new A2AMessageQueueable.MessageRequest(agentUrl, msg));
+}
+
+A2AMessageQueueable.A2AMessageQueueableConfig config = 
+    new A2AMessageQueueable.A2AMessageQueueableConfig();
+config.maxRetries = 3;
+config.delayBetweenMessages = 2; // seconds
+
+A2AMessageQueueable.enqueueMessages(requests, config);
 ```
 
-Note that `A2A#toUserMessage` will automatically generate a message ID for you when creating the `Message` 
-if you don't specify it. You can also explicitly specify a message ID like this:
-
-```java
-Message message = A2A.toUserMessage("tell me a joke", "message-1234"); // messageId is message-1234
+### Error Handling
+```apex
+try {
+    // A2A operation
+} catch (Exception e) {
+    A2AErrorHandler.A2AError error = A2AErrorHandler.handleException(e, 
+        new Map<String, Object>{'operation' => 'sendMessage'});
+    
+    if (A2AErrorHandler.isRetryable(error)) {
+        // Retry logic
+        Integer delay = A2AErrorHandler.calculateRetryDelay(attemptNumber);
+    }
+    
+    // Show user-friendly message
+    String userMessage = A2AErrorHandler.getUserMessage(error);
+}
 ```
 
-#### Get the current state of a task
+### Logging
+```apex
+// Configure logging
+A2ALogger.configure(
+    A2ALogger.LogLevel.DEBUG,  // Minimum level
+    true,                      // Console logging
+    true                       // Database persistence
+);
 
-```java
-// Retrieve the task with id "task-1234"
-GetTaskResponse response = client.getTask("task-1234");
+// Log operations
+A2ALogger.info('AGENT', 'Processing request', new Map<String, Object>{
+    'agentUrl' => agentUrl,
+    'messageId' => messageId
+});
 
-// You can also specify the maximum number of items of history for the task
-// to include in the response
-GetTaskResponse response = client.getTask(new TaskQueryParams("task-1234", 10));
+// Log task events
+A2ALogger.logTaskEvent(taskId, 'status_update', A2ATaskManager.A2ATaskStatus.COMPLETED);
+
+// Flush logs to database
+A2ALogger.flush();
 ```
 
-#### Cancel an ongoing task
+## Testing
 
-```java
-// Cancel the task we previously submitted with id "task-1234"
-CancelTaskResponse response = client.cancelTask("task-1234");
-
-// You can also specify additional properties using a map
-Map<String, Object> metadata = ...        
-CancelTaskResponse response = client.cancelTask(new TaskIdParams("task-1234", metadata));
+### Unit Tests
+Run all tests:
+```bash
+sfdx force:apex:test:run -u myorg -r human
 ```
 
-#### Get a push notification configuration for a task
-
-```java
-// Get task push notification configuration
-GetTaskPushNotificationConfigResponse response = client.getTaskPushNotificationConfig("task-1234");
-
-// The push notification configuration ID can also be optionally specified
-GetTaskPushNotificationConfigResponse response = client.getTaskPushNotificationConfig("task-1234", "config-4567");
-
-// Additional properties can be specified using a map
-Map<String, Object> metadata = ...
-GetTaskPushNotificationConfigResponse response = client.getTaskPushNotificationConfig(new GetTaskPushNotificationConfigParams("task-1234", "config-1234", metadata));
+Run specific test class:
+```bash
+sfdx force:apex:test:run -u myorg -t A2AMessageTest -r human
 ```
 
-#### Set a push notification configuration for a task
+### Test Coverage
+The SDK includes comprehensive test classes:
+- `A2AAgentCardTest`: Agent card serialization/deserialization
+- `A2AMessageTest`: Message and parts testing
+- `A2ATaskManagerTest`: Task management testing
 
-```java
-// Set task push notification configuration
-PushNotificationConfig pushNotificationConfig = new PushNotificationConfig.Builder()
-        .url("https://example.com/callback")
-        .authenticationInfo(new AuthenticationInfo(Collections.singletonList("jwt"), null))
-        .build();
-SetTaskPushNotificationResponse response = client.setTaskPushNotificationConfig("task-1234", pushNotificationConfig);
+## Best Practices
+
+### Security
+1. Always use the credential store for sensitive data
+2. Implement proper authentication for all agents
+3. Use permission sets to control access
+4. Validate all input data
+
+### Performance
+1. Use batch processing for large volumes
+2. Implement proper retry strategies
+3. Monitor governor limits
+4. Use Platform Events for real-time updates
+
+### Error Handling
+1. Use the error handler framework
+2. Implement appropriate recovery strategies
+3. Log all errors for debugging
+4. Provide user-friendly error messages
+
+## Troubleshooting
+
+### Common Issues
+
+#### Authentication Failures
+- Verify credentials in credential store
+- Check token expiry
+- Ensure proper permissions
+
+#### Network Errors
+- Check Remote Site Settings
+- Verify endpoint URLs
+- Review firewall rules
+
+#### Governor Limits
+- Use batch processing
+- Implement pagination
+- Monitor API limits
+
+### Debug Mode
+Enable debug logging:
+```apex
+A2ALogger.configure(A2ALogger.LogLevel.DEBUG, true, true);
 ```
-
-#### List the push notification configurations for a task
-
-```java
-ListTaskPushNotificationConfigResponse response = client.listTaskPushNotificationConfig("task-1234");
-
-// Additional properties can be specified using a map
-Map<String, Object> metadata = ...
-ListTaskPushNotificationConfigResponse response = client.listTaskPushNotificationConfig(new ListTaskPushNotificationConfigParams("task-123", metadata));
-```
-
-#### Delete a push notification configuration for a task
-
-```java
-DeleteTaskPushNotificationConfigResponse response = client.deleteTaskPushNotificationConfig("task-1234", "config-4567");
-
-// Additional properties can be specified using a map
-Map<String, Object> metadata = ...
-DeleteTaskPushNotificationConfigResponse response = client.deleteTaskPushNotificationConfig(new DeleteTaskPushNotificationConfigParams("task-1234", "config-4567", metadata));
-```
-
-#### Send a streaming message
-
-```java
-// Send a text message to the remote agent
-Message message = A2A.toUserMessage("tell me some jokes"); // the message ID will be automatically generated for you
-MessageSendParams params = new MessageSendParams.Builder()
-        .message(message)
-        .build();
-
-// Create a handler that will be invoked for Task, Message, TaskStatusUpdateEvent, and TaskArtifactUpdateEvent
-Consumer<StreamingEventKind> eventHandler = event -> {...};
-
-// Create a handler that will be invoked if an error is received
-Consumer<JSONRPCError> errorHandler = error -> {...};
-
-// Create a handler that will be invoked in the event of a failure
-Runnable failureHandler = () -> {...};
-
-// Send the streaming message to the remote agent
-client.sendStreamingMessage(params, eventHandler, errorHandler, failureHandler);
-```
-
-#### Resubscribe to a task
-
-```java
-// Create a handler that will be invoked for Task, Message, TaskStatusUpdateEvent, and TaskArtifactUpdateEvent
-Consumer<StreamingEventKind> eventHandler = event -> {...};
-
-// Create a handler that will be invoked if an error is received
-Consumer<JSONRPCError> errorHandler = error -> {...};
-
-// Create a handler that will be invoked in the event of a failure
-Runnable failureHandler = () -> {...};
-
-// Resubscribe to an ongoing task with id "task-1234"
-TaskIdParams taskIdParams = new TaskIdParams("task-1234");
-client.resubscribeToTask("request-1234", taskIdParams, eventHandler, errorHandler, failureHandler);
-```
-
-#### Retrieve details about the server agent that this client agent is communicating with
-```java
-AgentCard serverAgentCard = client.getAgentCard();
-```
-
-An agent card can also be retrieved using the `A2A#getAgentCard` method:
-```java
-// http://localhost:1234 is the base URL for the agent whose card we want to retrieve
-AgentCard agentCard = A2A.getAgentCard("http://localhost:1234");
-```
-
-## Additional Examples
-
-### Hello World Client Example
-
-A complete example of a Java A2A client communicating with a Python A2A server is available in the [examples/helloworld/client](examples/helloworld/client/README.md) directory. This example demonstrates:
-
-- Setting up and using the A2A Java client
-- Sending regular and streaming messages to a Python A2A server
-- Receiving and processing responses from the Python A2A server
-
-The example includes detailed instructions on how to run the Python A2A server and how to run the Java A2A client using JBang.
-
-Check out the [example's README](examples/helloworld/client/README.md) for more information.
-
-### Hello World Server Example
-
-A complete example of a Python A2A client communicating with a Java A2A server is available in the [examples/helloworld/server](examples/helloworld/server/README.md) directory. This example demonstrates:
-
-- A sample `AgentCard` producer
-- A sample `AgentExecutor` producer
-- A Java A2A server receiving regular and streaming messages from a Python A2A client
-
-Check out the [example's README](examples/helloworld/server/README.md) for more information.
-
-## Community Articles
-
-See [COMMUNITY_ARTICLES.md](COMMUNITY_ARTICLES.md) for a list of community articles and videos.
-
-## License
-
-This project is licensed under the terms of the [Apache 2.0 License](LICENSE).
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-## Server Integrations
-The following list contains community contributed integrations with various Java Runtimes.
+## License
 
-To contribute an integration, please see [CONTRIBUTING_INTEGRATIONS.md](CONTRIBUTING_INTEGRATIONS.md).
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-* [reference-impl/README.md](reference-impl/README.md) - Reference implementation, based on Quarkus.
-* https://github.com/wildfly-extras/a2a-java-sdk-server-jakarta - This integration is based on Jakarta EE, and should work in all runtimes supporting the [Jakarta EE Web Profile](https://jakarta.ee/specifications/webprofile/).
+## Support
+
+For issues and questions:
+- GitHub Issues: [github.com/your-org/a2a-apex-sdk/issues](https://github.com/your-org/a2a-apex-sdk/issues)
+- Documentation: [docs.example.com/a2a-apex-sdk](https://docs.example.com/a2a-apex-sdk)
+- Email: support@example.com
 
 
 
