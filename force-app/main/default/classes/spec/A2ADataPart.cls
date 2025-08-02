@@ -1,38 +1,80 @@
 /**
- * A data part of a Message or Artifact
- * Placeholder implementation - TODO: Complete based on Java io.a2a.spec.DataPart
+ * A fundamental data unit within a Message or Artifact.
+ * Converted from Java: io.a2a.spec.DataPart
  */
 public class A2ADataPart extends A2APart {
-    public String mimeType { get; set; }
-    public Object data { get; set; }
+    public Map<String, Object> data { get; set; }
+    public Map<String, Object> metadata { get; set; }
     
-    public A2ADataPart() {
-        super();
+    /**
+     * Constructor with data only
+     */
+    public A2ADataPart(Map<String, Object> data) {
+        this(data, null);
     }
     
-    public override String getKind() {
-        return KIND_DATA;
+    /**
+     * Constructor with data and metadata
+     */
+    public A2ADataPart(Map<String, Object> data, Map<String, Object> metadata) {
+        A2AAssert.checkNotNullParam('data', data);
+        this.data = data;
+        this.metadata = metadata;
     }
     
+    /**
+     * Returns the type of this part
+     */
+    public override String getType() {
+        return 'data';
+    }
+    
+    /**
+     * Serialize this part to a Map
+     */
     public override Map<String, Object> serialize() {
         Map<String, Object> result = new Map<String, Object>();
-        result.put('kind', getKind());
-        if (mimeType != null) result.put('mimeType', mimeType);
-        if (data != null) result.put('data', data);
-        if (metadata != null && !metadata.isEmpty()) {
-            result.put('metadata', metadata);
+        result.put('type', 'data');
+        result.put('data', this.data);
+        
+        if (this.metadata != null && !this.metadata.isEmpty()) {
+            result.put('metadata', this.metadata);
         }
+        
         return result;
     }
     
+    /**
+     * Deserialize from a Map
+     */
     public static A2ADataPart deserialize(Map<String, Object> jsonMap) {
-        if (jsonMap == null) return null;
+        Map<String, Object> data = (Map<String, Object>) jsonMap.get('data');
+        Map<String, Object> metadata = (Map<String, Object>) jsonMap.get('metadata');
         
-        A2ADataPart part = new A2ADataPart();
-        part.mimeType = (String) jsonMap.get('mimeType');
-        part.data = jsonMap.get('data');
-        part.metadata = (Map<String, Object>) jsonMap.get('metadata');
-        
-        return part;
+        return new A2ADataPart(data, metadata);
+    }
+    
+    /**
+     * Check if this part has metadata
+     */
+    public Boolean hasMetadata() {
+        return this.metadata != null && !this.metadata.isEmpty();
+    }
+    
+    /**
+     * Get a specific value from the data map
+     */
+    public Object getValue(String key) {
+        return this.data != null ? this.data.get(key) : null;
+    }
+    
+    /**
+     * Add or update a value in the data map
+     */
+    public void putValue(String key, Object value) {
+        if (this.data == null) {
+            this.data = new Map<String, Object>();
+        }
+        this.data.put(key, value);
     }
 }
