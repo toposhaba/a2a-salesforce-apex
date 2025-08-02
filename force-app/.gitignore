@@ -1,0 +1,44 @@
+# Salesforce DX
+.sfdx/
+.localdevserver/
+.sf/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# IntelliJ
+.idea/
+*.iml
+*.iws
+
+# Local environment variables
+.env
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependency directories
+node_modules/
+
+# Temp files
+*.tmp
+*.temp
+
+# Package files
+*.zip
+*.tar.gz
+
+# Salesforce cache
+.salesforce/
+
+# Unlocked packages
+packaged/

@@ -1,0 +1,18 @@
+{
+  "packageDirectories": [
+    {
+      "path": "force-app",
+      "default": true,
+      "package": "A2A SDK",
+      "versionName": "Version 1.0",
+      "versionNumber": "1.0.0.NEXT",
+      "versionDescription": "Salesforce Apex implementation of the A2A (Agent-to-Agent) Protocol SDK"
+    }
+  ],
+  "namespace": "a2a",
+  "sfdcLoginUrl": "https://login.salesforce.com",
+  "sourceApiVersion": "59.0",
+  "packageAliases": {
+    "A2A SDK": "0Ho000000000000"
+  }
+}
